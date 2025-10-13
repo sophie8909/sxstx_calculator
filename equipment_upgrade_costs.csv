@@ -1,0 +1,7 @@
+level,cost_stone_ore,cost_rola,cost_refining_stone
+1,10,100,0
+2,12,120,0
+3,15,150,0
+4,20,200,0
+5,25,250,0
+30,500,5000,1
