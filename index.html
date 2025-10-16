@@ -179,8 +179,8 @@
 
                 <div class="overflow-y-auto custom-scrollbar p-6 min-h-0">
                     <div id="production-inputs" class="space-y-6 mb-6"></div>
-                    <h3 class="text-lg font-semibold pt-4 border-t border-[#e5eff1]">全域加成 (%)</h3>
-                    <div id="global-bonuses" class="grid grid-cols-3 gap-4 mt-4"></div>
+                    <!-- <h3 class="text-lg font-semibold pt-4 border-t border-[#e5eff1]">全域加成 (%)</h3>
+                    <div id="global-bonuses" class="grid grid-cols-3 gap-4 mt-4"></div> -->
                 </div>
             </div>
 
@@ -269,6 +269,7 @@
             { id: 'skill_resonance', name: '技能共鳴' },
             { id: 'pet_resonance', name: '幻獸共鳴' },
             { id: 'relic_resonance', name: '遺物共鳴' },
+            { id: 'primordial_star', name: '原初之星' },
         ];
 
         // 定義所有遊戲內的素材及其圖示
@@ -296,12 +297,12 @@
             freezeDried: { materialId: 'freezeDried', baseProd: (lv) => 30 * Math.pow(lv, 1.4) }
         };
 
-        // 定義全域加成的項目
-        const globalBonuses = {
-            map: { name: '推圖進度' },
-            relic: { name: '古遺物' },
-            pass: { name: '月卡' }
-        };
+        // // 定義全域加成的項目
+        // const globalBonuses = {
+        //     map: { name: '推圖進度' },
+        //     relic: { name: '古遺物' },
+        //     pass: { name: '月卡' }
+        // };
 
         // 用於儲存預處理後的累積成本數據
         const cumulativeCostData = {};
@@ -517,11 +518,54 @@
 
                 // --- 渲染頂部「目標等級」區塊 ---
                 const renderTargetLevels = () => {
-                    targetLevelConfig.forEach(t => {
-                        let reachableHtml = (t.id === 'character') ? `<div id="target-char-reachable-level" class="text-xs text-gray-500 mt-1">最低可達: --</div>` : '';
-                        containers.targetLevels.appendChild(createInputGroup(`target-${t.id}`, t.name, '目標', false, reachableHtml));
-                    });
+                // 1) 先清空，避免重複 append
+                containers.targetLevels.innerHTML = "";
+
+                // 2) 逐項建立
+                targetLevelConfig.forEach((t) => {
+                    // 角色：顯示「最低可達」
+                    const reachableHtml =
+                    t.id === "character"
+                        ? `<div id="target-char-reachable-level" class="text-xs text-gray-500 mt-1">最低可達: --</div>`
+                        : "";
+
+                    // 原初之星：唯讀（由程式自動計算）
+                    const isReadOnly = t.id === "primordial_star" || t.readonly === true;
+
+                    // 組唯一 input id
+                    const inputId = `target-${t.id}`;
+
+                    // 3) 建立元素（createInputGroup: (id, label, placeholder, editable=true, extraHtml='')）
+                    const groupEl = createInputGroup(inputId, t.name, "目標", !isReadOnly, reachableHtml);
+
+                    // 4) 若唯讀，加上視覺提示／aria
+                    if (isReadOnly) {
+                    const input = groupEl.querySelector("input, select, textarea");
+                    if (input) {
+                        input.setAttribute("disabled", "disabled");
+                        input.setAttribute("aria-readonly", "true");
+                        // 提示：自動計算
+                        input.placeholder = "自動計算";
+                        // 若有你計算出的值，可在這裡填上：
+                        // input.value = computedPrimordialStar ?? "";
+                    }
+
+                    // 在標籤後補一個小徽章（可拿掉）
+                    const label = groupEl.querySelector("label");
+                    if (label) {
+                        label.insertAdjacentHTML(
+                        "beforeend",
+                        `<span class="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 align-middle">
+                            自動
+                        </span>`
+                        );
+                    }
+                    }
+
+                    containers.targetLevels.appendChild(groupEl);
+                });
                 };
+
 
                 // --- 渲染「遺物等級分佈」區塊 ---
                 const renderRelicDistribution = () => {
@@ -558,43 +602,38 @@
                         mainLabel.textContent = `${mat.icon} ${mat.name}`;
                         wrapper.appendChild(mainLabel);
 
-                        const grid = createElement('div', ['grid', 'grid-cols-2', 'gap-2']);
+                        // const grid = createElement('div', ['grid', 'grid-cols-2', 'gap-2']);
                         
                         // 生產等級部分
-                        const levelDiv = createElement('div');
-                        const levelLabel = createElement('label', ['text-xs', 'text-gray-500']);
-                        levelLabel.textContent = '生產等級';
-                        const levelGrid = createElement('div', ['grid', 'grid-cols-2', 'gap-1']);
-                        const currentLevelInput = createInputGroup(`prod-level-current-${srcId}`, '', '目前').querySelector('input');
-                        currentLevelInput.classList.add('production-related-input', 'text-sm');
-                        const targetLevelInput = createInputGroup(`prod-level-target-${srcId}`, '', '目標').querySelector('input');
-                        targetLevelInput.classList.add('production-related-input', 'text-sm');
-                        levelGrid.append(currentLevelInput.parentElement, targetLevelInput.parentElement);
-                        levelDiv.append(levelLabel, levelGrid);
+                        // const levelDiv = createElement('div');
+                        // const levelLabel = createElement('label', ['text-xs', 'text-gray-500']);
+                        // levelLabel.textContent = '生產等級';
+                        // const levelGrid = createElement('div', ['grid', 'grid-cols-2', 'gap-1']);
+                        // const currentLevelInput = createInputGroup(`prod-level-current-${srcId}`, '', '目前').querySelector('input');
+                        // currentLevelInput.classList.add('production-related-input', 'text-sm');
+                        // const targetLevelInput = createInputGroup(`prod-level-target-${srcId}`, '', '目標').querySelector('input');
+                        // targetLevelInput.classList.add('production-related-input', 'text-sm');
+                        // levelGrid.append(currentLevelInput.parentElement, targetLevelInput.parentElement);
+                        // levelDiv.append(levelLabel, levelGrid);
                         
                         // 時產量部分
                         const hourlyDiv = createElement('div');
                         const hourlyLabel = createElement('label', ['text-xs', 'text-gray-500']);
-                        hourlyLabel.textContent = '時產量 (理論/手動)';
-                        const hourlyGrid = createElement('div', ['grid', 'grid-cols-2', 'gap-1']);
-                        const theoreticalInput = createInputGroup(`theoretical-hourly-${srcId}`, '', '理論').querySelector('input');
-                        theoreticalInput.classList.add('text-sm');
-                        theoreticalInput.disabled = true;
-                        const manualInput = createInputGroup(`manual-hourly-${srcId}`, '', '手動').querySelector('input');
+                        hourlyLabel.textContent = '時產量';
+                        const manualInput = createInputGroup(`manual-hourly-${srcId}`, '', '手動輸入').querySelector('input');
                         manualInput.classList.add('text-sm');
-                        hourlyGrid.append(theoreticalInput.parentElement, manualInput.parentElement);
-                        hourlyDiv.append(hourlyLabel, hourlyGrid);
+                        hourlyDiv.append(hourlyLabel, manualInput.parentElement);
                         
-                        grid.append(levelDiv, hourlyDiv);
-                        wrapper.appendChild(grid);
+                        // grid.append(levelDiv, hourlyDiv);
+                        wrapper.appendChild(hourlyDiv);
                         containers.productionInputs.appendChild(wrapper);
                     });
 
-                    Object.entries(globalBonuses).forEach(([bonusId, bonus]) => {
-                         const group = createInputGroup(`bonus-${bonusId}`, bonus.name, '0');
-                         group.querySelector('input').classList.add('production-related-input');
-                         containers.globalBonuses.appendChild(group);
-                    });
+                    // Object.entries(globalBonuses).forEach(([bonusId, bonus]) => {
+                    //      const group = createInputGroup(`bonus-${bonusId}`, bonus.name, '0');
+                    //      group.querySelector('input').classList.add('production-related-input');
+                    //      containers.globalBonuses.appendChild(group);
+                    // });
                 };
 
                 // --- 執行所有渲染函式 ---
@@ -654,7 +693,18 @@
                 // --- 讀取所有目標等級 ---
                 const targets = {};
                 targetLevelConfig.forEach(t => { targets[t.id] = parseInt(document.getElementById(`target-${t.id}`).value) || 0; });
+
+                // --- 計算當前目標等級可達的原初等級 ---
+                const reachableStarLevelDisplay = document.getElementById('target-star-reachable-level');
+                const currentStarLevel = parseInt(document.getElementById('star-current').value) || 0;
+                const ownedStarExp = parseInt(document.getElementById('owned-star-exp').value) || 0;
+                const targetStarLevel = targets.star;
+                let reachableStarLevel = currentStarLevel;
                 
+                // TODO: [計算] 原初之星的可達等級計算邏輯
+               
+
+
                 // --- 計算並更新「最低可達等級」 ---
                 const reachableCharLevelDisplay = document.getElementById('target-char-reachable-level');
                 const currentCharacterLevel = parseInt(document.getElementById('character-current').value) || 0;
