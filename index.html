@@ -1,1037 +1,914 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>杖劍傳說 素材計算機</title>
-    <!-- tailwindcss CDN only for local / testing use -->
-    <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>杖劍傳說 素材計算機</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
-    <style>
+  <!-- Tailwind：開發期使用 CDN；上線請改用 CLI/PostCSS 打包 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet"/>
+
+  <style>
+    /* ===== 視覺主題（淺色版） ===== */
     body {
-        font-family: 'Noto Sans TC', sans-serif;
-        background: linear-gradient(180deg, #f5fafb 0%, #e6f3f4 100%);
-        color: #1e293b; /* 深藍灰文字 */
+      font-family: 'Noto Sans TC', sans-serif;
+      background: linear-gradient(180deg, #f5fafb 0%, #e6f3f4 100%);
+      color: #1e293b;
     }
-
     .card {
-        background: #ffffffd9; /* 半透明白卡片 */
-        border: 1px solid #cde5e8;
-        box-shadow: 0 2px 8px rgba(38, 115, 119, 0.15);
-        border-radius: 10px;
-        transition: all 0.25s ease;
+      background: #ffffffd9;                 /* 半透明白 */
+      border: 1px solid #cde5e8;
+      box-shadow: 0 2px 8px rgba(38,115,119,.15);
+      border-radius: 10px;
+      transition: all .25s ease;
+    }
+    .card:hover {
+      box-shadow: 0 4px 14px rgba(43,184,172,.25);
+      border-color: #21b8ac;
+      transform: translateY(-2px);
     }
 
     .input-field {
-        background-color: #f7fbfc;
-        color: #1e293b;
-        border: 1px solid #b6d7da;
-        transition: border-color 0.25s, box-shadow 0.25s, background-color 0.25s;
+      background-color: #f7fbfc;
+      color: #1e293b;
+      border: 1px solid #b6d7da;
+      transition: border-color .25s, box-shadow .25s, background-color .25s;
     }
-
     .input-field:focus {
-        border-color: #2cb5ab;
-        box-shadow: 0 0 6px rgba(44, 181, 171, 0.4);
-        outline: none;
-        background-color: #f0fafa;
+      border-color: #2cb5ab;
+      box-shadow: 0 0 6px rgba(44,181,171,.4);
+      outline: none;
+      background-color: #f0fafa;
     }
-
     .input-field:disabled {
-        background-color: #eef3f4;
-        color: #94a3b8;
-        border-color: #cbd5e1;
-        cursor: not-allowed;
+      background-color: #eef3f4;
+      color: #94a3b8;
+      border-color: #cbd5e1;
+      cursor: not-allowed;
     }
 
     .btn-primary {
-        background: linear-gradient(135deg, #31c9be 0%, #1a9e95 100%);
-        color: #fffef8;
-        border: 1px solid #21b8ac;
-        box-shadow: 0 2px 6px rgba(34, 180, 168, 0.25);
-        transition: background 0.3s, transform 0.15s;
+      background: linear-gradient(135deg,#31c9be 0%,#1a9e95 100%);
+      color: #fffef8;
+      border: 1px solid #21b8ac;
+      box-shadow: 0 2px 6px rgba(34,180,168,.25);
+      transition: background .3s, transform .15s;
     }
-
     .btn-primary:hover {
-        background: linear-gradient(135deg, #45dfd3 0%, #23b7ac 100%);
-        transform: translateY(-2px);
+      background: linear-gradient(135deg,#45dfd3 0%,#23b7ac 100%);
+      transform: translateY(-2px);
     }
 
-    .result-item {
-        background-color: #fffdf5;
-        border-left: 4px solid #f48b45; /* 成本／缺口：橘金 */
-        box-shadow: inset 0 0 8px rgba(244, 139, 69, 0.2);
-    }
-
-    .info-item {
-        background-color: #f0faf9;
-        border-left: 4px solid #2cb5ab; /* 資訊：青綠 */
-        box-shadow: inset 0 0 8px rgba(44, 181, 171, 0.15);
-    }
-
-    .cost-item {
-        background-color: #fffbee;
-        border-left: 4px solid #facc15; /* 黃金亮邊 */
-        box-shadow: inset 0 0 8px rgba(249, 209, 98, 0.2);
-    }
+    .result-item { background:#fffdf5; border-left:4px solid #f48b45; box-shadow: inset 0 0 8px rgba(244,139,69,.2); }
+    .info-item   { background:#f0faf9; border-left:4px solid #2cb5ab; box-shadow: inset 0 0 8px rgba(44,181,171,.15); }
+    .cost-item   { background:#fffbee; border-left:4px solid #facc15; box-shadow: inset 0 0 8px rgba(249,209,98,.2); }
 
     input[type=number]::-webkit-inner-spin-button,
-    input[type=number]::-webkit-outer-spin-button {
-        opacity: 0.4;
-    }
+    input[type=number]::-webkit-outer-spin-button { opacity:.4; }
 
-    /* 滾動條 */
-    .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: #f2f8f9; }
+    /* 捲軸 */
+    .custom-scrollbar::-webkit-scrollbar { width:8px; height:8px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background:#f2f8f9; }
     .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: linear-gradient(180deg, #b3dede 0%, #89cfcf 100%);
-        border-radius: 4px;
+      background: linear-gradient(180deg,#b3dede 0%,#89cfcf 100%); border-radius:4px;
     }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-        background: linear-gradient(180deg, #6dcacb 0%, #4fbebf 100%);
+      background: linear-gradient(180deg,#6dcacb 0%,#4fbebf 100%);
     }
 
-    /* 標題字色與重點色 */
-    h1, h2, h3, h4 {
-        color: #165f63; /* 深青標題 */
-        text-shadow: 0 1px 2px rgba(22, 95, 99, 0.15);
-    }
-    .text-accent { color: #1fb7ad; }
-    .text-gold { color: #d4a418; }
-    .text-warning { color: #d65a2d; }
-
-    /* 卡片 hover 效果 */
-    .card:hover {
-        box-shadow: 0 4px 14px rgba(43, 184, 172, 0.25);
-        border-color: #21b8ac;
-        transform: translateY(-2px);
-    }
-</style>
-
-
+    /* 標題顏色 */
+    h1,h2,h3,h4 { color:#165f63; text-shadow:0 1px 2px rgba(22,95,99,.15); }
+    .text-accent{ color:#1fb7ad; }
+    .text-gold  { color:#d4a418; }
+    .text-warning{ color:#d65a2d; }
+  </style>
 </head>
+
 <body class="p-4 lg:p-6">
+  <div class="w-full max-w-7xl mx-auto">
+    <!-- ===== 頁首 ===== -->
+    <header class="text-center mb-6">
+      <h1 class="text-3xl md:text-4xl font-bold">杖劍傳說 素材計算機</h1>
+    </header>
 
-    <div class="w-full max-w-7xl mx-auto">
-        <header class="text-center mb-6">
-            <h1 class="text-3xl md:text-4xl font-bold ">杖劍傳說 素材計算機</h1>
-        </header>
-
-        <div class="card rounded-lg p-4 shadow-lg mb-6 max-w-lg mx-auto">
-            <div class="flex items-center justify-center gap-x-6">
-                <div>
-                    <h3 class="text-lg font-semibold text-center mb-2">目標時間</h3>
-                    <input type="datetime-local" id="target-time" class="input-field rounded w-full py-2 px-3">
-                </div>
-                <div>
-                    <h3 class="text-lg font-semibold text-center mb-2">現在時間</h3>
-                    <div id="current-time-display" class="text-center bg-gray-900/50 p-2 rounded h-[42px] flex items-center justify-center min-w-[210px] text-[#e2e8f0]">
-                        <!-- JS will populate this -->
-                    </div>
-                </div>
-            </div>
+    <!-- ===== 目標時間 / 現在時間 ===== -->
+    <div class="card rounded-lg p-4 shadow-lg mb-6 max-w-lg mx-auto">
+      <div class="flex items-center justify-center gap-x-6">
+        <div>
+          <h3 class="text-lg font-semibold text-center mb-2">目標時間</h3>
+          <input type="datetime-local" id="target-time" class="input-field rounded w-full py-2 px-3">
         </div>
-        
-        <div class="card rounded-lg p-6 shadow-lg mb-6 max-w-6xl mx-auto">
-            <h3 class="text-xl font-bold text-center mb-4">目標等級 (共鳴)</h3>
-            <div id="target-levels" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
-                <!-- JS will populate this -->
-            </div>
+        <div>
+          <h3 class="text-lg font-semibold text-center mb-2">現在時間</h3>
+          <!-- 使用深底白字以區分 -->
+          <div id="current-time-display" class="text-center bg-gray-900/50 p-2 rounded h-[42px] flex items-center justify-center min-w-[210px] text-[#e2e8f0]"></div>
         </div>
-        
-        <div class="card rounded-lg p-6 shadow-lg mb-6 max-w-6xl mx-auto">
-            <h3 class="text-xl font-bold text-center mb-4">遺物等級分佈 <span id="relic-total-display" class="text-sm font-normal text-gray-400">(0/20)</span></h3>
-            <div id="relic-distribution-inputs" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-11 gap-x-6 gap-y-4">
-                <!-- JS will populate this -->
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            <div class="card rounded-xl p-0 shadow-lg max-h-[75vh] flex flex-col">
-                <!-- 標題：sticky + 淺色背景 + 柔和邊線 -->
-                <h2
-                    class="text-2xl font-bold border-b pb-3 sticky top-0 z-10
-                        px-6 py-3 m-0
-                        bg-white/90 backdrop-blur
-                        border-[#cde5e8]">
-                    角色目前等級
-                </h2>
-
-                <!-- 內容：只有這層滾動；移除重複的 max-h，避免雙重捲動 -->
-                <div class="overflow-y-auto custom-scrollbar p-6 min-h-0">
-                    <div id="level-inputs" class="pt-2"></div>
-                </div>
-            </div>
-
-
-            
-            <div class="card rounded-xl p-0 shadow-lg max-h-[75vh] flex flex-col">
-                <h2
-                    class="text-2xl font-bold border-b pb-3 sticky top-0 z-10
-                        px-6 py-3 m-0
-                        bg-white/90 backdrop-blur
-                        border-[#cde5e8]">
-                    小推車
-                </h2>
-
-                <div class="overflow-y-auto custom-scrollbar p-6 min-h-0">
-                    <div id="production-inputs" class="space-y-6 mb-6"></div>
-                    <!-- <h3 class="text-lg font-semibold pt-4 border-t border-[#e5eff1]">全域加成 (%)</h3>
-                    <div id="global-bonuses" class="grid grid-cols-3 gap-4 mt-4"></div> -->
-                </div>
-            </div>
-
-
-            <div class="flex flex-col gap-6">
-                <div class="card rounded-xl p-0 shadow-lg max-h-[40vh] flex flex-col">
-                    <h2
-                        class="text-2xl font-bold border-b pb-3 sticky top-0 z-10
-                            px-6 py-3 m-0
-                            bg-white/90 backdrop-blur
-                            border-[#cde5e8]">
-                        素材資訊
-                    </h2>
-
-                    <div class="overflow-y-auto custom-scrollbar p-6 min-h-0">
-                        <div class="pt-2 mb-6 border-b border-[#e5eff1] pb-6">
-                        <h3 class="text-lg font-semibold text-accent mb-3">床</h3>
-                        <div class="flex items-center">
-                            <label for="bed-exp-hourly" class="w-full block text-sm font-bold">📖 每小時經驗產量</label>
-                            <input type="number" id="bed-exp-hourly" placeholder="0" class="input-field rounded w-full p-2">
-                        </div>
-                        <div id="bed-levelup-time" class="text-xs text-gray-500 mt-2">預計升級時間: --</div>
-                        </div>
-
-                        <h3 class="text-lg font-semibold text-accent mb-3">目前持有素材</h3>
-                        <div id="owned-materials" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4"></div>
-                    </div>
-                </div>
-
-                <div class="card rounded-xl p-0 shadow-lg max-h-[43.5vh] flex flex-col">
-                    <h2
-                        class="text-2xl font-bold border-b pb-3 sticky top-0 z-10
-                            px-6 py-3 m-0
-                            bg-white/90 backdrop-blur
-                            border-[#cde5e8]">
-                        計算總覽
-                    </h2>
-
-                    <div class="overflow-y-auto custom-scrollbar p-6 min-h-0">
-                        <div id="results" class="space-y-4 pt-2">
-                        <p class="text-gray-500 text-center py-8">正在載入遊戲數據...</p>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-        
-        <footer class="text-center text-gray-500 mt-10 text-sm">
-            <!-- <p>重要：請將所有 .csv 檔案與此 HTML 檔案放在同一個資料夾，並透過本地伺服器 (Local Server) 瀏覽。</p> -->
-            <button id="enable-notifications-btn" class="mt-4 bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg text-xs">啟用升級通知</button>
-        </footer>
+      </div>
+    </div>
+    <!-- 賽季選項 -->
+    <div class="text-center mb-6">
+      <label for="season-select" class="mr-2 font-semibold">賽季選項:</label>
+      <select id="season-select" class="input-field rounded p-2">
+        <option value="s1">S1 澤之國</option>
+        <!-- <option value="s2">S2 龍之國</option> -->
+        <!-- 未來可擴充其他賽季 -->
+      </select>
+    </div>
+    <!-- ===== 目標等級（共鳴） ===== -->
+    <div class="card rounded-lg p-6 shadow-lg mb-6 max-w-6xl mx-auto">
+      <h3 class="text-xl font-bold text-center mb-4">目標等級 (共鳴)</h3>
+      <!-- 固定六欄，確保對齊 -->
+      <div id="target-levels" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4"></div>
     </div>
 
-    <script>
-        // --- 核心應用程式設定 (Core Application Settings) ---
-        const MAX_LEVEL = 200; // 最高等級上限
-        let notificationTimerId = null; // 用於存放通知的計時器ID
+    <!-- ===== 遺物分佈 ===== -->
+    <div class="card rounded-lg p-6 shadow-lg mb-6 max-w-6xl mx-auto">
+      <h3 class="text-xl font-bold text-center mb-4">遺物等級分佈 <span id="relic-total-display" class="text-sm font-normal text-gray-400">(0/20)</span></h3>
+      <div id="relic-distribution-inputs" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-11 gap-x-6 gap-y-4"></div>
+    </div>
 
-        // 定義所有需要輸入目前等級的項目，用於生成左側欄位
-        const categories = [
-            { id: 'character', name: '角色等級' },
-            { id: 'equipment_main_weapon', name: '主武器', group: '裝備等級' },
-            { id: 'equipment_off_weapon', name: '副武器', group: '裝備等級' },
-            { id: 'equipment_helmet', name: '頭盔', group: '裝備等級' },
-            { id: 'equipment_armor', name: '鎧甲', group: '裝備等級' },
-            { id: 'equipment_boots', name: '戰靴', group: '裝備等級' },
-            { id: 'skill_combat1', name: '戰技一', group: '技能等級' },
-            { id: 'skill_combat2', name: '戰技二', group: '技能等級' },
-            { id: 'skill_combat3', name: '戰技三', group: '技能等級' },
-            { id: 'skill_combat4', name: '戰技四', group: '技能等級' },
-            { id: 'skill_arcane1', name: '祕法一', group: '技能等級' },
-            { id: 'skill_arcane2', name: '祕法二', group: '技能等級' },
-            { id: 'skill_arcane3', name: '祕法三', group: '技能等級' },
-            { id: 'skill_arcane4', name: '祕法四', group: '技能等級' },
-            { id: 'pet1', name: '幻獸一', group: '幻獸等級' },
-            { id: 'pet2', name: '幻獸二', group: '幻獸等級' },
-            { id: 'pet3', name: '幻獸三', group: '幻獸等級' },
-            { id: 'pet4', name: '幻獸四', group: '幻獸等級' },
-        ];
+    <!-- ===== 三欄主內容 ===== -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- 左：角色目前等級 -->
+      <div class="card rounded-xl p-0 shadow-lg max-h-[75vh] flex flex-col">
+        <h2 class="text-2xl font-bold border-b pb-3 sticky top-0 z-10 px-6 py-3 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">角色目前等級</h2>
+        <div class="overflow-y-auto custom-scrollbar p-6 min-h-0">
+          <div id="level-inputs" class="pt-2"></div>
+        </div>
+      </div>
 
-        // 定義頂部的目標等級設定欄位
-        const targetLevelConfig = [
-            { id: 'character', name: '角色等級' },
-            { id: 'equipment_resonance', name: '裝備共鳴' },
-            { id: 'skill_resonance', name: '技能共鳴' },
-            { id: 'pet_resonance', name: '幻獸共鳴' },
-            { id: 'relic_resonance', name: '遺物共鳴' },
-            { id: 'primordial_star', name: '原初之星' },
-        ];
+      <!-- 中：小推車（目前僅手動時產） -->
+      <div class="card rounded-xl p-0 shadow-lg max-h-[75vh] flex flex-col">
+        <h2 class="text-2xl font-bold border-b pb-3 sticky top-0 z-10 px-6 py-3 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">小推車</h2>
+        <div class="overflow-y-auto custom-scrollbar p-6 min-h-0">
+          <div id="production-inputs" class="space-y-6 mb-6"></div>
+        </div>
+      </div>
 
-        // 定義所有遊戲內的素材及其圖示
-        const materials = {
-            exp: { name: '角色經驗', icon: '📖' },
-            rola: { name: '羅拉幣', icon: '💰' },
-            wood: { name: '木頭', icon: '🪵' },
-            stoneMat: { name: '石頭', icon: '🪨' },
-            essence: { name: '歷戰精華', icon: '✨' },
-            sand: { name: '時之砂', icon: '⏳' },
-            stoneOre: { name: '粗煉石', icon: '💎' },
-            refiningStone: { name: '精煉石', icon: '🔨' },
-            freezeDried: { name: '幻獸凍乾', icon: '🍖' },
-        };
+      <!-- 右：素材資訊 + 計算總覽 -->
+      <div class="flex flex-col gap-6">
+        <div class="card rounded-xl p-0 shadow-lg max-h-[40vh] flex flex-col">
+          <h2 class="text-2xl font-bold border-b pb-3 sticky top-0 z-10 px-6 py-3 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">素材資訊</h2>
+          <div class="overflow-y-auto custom-scrollbar p-6 min-h-0">
+            <div class="pt-2 mb-6 border-b border-[#e5eff1] pb-6">
+              <h3 class="text-lg font-semibold text-accent mb-3">床</h3>
+              <div class="flex items-center">
+                <label for="bed-exp-hourly" class="w-full block text-sm font-bold">📖 每小時經驗產量</label>
+                <input type="number" id="bed-exp-hourly" placeholder="0" class="input-field rounded w-full p-2">
+              </div>
+              <div id="bed-levelup-time" class="text-xs text-gray-500 mt-2">預計升級時間: --</div>
+            </div>
 
-        // 定義推車可生產的資源及其基礎產量公式
-        const productionSources = {
-            // TODO: [遊戲數據] 此處為各資源的基礎產量公式，請根據遊戲實際情況修改
-            rola: { materialId: 'rola', baseProd: (lv) => 100 * Math.pow(lv, 1.5) },
-            wood: { materialId: 'wood', baseProd: (lv) => 120 * Math.pow(lv, 1.45) },
-            stoneMat: { materialId: 'stoneMat', baseProd: (lv) => 110 * Math.pow(lv, 1.48) },
-            essence: { materialId: 'essence', baseProd: (lv) => 50 * Math.pow(lv, 1.6) },
-            stoneOre: { materialId: 'stoneOre', baseProd: (lv) => 40 * Math.pow(lv, 1.65) },
-            sand: { materialId: 'sand', baseProd: (lv) => 20 * Math.pow(lv, 1.3) },
-            freezeDried: { materialId: 'freezeDried', baseProd: (lv) => 30 * Math.pow(lv, 1.4) }
-        };
+            <h3 class="text-lg font-semibold text-accent mb-3">目前持有素材</h3>
+            <div id="owned-materials" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4"></div>
+          </div>
+        </div>
 
-        // // 定義全域加成的項目
-        // const globalBonuses = {
-        //     map: { name: '推圖進度' },
-        //     relic: { name: '古遺物' },
-        //     pass: { name: '月卡' }
-        // };
+        <div class="card rounded-xl p-0 shadow-lg max-h-[43.5vh] flex flex-col">
+          <h2 class="text-2xl font-bold border-b pb-3 sticky top-0 z-10 px-6 py-3 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">計算總覽</h2>
+          <div class="overflow-y-auto custom-scrollbar p-6 min-h-0">
+            <div id="results" class="space-y-4 pt-2">
+              <p class="text-gray-500 text-center py-8">正在載入遊戲數據...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-        // 用於儲存預處理後的累積成本數據
-        const cumulativeCostData = {};
-        
-        // 內建的備用模擬數據，當 CSV 檔案載入失敗時使用
-        const MOCK_GAME_DATA = {
-            // [模擬數據] 以下為 CSV 讀取失敗時的備用數據
-            productionUpgradeCosts: [ { level: 1, cost_wood: 100, cost_stone: 100, cost_rola: 500 }, { level: 2, cost_wood: 200, cost_stone: 200, cost_rola: 1000 }, { level: 3, cost_wood: 400, cost_stone: 400, cost_rola: 2000 }, ],
-            equipmentUpgradeCosts: [ { level: 1, cost_stone_ore: 10, cost_rola: 100, cost_refining_stone: 0 }, { level: 2, cost_stone_ore: 20, cost_rola: 200, cost_refining_stone: 0 }, { level: 30, cost_stone_ore: 500, cost_rola: 5000, cost_refining_stone: 1 }, ],
-            skillUpgradeCosts: [ { level: 1, cost_essence: 50 }, { level: 2, cost_essence: 75 }, { level: 3, cost_essence: 100 }, ],
-            petUpgradeCosts: [ { level: 1, cost_freeze_dried: 30 }, { level: 2, cost_freeze_dried: 45 }, { level: 3, cost_freeze_dried: 60 }, ],
-            relicUpgradeCosts: [ { level: 1, cost_sand: 100, cost_rola: 1000 }, { level: 2, cost_sand: 150, cost_rola: 1500 }, { level: 3, cost_sand: 200, cost_rola: 2000 }, ],
-            characterUpgradeCosts: Array.from({ length: MAX_LEVEL }, (_, i) => ({ level: i + 1, cost_exp: Math.floor(200 * Math.pow(i + 1, 2.2)) })),
-        };
+    <!-- ===== 底部：通知按鈕 ===== -->
+    <footer class="text-center text-gray-500 mt-10 text-sm">
+      <button id="enable-notifications-btn" class="mt-4 bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg text-xs">
+        啟用升級通知
+      </button>
+    </footer>
+  </div>
 
-        /**
-         * @description 從指定的 URL 獲取並解析 CSV 檔案。
-         * @param {string} url - CSV 檔案的路徑。
-         * @returns {Promise<Array<Object>>} - 解析後的物件陣列。
-         */
-        async function fetchAndParseCsv(url) {
-            const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error(`無法載入 CSV 檔案: ${url}`);
+  <script>
+    /* ---------------------------------------
+     * 基礎設定與資料模型
+     * ------------------------------------- */
+    const MAX_LEVEL = 200;              // 角色最高等級上限
+    let notificationTimerId = null;     // 推播計時器（避免重複排程）
+
+    // 左欄：可輸入的目前等級
+    const categories = [
+      { id:'character', name:'角色等級' },
+      { id:'equipment_main_weapon', name:'主武器', group:'裝備等級' },
+      { id:'equipment_off_weapon',  name:'副武器', group:'裝備等級' },
+      { id:'equipment_helmet',      name:'頭盔',   group:'裝備等級' },
+      { id:'equipment_armor',       name:'鎧甲',   group:'裝備等級' },
+      { id:'equipment_boots',       name:'戰靴',   group:'裝備等級' },
+      { id:'skill_combat1',         name:'戰技一', group:'技能等級' },
+      { id:'skill_combat2',         name:'戰技二', group:'技能等級' },
+      { id:'skill_combat3',         name:'戰技三', group:'技能等級' },
+      { id:'skill_combat4',         name:'戰技四', group:'技能等級' },
+      { id:'skill_arcane1',         name:'祕法一', group:'技能等級' },
+      { id:'skill_arcane2',         name:'祕法二', group:'技能等級' },
+      { id:'skill_arcane3',         name:'祕法三', group:'技能等級' },
+      { id:'skill_arcane4',         name:'祕法四', group:'技能等級' },
+      { id:'pet1', name:'幻獸一', group:'幻獸等級' },
+      { id:'pet2', name:'幻獸二', group:'幻獸等級' },
+      { id:'pet3', name:'幻獸三', group:'幻獸等級' },
+      { id:'pet4', name:'幻獸四', group:'幻獸等級' },
+    ];
+
+    // 頂部：目標等級（共鳴）欄位
+    const targetLevelConfig = [
+      { id:'character',         name:'角色等級' },
+      { id:'equipment_resonance', name:'裝備共鳴' },
+      { id:'skill_resonance',     name:'技能共鳴' },
+      { id:'pet_resonance',       name:'幻獸共鳴' },
+      { id:'relic_resonance',     name:'遺物共鳴' },
+      { id:'primordial_star',     name:'原初之星', readonly:true }, // 唯讀，自動計算
+    ];
+
+    // 可用素材（右欄）
+    const materials = {
+      exp:{ name:'角色經驗', icon:'📖' },
+      rola:{ name:'羅拉幣', icon:'💰' },
+      wood:{ name:'木頭', icon:'🪵' },
+      stoneMat:{ name:'石頭', icon:'🪨' },
+      essence:{ name:'歷戰精華', icon:'✨' },
+      sand:{ name:'時之砂', icon:'⏳' },
+      stoneOre:{ name:'粗煉石', icon:'💎' },
+      refiningStone:{ name:'精煉石', icon:'🔨' },
+      freezeDried:{ name:'幻獸凍乾', icon:'🍖' },
+    };
+
+    // 推車（只用於掛機收益，先保留識別）
+    const productionSources = {
+      rola:        { materialId:'rola' },
+      wood:        { materialId:'wood' },
+      stoneMat:    { materialId:'stoneMat' },
+      essence:     { materialId:'essence' },
+      stoneOre:    { materialId:'stoneOre' },
+      sand:        { materialId:'sand' },
+      freezeDried: { materialId:'freezeDried' }
+    };
+
+    // 預處理後的「累積成本表」存放處
+    const cumulativeCostData = {};
+
+    // 讀檔失敗時的備用模擬資料
+    const MOCK_GAME_DATA = {
+      productionUpgradeCosts: [
+        { level:1, cost_wood:100, cost_stone:100, cost_rola:500 },
+        { level:2, cost_wood:200, cost_stone:200, cost_rola:1000 },
+        { level:3, cost_wood:400, cost_stone:400, cost_rola:2000 },
+      ],
+      equipmentUpgradeCosts: [
+        { level:1,  cost_stone_ore:10,  cost_rola:100,  cost_refining_stone:0 },
+        { level:2,  cost_stone_ore:20,  cost_rola:200,  cost_refining_stone:0 },
+        { level:30, cost_stone_ore:500, cost_rola:5000, cost_refining_stone:1 },
+      ],
+      skillUpgradeCosts: [
+        { level:1, cost_essence:50 },
+        { level:2, cost_essence:75 },
+        { level:3, cost_essence:100 },
+      ],
+      petUpgradeCosts: [
+        { level:1, cost_freeze_dried:30 },
+        { level:2, cost_freeze_dried:45 },
+        { level:3, cost_freeze_dried:60 },
+      ],
+      relicUpgradeCosts: [
+        { level:1, cost_sand:100, cost_rola:1000 },
+        { level:2, cost_sand:150, cost_rola:1500 },
+        { level:3, cost_sand:200, cost_rola:2000 },
+      ],
+      // 角色升級的「到達該等級所需累積經驗」
+      characterUpgradeCosts: Array.from({ length: MAX_LEVEL }, (_, i) => ({
+        level: i + 1, cost_exp: Math.floor(200 * Math.pow(i + 1, 2.2))
+      })),
+    };
+
+    // 讀取 CSV（簡易解析：第一列為標頭）
+    async function fetchAndParseCsv(url){
+      const res = await fetch(url);
+      if(!res.ok) throw new Error(`無法載入 CSV: ${url}`);
+      const text = await res.text();
+      const lines = text.trim().split('\n');
+      const headers = lines[0].split(',').map(h=>h.trim());
+      return lines.slice(1).map(line=>{
+        const values = line.split(',').map(v=>v.trim());
+        const obj = {};
+        headers.forEach((h,i)=>{
+          const num = parseFloat(values[i]);
+          obj[h] = isNaN(num) ? 0 : num;
+        });
+        return obj;
+      });
+    }
+
+    // 將成本資料轉成「累積總和表」
+    function preprocessCostData(GAME_DATA){
+      const dataSources = {
+        equipment:  GAME_DATA.equipmentUpgradeCosts,
+        skill:      GAME_DATA.skillUpgradeCosts,
+        pet:        GAME_DATA.petUpgradeCosts,
+        relic:      GAME_DATA.relicUpgradeCosts,
+        production: GAME_DATA.productionUpgradeCosts,
+        character:  GAME_DATA.characterUpgradeCosts,
+      };
+      for(const type in dataSources){
+        const source = dataSources[type];
+        cumulativeCostData[type] = [];
+        let cumulative = {};
+        if(source && source.length>0){
+          Object.keys(source[0]).forEach(k=>{ if(k.startsWith('cost_')) cumulative[k] = 0; });
+        }
+        for(let i=0;i<(source?.length||0);i++){
+          const row = source[i];
+          Object.keys(cumulative).forEach(k=> cumulative[k] += (row[k]||0));
+          cumulativeCostData[type].push({ level: row.level, ...cumulative });
+        }
+      }
+    }
+
+    // 取得指定等級的「累積」成本（若 level 不存在，回傳最近的低等級）
+    function getCumulativeCost(costTable, level){
+      const empty = {};
+      if(!costTable || costTable.length===0) return empty;
+      costTable.forEach(row => Object.keys(row).forEach(k => empty[k]=0));
+      delete empty.level;
+      if(level<=0) return empty;
+      const idx = costTable.findLastIndex(d => d.level <= level);
+      const data = (idx !== -1) ? costTable[idx] : null;
+      return { ...empty, ...data };
+    }
+
+    // 成本欄位名 -> 材料鍵名（例：cost_stone_ore -> stoneOre）
+    function getMaterialIdFromCostKey(costKey){
+      let id = costKey.replace('cost_','');
+      if(id==='stone') return 'stoneMat';
+      return id.replace(/_([a-z])/g, m=>m[1].toUpperCase());
+    }
+
+    /* ---------------------------------------
+     * DOM Ready：載入資料 -> 初始化 UI -> 綁事件
+     * ------------------------------------- */
+    document.addEventListener('DOMContentLoaded', async ()=>{
+      const containers = {
+        levelInputs: document.getElementById('level-inputs'),
+        ownedMaterials: document.getElementById('owned-materials'),
+        productionInputs: document.getElementById('production-inputs'),
+        results: document.getElementById('results'),
+        targetLevels: document.getElementById('target-levels'),
+        relicDistributionInputs: document.getElementById('relic-distribution-inputs'),
+        currentTimeDisplay: document.getElementById('current-time-display'),
+      };
+
+      const dataFiles = {
+        productionUpgradeCosts:'production_upgrade_costs.csv',
+        equipmentUpgradeCosts: 'equipment_upgrade_costs.csv',
+        skillUpgradeCosts:     'skill_upgrade_costs.csv',
+        petUpgradeCosts:       'pet_upgrade_costs.csv',
+        relicUpgradeCosts:     'relic_upgrade_costs.csv',
+        characterUpgradeCosts: 'character_upgrade_costs.csv'
+      };
+
+      const loadedGameData = {};
+      const missingFiles = [];
+
+      // 逐檔讀取；失敗則落到模擬資料
+      for(const k in dataFiles){
+        try { loadedGameData[k] = await fetchAndParseCsv(dataFiles[k]); }
+        catch(e){ loadedGameData[k] = MOCK_GAME_DATA[k]; missingFiles.push(dataFiles[k]); }
+      }
+
+      main(loadedGameData, containers, missingFiles);
+    });
+
+    /* ---------------------------------------
+     * 主流程：渲染 UI、計算、事件
+     * ------------------------------------- */
+    function main(GAME_DATA, containers, missingFiles){
+      preprocessCostData(GAME_DATA);
+
+      // 小工具：建元素
+      const el = (tag, classes=[]) => {
+        const n = document.createElement(tag);
+        if(classes.length) n.classList.add(...classes);
+        return n;
+      };
+
+      // 輸入群組：label + input
+      const createInputGroup = (id, labelText, placeholder, isSub=false, extraHtml='')=>{
+        const wrap = el('div', isSub?['mb-4']:[]);
+        const label = el('label', ['block','text-sm','font-bold','mb-2']);
+        label.htmlFor = id; label.textContent = labelText;
+
+        const input = el('input', ['input-field','rounded','w-full','p-2']);
+        input.type = 'number'; input.id = id; input.placeholder = placeholder;
+
+        wrap.append(label, input);
+        if(extraHtml){ const div = el('div'); div.innerHTML = extraHtml; wrap.appendChild(div); }
+        return wrap;
+      };
+
+      /* ========== 渲染：左欄 目前等級 ========== */
+      function renderLevelInputs(){
+        const frag = document.createDocumentFragment();
+
+        // 角色（獨立一行）
+        const roleTitle = el('h3',['text-lg','font-semibold','text-accent','pb-2','mb-3']);
+        roleTitle.textContent = '角色等級';
+        frag.appendChild(roleTitle);
+        const roleRow = el('div',['grid','grid-cols-1','gap-4','mb-4','border-b','border-[#e5eff1]','pb-6']);
+        const charCat = categories.find(c=>c.id==='character');
+        if(charCat) roleRow.appendChild(createInputGroup(`${charCat.id}-current`, charCat.name, '目前'));
+        frag.appendChild(roleRow);
+
+        // 幻獸（一行四格）
+        const petTitle = el('h3',['text-lg','font-semibold','text-accent','pb-2','mb-3']);
+        petTitle.textContent = '幻獸等級';
+        frag.appendChild(petTitle);
+        const petRow = el('div',['grid','grid-cols-2','sm:grid-cols-4','gap-4','mb-4','border-b','border-[#e5eff1]','pb-6']);
+        categories.filter(c=>c.id.startsWith('pet')).forEach(cat=>{
+          petRow.appendChild(createInputGroup(`${cat.id}-current`, cat.name, '目前'));
+        });
+        frag.appendChild(petRow);
+
+        // 裝備（兩欄分流）
+        const equipTitle = el('h3',['text-lg','font-semibold','text-accent','pb-2','mb-3']);
+        equipTitle.textContent = '裝備等級';
+        frag.appendChild(equipTitle);
+        const equipWrap = el('div',['grid','grid-cols-2','gap-x-6','mb-4','border-b','border-[#e5eff1]','pb-6']);
+        const equipCol1 = el('div'), equipCol2 = el('div');
+        categories.filter(c=>c.group==='裝備等級').forEach((cat,i)=>{
+          (i<2?equipCol1:equipCol2).appendChild(createInputGroup(`${cat.id}-current`, cat.name, '目前', true));
+        });
+        equipWrap.append(equipCol1, equipCol2);
+        frag.appendChild(equipWrap);
+
+        // 技能（戰技 / 祕法 各一欄）
+        const skillTitle = el('h3',['text-lg','font-semibold','text-accent','pb-2','mb-3']);
+        skillTitle.textContent = '技能等級';
+        frag.appendChild(skillTitle);
+        const skillWrap = el('div',['grid','grid-cols-2','gap-x-6','mb-4','border-b','border-[#e5eff1]','pb-6']);
+        const s1 = el('div'), s2 = el('div');
+        categories.filter(c=>c.id.startsWith('skill_combat')).forEach(cat=> s1.appendChild(createInputGroup(`${cat.id}-current`, cat.name, '目前', true)));
+        categories.filter(c=>c.id.startsWith('skill_arcane')).forEach(cat=> s2.appendChild(createInputGroup(`${cat.id}-current`, cat.name, '目前', true)));
+        skillWrap.append(s1,s2);
+        frag.appendChild(skillWrap);
+
+        containers.levelInputs.appendChild(frag);
+      }
+
+      /* ========== 渲染：目標等級（六欄等寬） ========== */
+      function renderTargetLevels(){
+        containers.targetLevels.innerHTML = '';
+        targetLevelConfig.forEach(t=>{
+          const badge = (t.id==='character')
+            ? `<div id="target-char-reachable-level" class="text-xs text-gray-500 mt-1">最低可達: --</div>` : '';
+          const isReadOnly = t.readonly === true;
+          const group = createInputGroup(`target-${t.id}`, t.name, isReadOnly? '自動計算':'目標', !isReadOnly, badge);
+
+          if(isReadOnly){
+            const input = group.querySelector('input');
+            input.setAttribute('disabled','disabled');
+            input.setAttribute('aria-readonly','true');
+            const label = group.querySelector('label');
+            label.insertAdjacentHTML('beforeend',
+              `<span class="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 align-middle">自動</span>`
+            );
+          }
+
+          containers.targetLevels.appendChild(group);
+        });
+      }
+
+      /* ========== 渲染：遺物分佈（10~20） ========== */
+      function renderRelicDistribution(){
+        for(let i=10;i<=20;i++){
+          const g = createInputGroup(`relic-level-${i}`, `等級 ${i}`, '數量');
+          g.querySelector('input').classList.add('relic-dist-input');
+          containers.relicDistributionInputs.appendChild(g);
+        }
+      }
+
+      /* ========== 渲染：右欄素材輸入 ========== */
+      function renderMaterials(){
+        Object.entries(materials).forEach(([id,mat])=>{
+          const row = el('div',['flex','items-center']);
+          const label = el('label',['w-full','block','text-sm','font-bold']);
+          label.htmlFor = `owned-${id}`;
+          label.textContent = `${mat.icon} ${mat.name}`;
+          const input = el('input',['input-field','rounded','w-full','p-2']);
+          input.type='number'; input.id=`owned-${id}`; input.placeholder='0';
+          row.append(label,input);
+          containers.ownedMaterials.appendChild(row);
+        });
+      }
+
+      /* ========== 渲染：小推車（手動時產輸入） ========== */
+      function renderProduction(){
+        Object.entries(productionSources).forEach(([srcId,src])=>{
+          const mat = materials[src.materialId];
+          const wrap = el('div');
+          const title = el('label',['block','text-sm','font-bold','mb-2']);
+          title.textContent = `${mat.icon} ${mat.name}`;
+          wrap.appendChild(title);
+
+          const hourlyDiv = el('div');
+          const small = el('label',['text-xs','text-gray-500']); small.textContent='時產量';
+          const manual = createInputGroup(`manual-hourly-${srcId}`,'','手動輸入').querySelector('input');
+          manual.classList.add('text-sm');
+          hourlyDiv.append(small, manual.parentElement);
+          wrap.appendChild(hourlyDiv);
+
+          containers.productionInputs.appendChild(wrap);
+        });
+      }
+
+      /* ========== 綜合渲染呼叫 ========== */
+      function render(){
+        // 清空容器
+        Object.values(containers).forEach(c => c && (c.innerHTML=''));
+        renderLevelInputs();
+        renderTargetLevels();
+        renderRelicDistribution();
+        renderMaterials();
+        renderProduction();
+      }
+
+      /* ========== 現在時間顯示（每秒更新） ========== */
+      function updateCurrentTime(){
+        const el = containers.currentTimeDisplay;
+        if(!el) return;
+        const now = new Date();
+        el.textContent = now.toLocaleString('sv-SE', {
+          year:'numeric', month:'2-digit', day:'2-digit',
+          hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false
+        });
+      }
+
+      /* ========== 遺物分佈總數顯示 ========== */
+      function updateRelicTotal(){
+        let total = 0;
+        document.querySelectorAll('.relic-dist-input').forEach(i=> total += (parseInt(i.value)||0));
+        const disp = document.getElementById('relic-total-display');
+        disp.textContent = `(${total}/20)`;
+        if(total !== 20 && total > 0){ disp.classList.add('text-warning'); disp.classList.remove('text-gray-400'); }
+        else { disp.classList.remove('text-warning'); disp.classList.add('text-gray-400'); }
+      }
+
+        /* ========== S1 賽季分數計算 ========== */
+        function calculateSeasonScore_S1(targets){
+            let score = 0;
+            // 角色等級（S1 超過 100 等，每等換 100 賽季分數）
+            if(targets.character > 100) score += (targets.character - 100) * 100;
+            // 裝備共鳴（S1 超過 100 等，每等換 190 賽季分數）
+            if(targets.equipment_resonance > 100) score += (targets.equipment_resonance - 100) * 190;
+            // 技能共鳴（S1 超過 100 等，每等換 104 賽季分數）
+            if(targets.skill_resonance > 100) score += (targets.skill_resonance - 100) * 104;
+            // 幻獸共鳴（S1 超過 100 等，每等換 56 賽季分數）
+            if(targets.pet_resonance > 100) score += (targets.pet_resonance - 100) * 56;
+            // 遺物共鳴（S1 超過 10 等，每等換 200 賽季分數）
+            if(targets.relic_resonance > 10) score += (targets.relic_resonance - 10) * 1140;
+            return score;
+        }
+
+        /* ========== S1 原初之星轉換 ========== */
+        function convertPrimordialStar_S1(score){
+            // S1 原初之星換算公式：賽季分數 / 100 + 10 取整數
+            return Math.floor(score/100 + 10);
+        }
+
+        /* ========== S2 賽季分數計算 ========== */
+        function calculateSeasonScore_S2(targets){
+            let score = 0;
+            // 角色等級（S2 超過 100 等，每等換 120 賽季分數）
+            if(targets.character > 100) score += (targets.character - 100) * 120;
+            // 裝備共鳴（S2 超過 100 等，每等換 200 賽季分數）
+            if(targets.equipment_resonance > 100) score += (targets.equipment_resonance - 100) * 200;
+            // 技能共鳴（S2 超過 100 等，每等換 110 賽季分數）
+            if(targets.skill_resonance > 100) score += (targets.skill_resonance - 100) * 110;
+            // 幻獸共鳴（S2 超過 100 等，每等換 60 賽季分數）
+            if(targets.pet_resonance > 100) score += (targets.pet_resonance - 100) * 60;
+            // 遺物共鳴（S2 超過 10 等，每等換 1200 賽季分數）
+            if(targets.relic_resonance > 10) score += (targets.relic_resonance - 10) * 1200;
+            return score;
+        }
+
+      /* ========== 主計算：資源需求 / 掛機收益 / 缺口 ========== */
+      function calculate(){
+        let required = {};                 // 養成需求總計
+        let hasError = false, hasInput = false;
+        const missingDataErrors = [];
+
+        // 讀取「目標等級」
+        const targets = {};
+        targetLevelConfig.forEach(t => targets[t.id] = parseInt(document.getElementById(`target-${t.id}`).value) || 0);
+
+        // 可達角色等級（根據目標時間與床）
+        const reachableChar = document.getElementById('target-char-reachable-level');
+        const curCharLv = parseInt(document.getElementById('character-current').value) || 0;
+        const ownedExp = parseInt(document.getElementById('owned-exp')?.value) || 0; // 可自行加一個「目前已累積經驗」欄位
+        const bedExpHourly = parseFloat(document.getElementById('bed-exp-hourly').value) || 0;
+        const targetTimeStr = document.getElementById('target-time').value;
+
+        let reachableCharLevel = curCharLv;
+        if (targetTimeStr && cumulativeCostData['character']) {
+          const hours = Math.max(0, (new Date(targetTimeStr).getTime() - Date.now()) / 36e5);
+          const currentCum = getCumulativeCost(cumulativeCostData['character'], curCharLv - 1).cost_exp;
+          const totalExp = currentCum + ownedExp + (bedExpHourly * hours);
+          const idx = cumulativeCostData['character'].findLastIndex(d => d.cost_exp <= totalExp);
+          reachableCharLevel = (idx !== -1) ? cumulativeCostData['character'][idx].level : curCharLv;
+        }
+        reachableChar.textContent = `最低可達: ${reachableCharLevel > 0 ? reachableCharLevel : '--'}`;
+
+        // TODO: 自動計算「原初之星」等級
+        const primordialStarInput = document.getElementById('target-primordial_star');
+        if (primordialStarInput) {
+            const relicRes = targets.relic_resonance || 0;
+            // 根據賽季計算賽季分數   
+            let score = 0;
+            if (document.getElementById('season-select').value === 's1') {
+                score = calculateSeasonScore_S1(targets);
             }
-            const csvText = await response.text();
-            const lines = csvText.trim().split('\n');
-            const headers = lines[0].split(',').map(h => h.trim());
-            return lines.slice(1).map(line => {
-                const values = line.split(',').map(v => v.trim());
-                const obj = {};
-                headers.forEach((header, i) => {
-                    const value = parseFloat(values[i]);
-                    obj[header] = isNaN(value) ? 0 : value;
+            else if (document.getElementById('season-select').value === 's2') {
+                score = calculateSeasonScore_S2(targets);
+            }
+
+            // 根據賽季將賽季分數換算原初之星
+            if (document.getElementById('season-select').value === 's1') {
+                targets.primordial_star = convertPrimordialStar_S1(score);
+            }
+            else if (document.getElementById('season-select').value === 's2') {
+                // S2 的換算公式待確認，暫時先用 S1 的
+                targets.primordial_star = convertPrimordialStar_S1(score);
+            }
+            primordialStarInput.value = targets.primordial_star;
+            document.getElementById('target-primordial_star').value = targets.primordial_star;
+
+        }
+
+        // 遺物成本（需要 20 件）
+        const targetRelicResonance = targets.relic_resonance;
+        let relicCount = 0;
+        for(let i=10;i<=20;i++){
+          const count = parseInt(document.getElementById(`relic-level-${i}`).value) || 0;
+          if(count>0) hasInput = true;
+          relicCount += count;
+
+          for(let j=0;j<count;j++){
+            const current = i;
+            const finalTarget = Math.max(current, targetRelicResonance);
+            if(finalTarget>current){
+              const costTable = cumulativeCostData.relic;
+              const sourceTable = GAME_DATA.relicUpgradeCosts;
+              let missing = false;
+              for(let lvl=current; lvl<finalTarget; lvl++){
+                if(!sourceTable.find(d=>d.level===lvl)){ missingDataErrors.push(`遺物缺少 ${lvl} 級的升級數據`); missing=true; break; }
+              }
+              if(!missing && costTable){
+                const start = getCumulativeCost(costTable, current - 1);
+                const end   = getCumulativeCost(costTable, finalTarget - 1);
+                Object.keys(end).forEach(key=>{
+                  if(key.startsWith('cost_')){
+                    const matId = getMaterialIdFromCostKey(key);
+                    const startVal = start[key] || 0;
+                    required[matId] = (required[matId]||0) + (end[key] - startVal);
+                  }
                 });
-                return obj;
-            });
-        }
-
-        /**
-         * @description 預處理 GAME_DATA 中的成本數據，轉換為累積成本表。
-         * @param {Object} GAME_DATA - 包含所有從 CSV 或模擬數據來的成本資料。
-         */
-        function preprocessCostData(GAME_DATA) {
-            const dataSources = {
-                equipment: GAME_DATA.equipmentUpgradeCosts, skill: GAME_DATA.skillUpgradeCosts, pet: GAME_DATA.petUpgradeCosts,
-                relic: GAME_DATA.relicUpgradeCosts, production: GAME_DATA.productionUpgradeCosts,
-                character: GAME_DATA.characterUpgradeCosts,
-            };
-            // [計算] 此迴圈處理所有從 CSV 讀取的數據，將其轉換為計算機內部使用的「累積成本」格式。
-            for (const type in dataSources) {
-                const source = dataSources[type];
-                cumulativeCostData[type] = [];
-                let cumulative = {};
-                if (source && source.length > 0) { Object.keys(source[0]).forEach(key => { if (key.startsWith('cost_')) cumulative[key] = 0; }); }
-                for (let i = 0; i < source.length; i++) {
-                    const levelData = source[i];
-                    Object.keys(cumulative).forEach(key => { cumulative[key] += (levelData[key] || 0); });
-                    cumulativeCostData[type].push({ level: levelData.level, ...cumulative });
-                }
+              }
             }
+          }
         }
+        if(relicCount>0 && relicCount!==20) hasError = true;
 
-        /**
-         * @description 從指定的累積成本表中，獲取某個等級的總成本。
-         * @param {Array} costTable - 預處理過的累積成本表。
-         * @param {number} level - 想要查詢的等級。
-         * @returns {Object} 包含該等級所有累積成本的物件。
-         */
-        function getCumulativeCost(costTable, level) {
-            // [計算] 這是獲取累積經驗/資源的核心邏輯。
-            const emptyCost = {};
-            if (!costTable || costTable.length === 0) return emptyCost;
-            costTable.forEach(row => {
-                Object.keys(row).forEach(key => emptyCost[key] = 0);
-            });
-            delete emptyCost.level;
-            if (level <= 0) return emptyCost;
-            const index = costTable.findLastIndex(d => d.level <= level);
-            const data = (index !== -1) ? costTable[index] : null;
-            return { ...emptyCost, ...data };
-        }
+        // 角色 / 裝備 / 技能 / 幻獸成本
+        categories.forEach(cat=>{
+          const current = parseInt(document.getElementById(`${cat.id}-current`).value) || 0;
+          if(current>0) hasInput = true;
 
-        /**
-         * @description 將 CSV 標頭中的成本鍵名 (如 cost_stone_ore) 轉換為 materials 物件中的鍵名 (stoneOre)。
-         * @param {string} costKey - 成本鍵名。
-         * @returns {string} 轉換後的材料 ID。
-         */
-        function getMaterialIdFromCostKey(costKey) {
-            let matId = costKey.replace('cost_', '');
-            if (matId === 'stone') return 'stoneMat';
-            return matId.replace(/_([a-z])/g, g => g[1].toUpperCase());
-        }
+          let targetRes = 0;
+          if (cat.id === 'character') targetRes = targets.character;
+          else if (cat.id.startsWith('equipment_')) targetRes = targets.equipment_resonance;
+          else if (cat.id.startsWith('skill_'))     targetRes = targets.skill_resonance;
+          else if (cat.id.startsWith('pet'))        targetRes = targets.pet_resonance;
 
-        // 當整個網頁文件（DOM）載入完成後，開始執行主程式
-        document.addEventListener('DOMContentLoaded', async () => {
-            const containers = {
-                levelInputs: document.getElementById('level-inputs'), ownedMaterials: document.getElementById('owned-materials'),
-                productionInputs: document.getElementById('production-inputs'), globalBonuses: document.getElementById('global-bonuses'),
-                results: document.getElementById('results'), targetLevels: document.getElementById('target-levels'),
-                relicDistributionInputs: document.getElementById('relic-distribution-inputs'),
-                currentTimeDisplay: document.getElementById('current-time-display'),
-            };
-            const dataFiles = {
-                productionUpgradeCosts: 'production_upgrade_costs.csv',
-                equipmentUpgradeCosts: 'equipment_upgrade_costs.csv',
-                skillUpgradeCosts: 'skill_upgrade_costs.csv',
-                petUpgradeCosts: 'pet_upgrade_costs.csv',
-                relicUpgradeCosts: 'relic_upgrade_costs.csv',
-                characterUpgradeCosts: 'character_upgrade_costs.csv'
-            };
-            const loadedGameData = {};
-            const missingFiles = [];
-            // 嘗試載入所有 CSV，若失敗則使用模擬數據並記錄檔名
-            for (const key in dataFiles) {
-                try {
-                    loadedGameData[key] = await fetchAndParseCsv(dataFiles[key]);
-                } catch (error) {
-                    console.warn(`無法載入 ${dataFiles[key]}，將使用模擬數據。`, error);
-                    loadedGameData[key] = MOCK_GAME_DATA[key];
-                    missingFiles.push(dataFiles[key]);
-                }
+          const finalTarget = Math.max(current, targetRes);
+          if(finalTarget>current){
+            let costTable, sourceTable, itemName;
+            if (cat.id.startsWith('equipment_')) { costTable=cumulativeCostData.equipment; sourceTable=GAME_DATA.equipmentUpgradeCosts; itemName='裝備'; }
+            else if (cat.id.startsWith('skill_')) { costTable=cumulativeCostData.skill;     sourceTable=GAME_DATA.skillUpgradeCosts;     itemName='技能'; }
+            else if (cat.id.startsWith('pet'))    { costTable=cumulativeCostData.pet;       sourceTable=GAME_DATA.petUpgradeCosts;       itemName='幻獸'; }
+            else { costTable=cumulativeCostData[cat.id]; sourceTable=GAME_DATA.characterUpgradeCosts; itemName='角色'; }
+
+            let missing=false;
+            if(sourceTable){
+              for(let lvl=current; lvl<finalTarget; lvl++){
+                if(!sourceTable.find(d=>d.level===lvl)){ missingDataErrors.push(`${itemName}缺少 ${lvl} 級的升級數據`); missing=true; break; }
+              }
             }
-            // 進入主程式邏輯
-            main(loadedGameData, containers, missingFiles);
+            if(!missing && costTable){
+              const start = getCumulativeCost(costTable, current - 1);
+              const end   = getCumulativeCost(costTable, finalTarget - 1);
+              Object.keys(end).forEach(key=>{
+                if(key.startsWith('cost_')){
+                  const matId = getMaterialIdFromCostKey(key);
+                  const startVal = start[key] || 0;
+                  required[matId] = (required[matId]||0) + (end[key] - startVal);
+                }
+              });
+            }
+          }
         });
 
-        /**
-         * @description 主應用程式邏輯，在數據載入後執行。
-         * @param {Object} GAME_DATA - 載入或模擬的遊戲數據。
-         * @param {Object} containers - 頁面上的 DOM 元素容器。
-         * @param {Array<string>} missingFiles - 載入失敗的 CSV 檔名列表。
-         */
-        function main(GAME_DATA, containers, missingFiles) {
-            preprocessCostData(GAME_DATA);
-            
-            /**
-             * @description 根據設定檔，動態生成整個計算機的 HTML 介面。
-             */
-            function render() {
-                // --- 清空所有容器 ---
-                Object.values(containers).forEach(container => { if (container) container.innerHTML = ''; });
-
-                // --- 輔助函式：創建帶有 class 的元素 ---
-                const createElement = (tag, classes = []) => {
-                    const el = document.createElement(tag);
-                    if (classes.length > 0) el.classList.add(...classes);
-                    return el;
-                };
-
-                // --- 輔助函式：創建一個完整的輸入框群組 ---
-                const createInputGroup = (id, labelText, placeholder, isSub = false, additionalHtml = '') => {
-                    const wrapper = createElement('div', isSub ? ['mb-4'] : []);
-                    const label = createElement('label', ['block', 'text-sm', 'font-bold', 'mb-2']);
-                    label.htmlFor = id;
-                    label.textContent = labelText;
-                    
-                    const input = createElement('input', ['input-field', 'rounded', 'w-full', 'p-2']);
-                    input.type = 'number';
-                    input.id = id;
-                    input.placeholder = placeholder;
-                    
-                    wrapper.appendChild(label);
-                    wrapper.appendChild(input);
-                    if (additionalHtml) {
-                        const div = createElement('div');
-                        div.innerHTML = additionalHtml;
-                        wrapper.appendChild(div);
-                    }
-                    return wrapper;
-                };
-
-                // --- 渲染左側「角色目前等級」區塊 ---
-                const renderLevelInputs = () => {
-                    const fragment = document.createDocumentFragment();
-
-                    // 角色與幻獸
-                    const charPetWrapper = createElement('div', ['grid', 'grid-cols-2', 'sm:grid-cols-5', 'gap-4', 'mb-4', 'border-b', 'border-[#e5eff1]', 'pb-6']);
-                    const charCat = categories.find(c => c.id === 'character');
-                    if(charCat) charPetWrapper.appendChild(createInputGroup(`${charCat.id}-current`, charCat.name, '目前'));
-                    categories.filter(c => c.id.startsWith('pet')).forEach(cat => {
-                        charPetWrapper.appendChild(createInputGroup(`${cat.id}-current`, cat.name, '目前'));
-                    });
-                    fragment.appendChild(charPetWrapper);
-
-                    // 裝備
-                    const equipTitle = createElement('h3', ['text-lg', 'font-semibold', 'text-accent', 'pb-2', 'mb-3']);
-                    equipTitle.textContent = '裝備等級';
-                    fragment.appendChild(equipTitle);
-                    const equipWrapper = createElement('div', ['grid', 'grid-cols-2', 'gap-x-6', 'mb-4', 'border-b', 'border-[#e5eff1]', 'pb-6']);
-                    const equipCol1 = createElement('div');
-                    const equipCol2 = createElement('div');
-                    categories.filter(c => c.group === '裝備等級').forEach((cat, i) => {
-                        (i < 2 ? equipCol1 : equipCol2).appendChild(createInputGroup(`${cat.id}-current`, cat.name, '目前', true));
-                    });
-                    equipWrapper.append(equipCol1, equipCol2);
-                    fragment.appendChild(equipWrapper);
-
-                    // 技能
-                    const skillTitle = createElement('h3', ['text-lg', 'font-semibold', 'text-accent', 'pb-2', 'mb-3']);
-                    skillTitle.textContent = '技能等級';
-                    fragment.appendChild(skillTitle);
-                    const skillWrapper = createElement('div', ['grid', 'grid-cols-2', 'gap-x-6', 'mb-4', 'border-b', 'border-[#e5eff1]', 'pb-6']);
-                    const skillCol1 = createElement('div');
-                    const skillCol2 = createElement('div');
-                    categories.filter(c => c.id.startsWith('skill_combat')).forEach(cat => skillCol1.appendChild(createInputGroup(`${cat.id}-current`, cat.name, '目前', true)));
-                    categories.filter(c => c.id.startsWith('skill_arcane')).forEach(cat => skillCol2.appendChild(createInputGroup(`${cat.id}-current`, cat.name, '目前', true)));
-                    skillWrapper.append(skillCol1, skillCol2);
-                    fragment.appendChild(skillWrapper);
-                    
-                    containers.levelInputs.appendChild(fragment);
-                };
-
-                // --- 渲染頂部「目標等級」區塊 ---
-                const renderTargetLevels = () => {
-                // 1) 先清空，避免重複 append
-                containers.targetLevels.innerHTML = "";
-
-                // 2) 逐項建立
-                targetLevelConfig.forEach((t) => {
-                    // 角色：顯示「最低可達」
-                    const reachableHtml =
-                    t.id === "character"
-                        ? `<div id="target-char-reachable-level" class="text-xs text-gray-500 mt-1">最低可達: --</div>`
-                        : "";
-
-                    // 原初之星：唯讀（由程式自動計算）
-                    const isReadOnly = t.id === "primordial_star" || t.readonly === true;
-
-                    // 組唯一 input id
-                    const inputId = `target-${t.id}`;
-
-                    // 3) 建立元素（createInputGroup: (id, label, placeholder, editable=true, extraHtml='')）
-                    const groupEl = createInputGroup(inputId, t.name, "目標", !isReadOnly, reachableHtml);
-
-                    // 4) 若唯讀，加上視覺提示／aria
-                    if (isReadOnly) {
-                    const input = groupEl.querySelector("input, select, textarea");
-                    if (input) {
-                        input.setAttribute("disabled", "disabled");
-                        input.setAttribute("aria-readonly", "true");
-                        // 提示：自動計算
-                        input.placeholder = "自動計算";
-                        // 若有你計算出的值，可在這裡填上：
-                        // input.value = computedPrimordialStar ?? "";
-                    }
-
-                    // 在標籤後補一個小徽章（可拿掉）
-                    const label = groupEl.querySelector("label");
-                    if (label) {
-                        label.insertAdjacentHTML(
-                        "beforeend",
-                        `<span class="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 align-middle">
-                            自動
-                        </span>`
-                        );
-                    }
-                    }
-
-                    containers.targetLevels.appendChild(groupEl);
-                });
-                };
-
-
-                // --- 渲染「遺物等級分佈」區塊 ---
-                const renderRelicDistribution = () => {
-                    for (let i = 10; i <= 20; i++) {
-                        const group = createInputGroup(`relic-level-${i}`, `等級 ${i}`, '數量');
-                        group.querySelector('input').classList.add('relic-dist-input');
-                        containers.relicDistributionInputs.appendChild(group);
-                    }
-                };
-                
-                // --- 渲染右側「素材資訊」區塊 ---
-                const renderMaterials = () => {
-                    Object.entries(materials).forEach(([matId, mat]) => {
-                        const wrapper = createElement('div', ['flex', 'items-center']);
-                        const label = createElement('label', ['w-full', 'block', 'text-sm', 'font-bold']);
-                        label.htmlFor = `owned-${matId}`;
-                        label.textContent = `${mat.icon} ${mat.name}`;
-                        const input = createElement('input', ['input-field', 'rounded', 'w-full', 'p-2']);
-                        input.type = 'number';
-                        input.id = `owned-${matId}`;
-                        input.placeholder = '0';
-                        wrapper.append(label, input);
-                        containers.ownedMaterials.appendChild(wrapper);
-                    });
-                };
-                
-                // --- 渲染中間「推車產量」區塊 ---
-                const renderProduction = () => {
-                    Object.entries(productionSources).forEach(([srcId, src]) => {
-                        const mat = materials[src.materialId];
-                        const wrapper = createElement('div');
-                        
-                        const mainLabel = createElement('label', ['block', 'text-sm', 'font-bold', 'mb-2']);
-                        mainLabel.textContent = `${mat.icon} ${mat.name}`;
-                        wrapper.appendChild(mainLabel);
-
-                        // const grid = createElement('div', ['grid', 'grid-cols-2', 'gap-2']);
-                        
-                        // 生產等級部分
-                        // const levelDiv = createElement('div');
-                        // const levelLabel = createElement('label', ['text-xs', 'text-gray-500']);
-                        // levelLabel.textContent = '生產等級';
-                        // const levelGrid = createElement('div', ['grid', 'grid-cols-2', 'gap-1']);
-                        // const currentLevelInput = createInputGroup(`prod-level-current-${srcId}`, '', '目前').querySelector('input');
-                        // currentLevelInput.classList.add('production-related-input', 'text-sm');
-                        // const targetLevelInput = createInputGroup(`prod-level-target-${srcId}`, '', '目標').querySelector('input');
-                        // targetLevelInput.classList.add('production-related-input', 'text-sm');
-                        // levelGrid.append(currentLevelInput.parentElement, targetLevelInput.parentElement);
-                        // levelDiv.append(levelLabel, levelGrid);
-                        
-                        // 時產量部分
-                        const hourlyDiv = createElement('div');
-                        const hourlyLabel = createElement('label', ['text-xs', 'text-gray-500']);
-                        hourlyLabel.textContent = '時產量';
-                        const manualInput = createInputGroup(`manual-hourly-${srcId}`, '', '手動輸入').querySelector('input');
-                        manualInput.classList.add('text-sm');
-                        hourlyDiv.append(hourlyLabel, manualInput.parentElement);
-                        
-                        // grid.append(levelDiv, hourlyDiv);
-                        wrapper.appendChild(hourlyDiv);
-                        containers.productionInputs.appendChild(wrapper);
-                    });
-
-                    // Object.entries(globalBonuses).forEach(([bonusId, bonus]) => {
-                    //      const group = createInputGroup(`bonus-${bonusId}`, bonus.name, '0');
-                    //      group.querySelector('input').classList.add('production-related-input');
-                    //      containers.globalBonuses.appendChild(group);
-                    // });
-                };
-
-                // --- 執行所有渲染函式 ---
-                renderLevelInputs();
-                renderTargetLevels();
-                renderRelicDistribution();
-                renderMaterials();
-                renderProduction();
-            }
-
-            /**
-             * @description 更新「現在時間」的顯示。
-             */
-            function updateCurrentTime() {
-                if (containers.currentTimeDisplay) {
-                    const now = new Date();
-                    const options = { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
-                    containers.currentTimeDisplay.textContent = now.toLocaleString('sv-SE', options);
-                }
-            }
-
-            /**
-             * @description 更新遺物分佈區塊的總數顯示。
-             */
-            function updateRelicTotal() {
-                let total = 0;
-                document.querySelectorAll('.relic-dist-input').forEach(el => { total += parseInt(el.value) || 0; });
-                const display = document.getElementById('relic-total-display');
-                display.textContent = `(${total}/20)`;
-                if (total !== 20 && total > 0) { display.classList.add('text-warning'); display.classList.remove('text-gray-400'); } 
-                else { display.classList.remove('text-warning'); display.classList.add('text-gray-400'); }
-            }
-
-            /**
-             * @description 當生產等級或全域加成變動時，重新計算理論時產量。
-             */
-            function updateTheoreticalProduction() {
-                // [計算] 此處為全域加成的計算公式
-                const totalBonus = 1 +
-                    (parseFloat(document.getElementById('bonus-map').value) || 0) / 100 +
-                    (parseFloat(document.getElementById('bonus-relic').value) || 0) / 100 +
-                    (parseFloat(document.getElementById('bonus-pass').value) || 0) / 100;
-                for (const srcId in productionSources) {
-                    const level = parseInt(document.getElementById(`prod-level-current-${srcId}`).value) || 0;
-                    const baseProd = level > 0 ? productionSources[srcId].baseProd(level) : 0;
-                    document.getElementById(`theoretical-hourly-${srcId}`).value = Math.floor(baseProd * totalBonus);
-                }
-            }
-
-            /**
-             * @description 主計算函式，會被所有輸入框的 'input' 事件觸發。
-             */
-            function calculate() {
-                let required = {}, prodUpgradeCost = {}, hasError = false, hasInput = false;
-                const missingDataErrors = []; 
-
-                // --- 讀取所有目標等級 ---
-                const targets = {};
-                targetLevelConfig.forEach(t => { targets[t.id] = parseInt(document.getElementById(`target-${t.id}`).value) || 0; });
-
-                // --- 計算當前目標等級可達的原初等級 ---
-                const reachableStarLevelDisplay = document.getElementById('target-star-reachable-level');
-                const currentStarLevel = parseInt(document.getElementById('star-current').value) || 0;
-                const ownedStarExp = parseInt(document.getElementById('owned-star-exp').value) || 0;
-                const targetStarLevel = targets.star;
-                let reachableStarLevel = currentStarLevel;
-                
-                // TODO: [計算] 原初之星的可達等級計算邏輯
-               
-
-
-                // --- 計算並更新「最低可達等級」 ---
-                const reachableCharLevelDisplay = document.getElementById('target-char-reachable-level');
-                const currentCharacterLevel = parseInt(document.getElementById('character-current').value) || 0;
-                const ownedExp = parseInt(document.getElementById('owned-exp').value) || 0;
-                const bedExpHourly = parseFloat(document.getElementById('bed-exp-hourly').value) || 0;
-                const targetTimeStr = document.getElementById('target-time').value;
-                let reachableCharLevel = currentCharacterLevel;
-                
-                // TODO: [計算] 最低可達角色等級的計算邏輯
-                if (targetTimeStr && cumulativeCostData['character']) {
-                    const hours = Math.max(0, (new Date(targetTimeStr).getTime() - new Date().getTime()) / 36e5);
-                    const currentInvestedExp = getCumulativeCost(cumulativeCostData['character'], currentCharacterLevel - 1).cost_exp;
-                    const totalExpPool = currentInvestedExp + ownedExp + (bedExpHourly * hours);
-                    const foundIndex = cumulativeCostData['character'].findLastIndex(d => d.cost_exp <= totalExpPool);
-                    reachableCharLevel = (foundIndex !== -1) ? cumulativeCostData['character'][foundIndex].level : currentCharacterLevel;
-                }
-                
-                // 更新介面顯示
-                reachableCharLevelDisplay.textContent = `最低可達: ${reachableCharLevel > 0 ? reachableCharLevel : '--'}`;
-
-                // --- 遺物成本計算 ---
-                // TODO: [計算] 遺物升級所需成本的核心計算邏輯
-                const targetRelicResonance = targets.relic_resonance;
-                let relicCount = 0;
-                for (let i = 10; i <= 20; i++) {
-                    const count = parseInt(document.getElementById(`relic-level-${i}`).value) || 0;
-                    if (count > 0) hasInput = true;
-                    relicCount += count;
-                    for (let j = 0; j < count; j++) {
-                        const current = i;
-                        const finalTarget = Math.max(current, targetRelicResonance);
-                        if (finalTarget > current) {
-                            const costTable = cumulativeCostData.relic;
-                            const sourceDataTable = GAME_DATA.relicUpgradeCosts;
-                            let missingLevelFound = false;
-                            for (let lvl = current; lvl < finalTarget; lvl++) {
-                                if (!sourceDataTable.find(d => d.level === lvl)) {
-                                    missingDataErrors.push(`遺物缺少 ${lvl} 級的升級數據`);
-                                    missingLevelFound = true;
-                                    break;
-                                }
-                            }
-                            if (!missingLevelFound && costTable) {
-                                const startCost = getCumulativeCost(costTable, current - 1);
-                                const endCost = getCumulativeCost(costTable, finalTarget - 1);
-                                Object.keys(endCost).forEach(key => {
-                                    if (key.startsWith('cost_')) {
-                                        const matId = getMaterialIdFromCostKey(key);
-                                        const startValue = startCost[key] || 0;
-                                        required[matId] = (required[matId] || 0) + (endCost[key] - startValue);
-                                    }
-                                });
-                            }
-                        }
-                    }
-                }
-                if (relicCount > 0 && relicCount !== 20) { hasError = true; }
-
-                // --- 其他項目成本計算 ---
-                // TODO: [計算] 角色、裝備、技能、幻獸升級所需成本的核心計算邏輯
-                categories.forEach(cat => {
-                    const current = parseInt(document.getElementById(`${cat.id}-current`).value) || 0;
-                    if (current > 0) hasInput = true;
-                    let targetResonance = 0;
-                    if (cat.id === 'character') { targetResonance = targets.character; } 
-                    else if (cat.id.startsWith('equipment_')) { targetResonance = targets.equipment_resonance; } 
-                    else if (cat.id.startsWith('skill_')) { targetResonance = targets.skill_resonance; } 
-                    else if (cat.id.startsWith('pet')) { targetResonance = targets.pet_resonance; } 
-                    
-                    const finalTarget = Math.max(current, targetResonance);
-                    if (finalTarget > 0 && !hasInput) hasInput = true;
-                    if (finalTarget > current) {
-                        let costTable, sourceDataTable, itemName;
-                        if (cat.id.startsWith('equipment_')) {
-                            costTable = cumulativeCostData.equipment;
-                            sourceDataTable = GAME_DATA.equipmentUpgradeCosts;
-                            itemName = '裝備';
-                        } else if (cat.id.startsWith('skill_')) {
-                            costTable = cumulativeCostData.skill;
-                            sourceDataTable = GAME_DATA.skillUpgradeCosts;
-                            itemName = '技能';
-                        } else if (cat.id.startsWith('pet')) {
-                            costTable = cumulativeCostData.pet;
-                            sourceDataTable = GAME_DATA.petUpgradeCosts;
-                            itemName = '幻獸';
-                        } else { // 角色
-                            costTable = cumulativeCostData[cat.id];
-                            sourceDataTable = GAME_DATA.characterUpgradeCosts;
-                            itemName = '角色';
-                        }
-                        let missingLevelFound = false;
-                        if (sourceDataTable) {
-                            for (let lvl = current; lvl < finalTarget; lvl++) {
-                                if (!sourceDataTable.find(d => d.level === lvl)) {
-                                    missingDataErrors.push(`${itemName}缺少 ${lvl} 級的升級數據`);
-                                    missingLevelFound = true;
-                                    break;
-                                }
-                            }
-                        }
-                        if (!missingLevelFound && costTable) {
-                            const startCost = getCumulativeCost(costTable, current - 1);
-                            const endCost = getCumulativeCost(costTable, finalTarget - 1);
-                            Object.keys(endCost).forEach(key => {
-                                const startValue = startCost[key] || 0;
-                                if (key.startsWith('cost_')) {
-                                    const matId = getMaterialIdFromCostKey(key);
-                                    required[matId] = (required[matId] || 0) + (endCost[key] - startValue);
-                                }
-                            });
-                        }
-                    }
-                });
-
-                // --- 生產建築升級成本計算 ---
-                // TODO: [計算] 推車生產建築升級所需成本的核心計算邏輯
-                for (const srcId in productionSources) {
-                    const current = parseInt(document.getElementById(`prod-level-current-${srcId}`).value) || 0;
-                    const target = parseInt(document.getElementById(`prod-level-target-${srcId}`).value) || 0;
-                    if (target > current) {
-                        const sourceDataTable = GAME_DATA.productionUpgradeCosts;
-                        let missingLevelFound = false;
-                        for (let lvl = current; lvl < target; lvl++) {
-                            if (!sourceDataTable.find(d => d.level === lvl)) {
-                                missingDataErrors.push(`推車(${materials[productionSources[srcId].materialId].name})缺少 ${lvl} 級的升級數據`);
-                                missingLevelFound = true;
-                                break;
-                            }
-                        }
-                        if (!missingLevelFound) {
-                            const costTable = cumulativeCostData.production;
-                            const startCost = getCumulativeCost(costTable, current - 1);
-                            const endCost = getCumulativeCost(costTable, target - 1);
-                            Object.keys(endCost).forEach(key => {
-                                if (key.startsWith('cost_')) {
-                                    const matId = getMaterialIdFromCostKey(key);
-                                    const startValue = startCost[key] || 0;
-                                    prodUpgradeCost[matId] = (prodUpgradeCost[matId] || 0) + (endCost[key] - startValue);
-                                }
-                            });
-                        }
-                    }
-                }
-                const uniqueMissingDataErrors = [...new Set(missingDataErrors)];
-                if (hasError || uniqueMissingDataErrors.length > 0) {
-                    let errorHtml = '';
-                    if (hasError) { errorHtml += '<p class="text-warning text-center py-4">輸入有誤 (例如遺物總數不為20)，請檢查。</p>'; }
-                    if (uniqueMissingDataErrors.length > 0) {
-                        errorHtml += `<div class="bg-red-900/50 border-l-4 border-red-400 text-red-300 p-3 rounded-lg mb-4 text-sm"><h4 class="font-bold">數據缺失</h4><p>CSV檔案中缺少以下等級的數據，計算無法完成：<br>${uniqueMissingDataErrors.join('<br>')}</div>`;
-                    }
-                    containers.results.innerHTML = errorHtml;
-                    return;
-                }
-                if (!hasInput) { renderResults({}, {}, {}, {}); return; }
-                
-                // TODO: [計算] 掛機收益計算邏輯
-                let gainsFromTime = {};
-                if (targetTimeStr) {
-                    const hours = Math.max(0, (new Date(targetTimeStr).getTime() - new Date().getTime()) / 36e5);
-                    for (const srcId in productionSources) {
-                        const manual = parseFloat(document.getElementById(`manual-hourly-${srcId}`).value) || 0;
-                        const theoretical = parseFloat(document.getElementById(`theoretical-hourly-${srcId}`).value) || 0;
-                        const hourlyGain = manual > 0 ? manual : theoretical;
-                        gainsFromTime[productionSources[srcId].materialId] = (gainsFromTime[productionSources[srcId].materialId] || 0) + Math.floor(hourlyGain * hours);
-                    }
-                    if (bedExpHourly > 0) { gainsFromTime['exp'] = (gainsFromTime['exp'] || 0) + Math.floor(bedExpHourly * hours); }
-                }
-
-                // TODO: [計算] 最終資源缺口計算邏輯
-                let deficit = {};
-                for (const matId in materials) {
-                    const totalRequired = (required[matId] || 0) + (prodUpgradeCost[matId] || 0);
-                    const owned = parseInt(document.getElementById(`owned-${matId}`).value) || 0;
-                    const gained = gainsFromTime[matId] || 0;
-                    deficit[matId] = Math.max(0, totalRequired - owned - gained);
-                }
-                
-                updateLevelUpTimeAndNotification(currentCharacterLevel, ownedExp, bedExpHourly);
-                renderResults(required, prodUpgradeCost, gainsFromTime, deficit);
-            }
-
-            /**
-             * @description 計算並更新下次升級所需時間及設定通知。
-             */
-            function updateLevelUpTimeAndNotification(currentLevel, ownedExp, bedExpHourly) {
-                const levelUpTimeDisplay = document.getElementById('bed-levelup-time');
-                if (notificationTimerId) { clearTimeout(notificationTimerId); notificationTimerId = null; }
-                if (bedExpHourly <= 0 || currentLevel >= MAX_LEVEL) { levelUpTimeDisplay.textContent = '預計升級時間: --'; return; }
-                
-                // TODO: [計算] 角色下次升級時間的計算邏輯
-                // 1) 門檻（沿用你的模型：currentLevel 是「下一級門檻」）
-                const nextCum    = getCumulativeCost(cumulativeCostData['character'], currentLevel).cost_exp;
-                const currentCum = getCumulativeCost(cumulativeCostData['character'], currentLevel - 1).cost_exp;
-
-                // 2) 尚需經驗（ownedExp 為當前等級內已累積）
-                const expNeeded = Math.max(0, Number(nextCum) - Number(currentCum) - (Number(ownedExp) || 0));
-                let levelupTs = NaN; // 🔴 用毫秒數，外層可被後續推播邏輯讀到
-
-                console.log({ nextCum, currentCum, ownedExp, expNeeded });
-
-                if (expNeeded <= 0) {
-                levelUpTimeDisplay.textContent = '預計升級時間: 可立即升級';
-                } else {
-                // 3) 估算所需時間
-                const ratePerHour = Number(bedExpHourly);
-                if (!Number.isFinite(ratePerHour) || ratePerHour <= 0) {
-                    levelUpTimeDisplay.textContent = '預計升級時間: 請先輸入床的每小時經驗產量';
-                } else {
-                    const ratePerSec = ratePerHour / 3600;
-                    const secondsNeeded = Math.ceil(expNeeded / ratePerSec);
-                    const minutesNeeded = Math.ceil(secondsNeeded / 60); // 向上取整到分鐘
-                    levelupTs = Date.now() + minutesNeeded * 60 * 1000;
-
-                    const timeStr = new Date(levelupTs).toLocaleString('zh-TW', {
-                    year: 'numeric', month: '2-digit', day: '2-digit',
-                    hour: '2-digit', minute: '2-digit'
-                    });
-                    levelUpTimeDisplay.textContent = `預計升級時間: ${timeStr}（約 ${minutesNeeded.toLocaleString()} 分鐘）`;
-                }
-                }
-
-                // 4) 推播（頁面關閉不會觸發；每次重算都重排）
-                if (notificationTimerId) {
-                clearTimeout(notificationTimerId);
-                notificationTimerId = null;
-                }
-
-                if ('Notification' in window && Notification.permission === 'granted') {
-                if (bedExpHourly > 0 && expNeeded > 0 && Number.isFinite(levelupTs) && levelupTs > Date.now()) {
-                    // 對齊到下一個整分鐘再提前 3 分鐘，避免提早
-                    const alignedLvTs = Math.ceil(levelupTs / 60000) * 60000;
-                    const notifyAt = alignedLvTs - 3 * 60 * 1000;
-                    const delay = notifyAt - Date.now();
-
-                    if (delay > 0) {
-                    const MAX_DELAY = 0x7fffffff; // 約 24.8 天
-                    const schedule = (ms) => {
-                        if (ms > MAX_DELAY) {
-                        notificationTimerId = setTimeout(() => schedule(ms - MAX_DELAY), MAX_DELAY);
-                        } else {
-                        notificationTimerId = setTimeout(() => {
-                            new Notification('杖劍傳說提醒', {
-                            body: `您的角色約 3 分鐘後可升級至 ${currentLevel + 1} 級！`,
-                            icon: 'https://placehold.co/192x192/31c9be/ffffff?text=LV'
-                            });
-                            notificationTimerId = null;
-                        }, ms);
-                        }
-                    };
-                    schedule(delay);
-                    // console.debug({ alignedLvTs: new Date(alignedLvTs), notifyAt: new Date(notifyAt), delay });
-                    }
-                }
-                }
-
-
-
-            }
-
-            /**
-             * @description 將計算結果渲染到右側的「計算總覽」區塊。
-             */
-            function renderResults(req, prodCost, gains, deficit) {
-                let html = '';
-                if (missingFiles.length > 0) { html += `<div class="bg-yellow-900/50 border-l-4 border-yellow-400 text-yellow-300 p-3 rounded-lg mb-4 text-sm"><h4 class="font-bold">注意</h4><p>無法載入以下數據檔案，目前正使用模擬數據：<br>${missingFiles.join(', ')}</p></div>`; }
-                const formatNum = (n) => n.toLocaleString();
-                let costHtml = '';
-                for (const matId in req) { if (req[matId] > 0) { costHtml += `<div class="flex justify-between items-center text-sm"><span>${materials[matId].icon} ${materials[matId].name}</span><strong>${formatNum(req[matId])}</strong></div>`; } }
-                if (costHtml) { html += `<div class="cost-item p-3 rounded-lg space-y-1"><h4 class="font-bold text-gold">角色養成所需</h4>${costHtml}</div>`; }
-                let prodCostHtml = '';
-                for (const matId in prodCost) { if (prodCost[matId] > 0) { prodCostHtml += `<div class="flex justify-between items-center text-sm"><span>${materials[matId].icon} ${materials[matId].name}</span><strong>${formatNum(prodCost[matId])}</strong></div>`; } }
-                if (prodCostHtml) { html += `<div class="cost-item p-3 rounded-lg space-y-1"><h4 class="font-bold text-gold">生產等級升級所需</h4>${prodCostHtml}</div>`; }
-                let gainsHtml = '';
-                for (const matId in gains) { if (gains[matId] > 0) { gainsHtml += `<div class="flex justify-between items-center text-sm"><span>${materials[matId].icon} ${materials[matId].name}</span><strong class="text-accent">+${formatNum(gains[matId])}</strong></div>`; } }
-                if (gainsHtml) { html += `<div class="info-item p-3 rounded-lg space-y-1"><h4 class="font-bold text-accent">預計掛機獲得</h4>${gainsHtml}</div>`; }
-                let deficitHtml = '';
-                for (const matId in deficit) {
-                    if (deficit[matId] > 0) {
-                        deficitHtml += `<div class="result-item p-4 rounded-lg flex justify-between items-center"><div class="flex items-center"><span class="text-2xl mr-3">${materials[matId].icon}</span><span class="font-bold text-lg">${materials[matId].name}</span></div><strong class="text-xl font-semibold text-warning">-${formatNum(deficit[matId])}</strong></div>`;
-                    }
-                }
-                if (deficitHtml) { html += `<h3 class="text-xl font-bold text-warning border-t border-[#e5eff1] pt-4 mt-4">最終資源缺口</h3>` + deficitHtml; } 
-                else if (costHtml || prodCostHtml) { html += '<p class="text-green-400 text-center py-6 font-bold text-lg">恭喜！根據計算，你的資源已完全足夠！</p>'; }
-                containers.results.innerHTML = html || '<p class="text-gray-500 text-center py-8">請輸入資料以自動計算。</p>';
-            }
-
-            /**
-             * @description 綁定所有輸入框的事件監聽器以觸發自動計算。
-             */
-            function setupEventListeners() {
-                document.body.addEventListener('input', (event) => {
-                    const target = event.target;
-                    if (target.matches('input[type=number], input[type=datetime-local]')) {
-                        if (target.classList.contains('production-related-input')) { updateTheoreticalProduction(); }
-                        if (target.classList.contains('relic-dist-input')) { updateRelicTotal(); }
-                        calculate();
-                    }
-                });
-
-                const notificationBtn = document.getElementById('enable-notifications-btn');
-                if ('Notification' in window) {
-                    notificationBtn.addEventListener('click', () => {
-                        Notification.requestPermission().then(permission => {
-                            if (permission === 'granted') {
-                                notificationBtn.textContent = '通知已啟用';
-                                notificationBtn.disabled = true;
-                                new Notification('通知已啟用', { body: '將在角色升級前 3 分鐘提醒您！' });
-                            } else {
-                                notificationBtn.textContent = '通知被拒絕';
-                                notificationBtn.disabled = true;
-                            }
-                        });
-                    });
-                } else {
-                    notificationBtn.textContent = '瀏覽器不支援通知';
-                    notificationBtn.disabled = true;
-                }
-            }
-
-            render();
-            setupEventListeners();
-            updateTheoreticalProduction();
-            updateRelicTotal();
-            setInterval(updateCurrentTime, 1000);
-            updateCurrentTime();
-            calculate(); // 初始計算一次
+        // 異常回報
+        const uniqErrors = [...new Set(missingDataErrors)];
+        if (hasError || uniqErrors.length>0){
+          let err = '';
+          if (hasError) err += '<p class="text-warning text-center py-4">輸入有誤 (例如遺物總數不為20)，請檢查。</p>';
+          if (uniqErrors.length>0) {
+            err += `<div class="bg-red-900/50 border-l-4 border-red-400 text-red-300 p-3 rounded-lg mb-4 text-sm">
+                      <h4 class="font-bold">數據缺失</h4>
+                      <p>CSV缺少以下等級資料：<br>${uniqErrors.join('<br>')}</p>
+                    </div>`;
+          }
+          containers.results.innerHTML = err;
+          return;
         }
-    </script>
+        if(!hasInput){ renderResults({}, {}, {}, {}); return; }
+
+        // 掛機收益（依目標時間；本版只使用「手動時產」）
+        const gainsFromTime = {};
+        // const targetTimeStr = document.getElementById('target-time').value;
+        if(targetTimeStr){
+          const hours = Math.max(0, (new Date(targetTimeStr).getTime() - Date.now()) / 36e5);
+          for(const srcId in productionSources){
+            const manual = parseFloat(document.getElementById(`manual-hourly-${srcId}`)?.value) || 0;
+            gainsFromTime[productionSources[srcId].materialId] =
+              (gainsFromTime[productionSources[srcId].materialId]||0) + Math.floor(manual * hours);
+          }
+          const bedPerHour = parseFloat(document.getElementById('bed-exp-hourly').value) || 0;
+          if(bedPerHour>0) gainsFromTime['exp'] = (gainsFromTime['exp']||0) + Math.floor(bedPerHour * hours);
+        }
+
+        // 缺口 = 需求 - (持有 + 掛機)
+        const deficit = {};
+        for(const matId in materials){
+          const need = required[matId] || 0;
+          const owned = parseInt(document.getElementById(`owned-${matId}`)?.value) || 0;
+          const gained = gainsFromTime[matId] || 0;
+          deficit[matId] = Math.max(0, need - owned - gained);
+        }
+
+        // 更新升級時間與通知
+        updateLevelUpTimeAndNotification(curCharLv, ownedExp, parseFloat(document.getElementById('bed-exp-hourly').value)||0);
+
+        // 輸出結果
+        renderResults(required, {}, gainsFromTime, deficit);
+      }
+
+      /* ========== 升級時間 + 推播排程 ========== */
+      function updateLevelUpTimeAndNotification(currentLevel, ownedExp, bedExpHourly){
+        const disp = document.getElementById('bed-levelup-time');
+
+        // 清除先前排程
+        if(notificationTimerId){ clearTimeout(notificationTimerId); notificationTimerId = null; }
+
+        // 基本防呆
+        if (bedExpHourly <= 0 || currentLevel >= MAX_LEVEL) { disp.textContent = '預計升級時間: --'; return; }
+
+        // 門檻：下一級 = currentLevel（你的資料模型）
+        const nextCum = getCumulativeCost(cumulativeCostData['character'], currentLevel).cost_exp;
+        const curCum  = getCumulativeCost(cumulativeCostData['character'], currentLevel - 1).cost_exp;
+
+        // 尚需經驗 = 下一級累積 - (本級起點累積 + 當前等級內已累積)
+        const expNeeded = Math.max(0, Number(nextCum) - Number(curCum) - (Number(ownedExp)||0));
+        let levelupTs = NaN;
+
+        if(expNeeded <= 0){
+          disp.textContent = '預計升級時間: 可立即升級';
+        }else{
+          const ratePerHour = Number(bedExpHourly);
+          if(!Number.isFinite(ratePerHour) || ratePerHour<=0){
+            disp.textContent = '預計升級時間: 請先輸入床的每小時經驗產量';
+          }else{
+            // 以秒換算並向上取整到「分鐘」，避免提前顯示
+            const ratePerSec = ratePerHour / 3600;
+            const secondsNeeded = Math.ceil(expNeeded / ratePerSec);
+            const minutesNeeded = Math.ceil(secondsNeeded / 60);
+            levelupTs = Date.now() + minutesNeeded * 60 * 1000;
+
+            const timeStr = new Date(levelupTs).toLocaleString('zh-TW', {
+              year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit'
+            });
+            disp.textContent = `預計升級時間: ${timeStr}（約 ${minutesNeeded.toLocaleString()} 分鐘）`;
+          }
+        }
+
+        // 推播（頁面關閉不會觸發；刷新即重排）
+        if ('Notification' in window && Notification.permission === 'granted') {
+          if (bedExpHourly > 0 && expNeeded > 0 && Number.isFinite(levelupTs) && levelupTs > Date.now()) {
+            const alignedLvTs = Math.ceil(levelupTs / 60000) * 60000;     // 對齊下一整分鐘
+            const notifyAt = alignedLvTs - 3 * 60 * 1000;                 // 提前 3 分鐘
+            const delay = notifyAt - Date.now();
+            if (delay > 0) {
+              const MAX_DELAY = 0x7fffffff; // ~24.8 天
+              const schedule = (ms)=>{
+                if(ms > MAX_DELAY){
+                  notificationTimerId = setTimeout(()=>schedule(ms - MAX_DELAY), MAX_DELAY);
+                }else{
+                  notificationTimerId = setTimeout(()=>{
+                    new Notification('杖劍傳說提醒', {
+                      body:`您的角色約 3 分鐘後可升級至 ${currentLevel + 1} 級！`,
+                      icon:'https://placehold.co/192x192/31c9be/ffffff?text=LV'
+                    });
+                    notificationTimerId = null;
+                  }, ms);
+                }
+              };
+              schedule(delay);
+            }
+          }
+        }
+      }
+
+      /* ========== 結果輸出（右下卡片） ========== */
+      function renderResults(req, prodCost, gains, deficit){
+        let html = '';
+        // 若使用模擬資料，於頂部提示
+        if (missingFiles.length > 0){
+          html += `<div class="bg-yellow-900/50 border-l-4 border-yellow-400 text-yellow-300 p-3 rounded-lg mb-4 text-sm">
+                    <h4 class="font-bold">注意</h4>
+                    <p>無法載入以下數據檔案，已使用模擬數據：<br>${missingFiles.join(', ')}</p>
+                   </div>`;
+        }
+        const fmt = n => n.toLocaleString();
+
+        // 養成需求
+        let needHtml = '';
+        for(const id in req){ if(req[id]>0) needHtml += `<div class="flex justify-between items-center text-sm"><span>${materials[id].icon} ${materials[id].name}</span><strong>${fmt(req[id])}</strong></div>`; }
+        if(needHtml) html += `<div class="cost-item p-3 rounded-lg space-y-1"><h4 class="font-bold text-gold">角色養成所需</h4>${needHtml}</div>`;
+
+        // 掛機收益
+        let gainsHtml = '';
+        for(const id in gains){ if(gains[id]>0) gainsHtml += `<div class="flex justify-between items-center text-sm"><span>${materials[id].icon} ${materials[id].name}</span><strong class="text-accent">+${fmt(gains[id])}</strong></div>`; }
+        if(gainsHtml) html += `<div class="info-item p-3 rounded-lg space-y-1"><h4 class="font-bold text-accent">預計掛機獲得</h4>${gainsHtml}</div>`;
+
+        // 缺口
+        let deficitHtml = '';
+        for(const id in deficit){
+          if(deficit[id]>0){
+            deficitHtml += `<div class="result-item p-4 rounded-lg flex justify-between items-center">
+                              <div class="flex items-center"><span class="text-2xl mr-3">${materials[id].icon}</span>
+                              <span class="font-bold text-lg">${materials[id].name}</span></div>
+                              <strong class="text-xl font-semibold text-warning">-${fmt(deficit[id])}</strong>
+                            </div>`;
+          }
+        }
+        if(deficitHtml){ html += `<h3 class="text-xl font-bold text-warning border-top border-[#e5eff1] pt-4 mt-4">最終資源缺口</h3>${deficitHtml}`; }
+        else if (needHtml){ html += '<p class="text-green-600 text-center py-6 font-bold text-lg">恭喜！你的資源已足夠！</p>'; }
+
+        containers.results.innerHTML = html || '<p class="text-gray-500 text-center py-8">請輸入資料以自動計算。</p>';
+      }
+
+      /* ========== 事件綁定 ========== */
+      function setupEventListeners(){
+        // 任一數值/時間改變就重新計算
+        document.body.addEventListener('input', e=>{
+          const t = e.target;
+          if (t.matches('input[type=number], input[type=datetime-local]')) {
+            if (t.classList.contains('relic-dist-input')) updateRelicTotal();
+            calculate();
+          }
+        });
+
+        // 啟用通知
+        const notifBtn = document.getElementById('enable-notifications-btn');
+        if('Notification' in window){
+          notifBtn.addEventListener('click', ()=>{
+            Notification.requestPermission().then(p=>{
+              if(p==='granted'){
+                notifBtn.textContent = '通知已啟用';
+                notifBtn.disabled = true;
+                new Notification('通知已啟用',{ body:'角色升級前 3 分鐘將提醒您！' });
+              }else{
+                notifBtn.textContent = '通知被拒絕'; notifBtn.disabled = true;
+              }
+            });
+          });
+        }else{
+          notifBtn.textContent = '瀏覽器不支援通知'; notifBtn.disabled = true;
+        }
+      }
+
+      // ---- 啟動流程 ----
+      render();
+      setupEventListeners();
+      updateRelicTotal();
+      setInterval(updateCurrentTime, 1000);
+      updateCurrentTime();
+      calculate(); // 初始化計算一次
+    }
+  </script>
 </body>
 </html>
