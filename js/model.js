@@ -42,7 +42,7 @@ export const targetLevelConfig = [
 /** 可用素材 */
 export const materials = {
   exp: { name: '角色經驗', icon: '📖' },
-  rola: { name: '羅拉幣', icon: '💰' },
+  rola: { name: '羅拉', icon: '💰' },
   essence: { name: '歷戰精華', icon: '✨' },
   sand: { name: '時之砂', icon: '⏳' },
   stoneOre: { name: '粗煉石', icon: '💎' },
@@ -95,18 +95,18 @@ const dataUrl = (name) => new URL(name, DATA_BASE).href;
 // === 換成以下設定： ===
 export const DATA_FILES_CONFIG = {
   s1: {
+    characterUpgradeCosts: dataUrl('character_upgrade_costs_s1.csv'),
     equipmentUpgradeCosts: dataUrl('equipment_upgrade_costs_s1.csv'),
     skillUpgradeCosts:     dataUrl('skill_upgrade_costs_s1.csv'),
-    petUpgradeCosts:       dataUrl('pet_upgrade_costs_s1.csv'),
     relicUpgradeCosts:     dataUrl('relic_upgrade_costs_s1.csv'),
-    characterUpgradeCosts: dataUrl('character_upgrade_costs_s1.csv'),
+    petUpgradeCosts:       dataUrl('pet_upgrade_costs_s1.csv'),
   },
   s2: {
+    characterUpgradeCosts: dataUrl('character_upgrade_costs_s2.csv'),
     equipmentUpgradeCosts: dataUrl('equipment_upgrade_costs_s2.csv'),
     skillUpgradeCosts:     dataUrl('skill_upgrade_costs_s2.csv'),
-    petUpgradeCosts:       dataUrl('pet_upgrade_costs_s2.csv'),
     relicUpgradeCosts:     dataUrl('relic_upgrade_costs_s2.csv'),
-    characterUpgradeCosts: dataUrl('character_upgrade_costs_s2.csv'),
+    petUpgradeCosts:       dataUrl('pet_upgrade_costs_s2.csv'),
   },
 };
 /** 內部狀態 */
@@ -159,11 +159,11 @@ export function preprocessCostData() {
   const src = state.gameData;
   const out = {};
   const tables = {
+    character: src.characterUpgradeCosts,
     equipment: src.equipmentUpgradeCosts,
     skill: src.skillUpgradeCosts,
-    pet: src.petUpgradeCosts,
     relic: src.relicUpgradeCosts,
-    character: src.characterUpgradeCosts,
+    pet: src.petUpgradeCosts,
   };
 
   for (const type in tables) {
