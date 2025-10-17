@@ -1,0 +1,73 @@
+/* 全站字體與背景 */
+body {
+  font-family: 'Noto Sans TC', sans-serif;
+  background: linear-gradient(180deg, #f5fafb 0%, #e6f3f4 100%);
+  color: #1e293b;
+}
+
+/* 卡片 */
+.card {
+  background: #ffffffd9;
+  border: 1px solid #cde5e8;
+  box-shadow: 0 2px 8px rgba(38, 115, 119, .15);
+  border-radius: 10px;
+  transition: all .25s ease;
+}
+
+/* 輸入欄位 */
+.input-field {
+  background-color: #f7fbfc;
+  color: #1e293b;
+  border: 1px solid #b6d7da;
+  transition: border-color .25s, box-shadow .25s, background-color .25s;
+}
+.input-field:focus {
+  border-color: #2cb5ab;
+  box-shadow: 0 0 6px rgba(44, 181, 171, .4);
+  outline: none;
+  background-color: #f0fafa;
+}
+.input-field:disabled {
+  background-color: #eef3f4;
+  color: #94a3b8;
+  border-color: #cbd5e1;
+  cursor: not-allowed;
+}
+
+/* 主按鈕（目前未用，保留） */
+.btn-primary {
+  background: linear-gradient(135deg, #31c9be 0%, #1a9e95 100%);
+  color: #fffef8;
+  border: 1px solid #21b8ac;
+  box-shadow: 0 2px 6px rgba(34, 180, 168, .25);
+  transition: background .3s, transform .15s;
+}
+.btn-primary:hover {
+  background: linear-gradient(135deg, #45dfd3 0%, #23b7ac 100%);
+  transform: translateY(-2px);
+}
+
+/* 結果卡片色系 */
+.result-item { background:#fffdf5; border-left:4px solid #f48b45; box-shadow: inset 0 0 8px rgba(244,139,69,.2); }
+.info-item   { background:#f0faf9; border-left:4px solid #2cb5ab; box-shadow: inset 0 0 8px rgba(44,181,171,.15); }
+.cost-item   { background:#fffbee; border-left:4px solid #facc15; box-shadow: inset 0 0 8px rgba(249,209,98,.2); }
+
+/* 數字箭頭按鈕 */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button { opacity:.4; }
+
+/* 捲軸 */
+.custom-scrollbar::-webkit-scrollbar { width:8px; height:8px; }
+.custom-scrollbar::-webkit-scrollbar-track { background:#f2f8f9; }
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg,#b3dede 0%,#89cfcf 100%); border-radius:4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg,#6dcacb 0%,#4fbebf 100%);
+}
+
+/* 標題顏色 */
+h1,h2,h3,h4 { color:#165f63; text-shadow:0 1px 2px rgba(22,95,99,.15); }
+.text-accent{ color:#1fb7ad; }
+.text-gold  { color:#d4a418; }
+.text-warning{ color:#d65a2d; }
