@@ -88,22 +88,26 @@ export const MOCK_GAME_DATA = {
 };
 
 /** 各賽季 CSV 路徑 */
+const DATA_BASE = new URL('../data/', import.meta.url); // model.js 在 /js/，data 在 /data/
+const u = (name) => new URL(name, DATA_BASE).href;
+
 export const DATA_FILES_CONFIG = {
   s1: {
-    equipmentUpgradeCosts: '../data/equipment_upgrade_costs_s1.csv',
-    skillUpgradeCosts: '../data/skill_upgrade_costs_s1.csv',
-    petUpgradeCosts: '../data/pet_upgrade_costs_s1.csv',
-    relicUpgradeCosts: '../data/relic_upgrade_costs_s1.csv',
-    characterUpgradeCosts: '../data/character_upgrade_costs_s1.csv',
+    equipmentUpgradeCosts: u('equipment_upgrade_costs_s1.csv'),
+    skillUpgradeCosts:     u('skill_upgrade_costs_s1.csv'),
+    petUpgradeCosts:       u('pet_upgrade_costs_s1.csv'),
+    relicUpgradeCosts:     u('relic_upgrade_costs_s1.csv'),
+    characterUpgradeCosts: u('character_upgrade_costs_s1.csv'),
   },
   s2: {
-    equipmentUpgradeCosts: '../data/equipment_upgrade_costs_s2.csv',
-    skillUpgradeCosts: '../data/skill_upgrade_costs_s2.csv',
-    petUpgradeCosts: '../data/pet_upgrade_costs_s2.csv',
-    relicUpgradeCosts: '../data/relic_upgrade_costs_s2.csv',
-    characterUpgradeCosts: '../data/character_upgrade_costs_s2.csv',
+    equipmentUpgradeCosts: u('equipment_upgrade_costs_s2.csv'),
+    skillUpgradeCosts:     u('skill_upgrade_costs_s2.csv'),
+    petUpgradeCosts:       u('pet_upgrade_costs_s2.csv'),
+    relicUpgradeCosts:     u('relic_upgrade_costs_s2.csv'),
+    characterUpgradeCosts: u('character_upgrade_costs_s2.csv'),
   },
 };
+
 
 /** 內部狀態 */
 export const state = {
