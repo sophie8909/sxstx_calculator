@@ -109,9 +109,6 @@ export const DATA_FILES_CONFIG = {
     characterUpgradeCosts: dataUrl('character_upgrade_costs_s2.csv'),
   },
 };
-
-
-
 /** 內部狀態 */
 export const state = {
   seasonId: 's1',
