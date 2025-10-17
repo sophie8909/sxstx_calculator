@@ -71,7 +71,7 @@ async function handleSeasonChange(containers) {
   renderAll(containers);
 
   // 回填 LocalStorage 的值（賽季切換後仍保留）
-  loadAllInputs();
+  loadAllInputs(['season-select']);
 
   // 初次更新遺物總數、時間、結果
   updateRelicTotal();
