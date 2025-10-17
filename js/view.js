@@ -7,20 +7,26 @@ import { categories, targetLevelConfig, materials, productionSources } from './m
 /** 一次取得頁面需要用到的容器節點 */
 export function getContainers() {
   return {
-    levelInputs: document.getElementById('level-inputs'),
-    ownedMaterials: document.getElementById('owned-materials'),
+    // 左欄（新的）
+    equipInputs: document.getElementById('equip-inputs'),
+    skillInputs: document.getElementById('skill-inputs'),
+
+    // 中欄（新的）
+    charBedInputs: document.getElementById('char-bed-inputs'),
+    petInputs: document.getElementById('pet-inputs'),
     productionInputs: document.getElementById('production-inputs'),
+
+    // 右欄
+    ownedMaterials: document.getElementById('owned-materials'),
     results: document.getElementById('results'),
+
+    // 上方
     targetLevels: document.getElementById('target-levels'),
     relicDistributionInputs: document.getElementById('relic-distribution-inputs'),
     currentTimeDisplay: document.getElementById('current-time-display'),
-    charBedInputs: document.getElementById('char-bed-inputs'),
-    equipInputs: document.getElementById('equip-inputs'),
-    skillInputs: document.getElementById('skill-inputs'),
-    petInputs: document.getElementById('pet-inputs'),
-
   };
 }
+
 
 /** 共用：建立「標籤 + 數字輸入」區塊 */
 export function createInputGroup(id, labelText, placeholder, isSub = false, extraHtml = '') {
@@ -221,19 +227,25 @@ export function renderMaterials(container) {
   });
 }
 
-/** 一次性渲染所有靜態區塊 */
 export function renderAll(containers) {
-  // 清空容器
-  Object.values(containers).forEach(c => c && (c.innerHTML = ''));
-  renderSkillInputs(containers.skillInputs);
-  renderEquipInputs(containers.equipInputs);
-  renderPetInputs(containers.petInputs);
-  renderTargetLevels(containers.targetLevels);
-  renderRelicDistribution(containers.relicDistributionInputs);
-  renderMaterials(containers.ownedMaterials);
-  renderProduction(containers.productionInputs);
-  // ★ 新增：渲染中欄「角色與床」
-  renderCharBed(containers.charBedInputs);
+  // 清空現有容器（存在才清）
+  Object.values(containers).forEach(c => { if (c) c.innerHTML = ''; });
+
+  // 上方
+  if (containers.targetLevels) renderTargetLevels(containers.targetLevels);
+  if (containers.relicDistributionInputs) renderRelicDistribution(containers.relicDistributionInputs);
+
+  // 左欄
+  if (containers.equipInputs) renderEquipInputs(containers.equipInputs);
+  if (containers.skillInputs) renderSkillInputs(containers.skillInputs);
+
+  // 中欄
+  if (containers.charBedInputs) renderCharBed(containers.charBedInputs);
+  if (containers.petInputs) renderPetInputs(containers.petInputs);
+  if (containers.productionInputs) renderProduction(containers.productionInputs);
+
+  // 右欄
+  if (containers.ownedMaterials) renderMaterials(containers.ownedMaterials);
 }
 
 /** 現在時間（每秒呼叫一次） */
