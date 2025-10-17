@@ -462,11 +462,13 @@ export function saveAllInputs() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
-export function loadAllInputs() {
+// 取代原本的 loadAllInputs()
+export function loadAllInputs(excludeKeys = []) {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw) return;
   const data = JSON.parse(raw);
   Object.keys(data).forEach(id => {
+    if (excludeKeys.includes(id)) return; // ★ 新增：跳過不想覆寫的欄位
     const n = document.getElementById(id);
     if (n) n.value = data[id];
   });
