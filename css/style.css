@@ -71,3 +71,32 @@ h1,h2,h3,h4 { color:#165f63; text-shadow:0 1px 2px rgba(22,95,99,.15); }
 .text-accent{ color:#1fb7ad; }
 .text-gold  { color:#d4a418; }
 .text-warning{ color:#d65a2d; }
+
+/* ===== Compact 緊湊版覆寫 ===== */
+body.compact .card { border-radius: 8px; }
+body.compact .card > .custom-scrollbar { padding: 1rem !important; } /* p-4 */
+body.compact h2 { padding: .5rem 1rem !important; }                  /* header px-4 py-2 */
+body.compact .input-field { padding: .375rem .5rem !important; }     /* input p-1.5 */
+body.compact label { margin-bottom: .25rem !important; }             /* label mb-1 */
+body.compact .mb-6 { margin-bottom: 1rem !important; }               /* 通用縮小 */
+body.compact .space-y-6 > * + * { margin-top: 1rem !important; }     /* 通用縮小 */
+body.compact .gap-6 { gap: 1rem !important; }                        /* gap-6 → gap-4 */
+body.compact .gap-4 { gap: .75rem !important; }                      /* 更緊 */
+body.compact .result-item, 
+body.compact .info-item, 
+body.compact .cost-item { padding: .75rem !important; }              /* 卡片內距 */
+body.compact #results .grid { gap: .75rem !important; }              /* 結果格 */
+body.compact #results .grid > div { padding: .75rem !important; }    /* 結果卡內距 */
+
+/* ===== 計算總覽橫向顯示與顏色補強 ===== */
+#results .flex { align-items: stretch; }
+#results .result-item {
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
+}
+#results .bg-green-100:hover,
+#results .bg-blue-100:hover,
+#results .bg-orange-100:hover,
+#results .bg-red-100:hover {
+  filter: brightness(0.95);
+  transition: 0.2s;
+}
