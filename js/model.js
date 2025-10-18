@@ -91,22 +91,44 @@ export const MOCK_GAME_DATA = {
 const DATA_BASE = new URL('../data/', import.meta.url);
 const dataUrl = (name) => new URL(name, DATA_BASE).href;
 
+// export const DATA_FILES_CONFIG = {
+//   s1: {
+//     characterUpgradeCosts: dataUrl('character_upgrade_costs_s1.csv'),
+//     equipmentUpgradeCosts: dataUrl('equipment_upgrade_costs_s1.csv'),
+//     skillUpgradeCosts:     dataUrl('skill_upgrade_costs_s1.csv'),
+//     relicUpgradeCosts:     dataUrl('relic_upgrade_costs_s1.csv'),
+//     petUpgradeCosts:       dataUrl('pet_upgrade_costs_s1.csv'),
+//   },
+//   s2: {
+//     characterUpgradeCosts: dataUrl('character_upgrade_costs_s2.csv'),
+//     equipmentUpgradeCosts: dataUrl('equipment_upgrade_costs_s2.csv'),
+//     skillUpgradeCosts:     dataUrl('skill_upgrade_costs_s2.csv'),
+//     relicUpgradeCosts:     dataUrl('relic_upgrade_costs_s2.csv'),
+//     petUpgradeCosts:       dataUrl('pet_upgrade_costs_s2.csv'),
+//   },
+// };
+/** Google 試算表基底連結（固定不動） */
+const GOOGLE_SHEET_BASE =
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vRMlpHJpHMNQTCxhYgj2fmvazou_cQpAiVa-w5tg7WR2EJTn4EExoLwojYM3BoS8FSTpxvaKIQdmPQC/pub';
+
+/** 各賽季資料設定，只保留 gid */
 export const DATA_FILES_CONFIG = {
   s1: {
-    characterUpgradeCosts: dataUrl('character_upgrade_costs_s1.csv'),
-    equipmentUpgradeCosts: dataUrl('equipment_upgrade_costs_s1.csv'),
-    skillUpgradeCosts:     dataUrl('skill_upgrade_costs_s1.csv'),
-    relicUpgradeCosts:     dataUrl('relic_upgrade_costs_s1.csv'),
-    petUpgradeCosts:       dataUrl('pet_upgrade_costs_s1.csv'),
+    characterUpgradeCosts: 32106530,  // 角色等級
+    equipmentUpgradeCosts: 1167380870,  // 裝備
+    skillUpgradeCosts:     1445528269,  // 技能
+    relicUpgradeCosts:     821938531,  // 遺物
+    petUpgradeCosts:       1771319253,  // 幻獸
   },
   s2: {
-    characterUpgradeCosts: dataUrl('character_upgrade_costs_s2.csv'),
-    equipmentUpgradeCosts: dataUrl('equipment_upgrade_costs_s2.csv'),
-    skillUpgradeCosts:     dataUrl('skill_upgrade_costs_s2.csv'),
-    relicUpgradeCosts:     dataUrl('relic_upgrade_costs_s2.csv'),
-    petUpgradeCosts:       dataUrl('pet_upgrade_costs_s2.csv'),
+    characterUpgradeCosts: 314585849,
+    equipmentUpgradeCosts: 75474263,
+    skillUpgradeCosts:     682954597,
+    relicUpgradeCosts:     1548103854,
+    petUpgradeCosts:       1910677696,
   },
 };
+
 
 /** 內部狀態 */
 export const state = {
@@ -202,24 +224,33 @@ export function preprocessCostData() {
   state.cumulativeCostData = out;
 }
 
+/** 根據 gid 自動拼出 CSV URL */
+function makeCsvUrl(gid) {
+  return `${GOOGLE_SHEET_BASE}?gid=${gid}&single=true&output=csv`;
+}
 
-/** 載入指定賽季的資料（CSV 缺檔則套用 MOCK） */
+/** 載入對應賽季的資料 */
 export async function loadDataForSeason(seasonId) {
-  state.missingFiles = [];
-  const dataFiles = DATA_FILES_CONFIG[seasonId] || DATA_FILES_CONFIG.s1;
+  const cfg = DATA_FILES_CONFIG[seasonId] || DATA_FILES_CONFIG.s1;
   const loaded = {};
+  state.missingFiles = [];
 
-  for (const key in dataFiles) {
+  for (const key of Object.keys(cfg)) {
+    const gid = cfg[key];
+    const url = makeCsvUrl(gid);
+
     try {
-      loaded[key] = await fetchAndParseCsv(dataFiles[key]);
+      loaded[key] = await fetchAndParseCsv(url);
     } catch (err) {
-      console.warn(`無法載入 ${dataFiles[key]}，改用模擬數據`, err);
+      console.warn(`❌ 無法載入 ${key} (${url})，改用模擬數據`, err);
       loaded[key] = MOCK_GAME_DATA[key];
-      state.missingFiles.push(dataFiles[key]);
+      state.missingFiles.push(key);
     }
   }
+
   state.gameData = loaded;
 }
+
 
 /** 取得指定等級的累積成本（若不存在取最近低等級） */
 export function getCumulative(costTable, level) {
