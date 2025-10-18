@@ -87,12 +87,10 @@ export const MOCK_GAME_DATA = {
   })),
 };
 
-/** 各賽季 CSV 路徑 */
-
-const DATA_BASE = new URL('../data/', import.meta.url); // model.js 在 /js/，data 在 /data/
+/** 各賽季 CSV 路徑（model.js 在 /js/，data 在 /data/） */
+const DATA_BASE = new URL('../data/', import.meta.url);
 const dataUrl = (name) => new URL(name, DATA_BASE).href;
 
-// === 換成以下設定： ===
 export const DATA_FILES_CONFIG = {
   s1: {
     characterUpgradeCosts: dataUrl('character_upgrade_costs_s1.csv'),
@@ -109,6 +107,7 @@ export const DATA_FILES_CONFIG = {
     petUpgradeCosts:       dataUrl('pet_upgrade_costs_s2.csv'),
   },
 };
+
 /** 內部狀態 */
 export const state = {
   seasonId: 's1',
@@ -186,14 +185,14 @@ export function preprocessCostData() {
 export function getCumulative(costTable, level) {
   const empty = {};
   if (!costTable || costTable.length === 0) return empty;
-  costTable.forEach(row => Object.keys(row).forEach(k => empty[k] = 0));
+  costTable.forEach(row => Object.keys(row).forEach(k => (empty[k] = 0)));
   delete empty.level;
   if (level <= 0) return empty;
   const idx = findLastIndexByLevel(costTable, level);
   return idx !== -1 ? { ...empty, ...costTable[idx] } : empty;
 }
 
-/** S1 賽季分數換算 */
+/** S1 / S2 賽季分數（原本就有，保留） */
 export function calculateSeasonScore_S1(targets) {
   let score = 0;
   if (targets.character > 100) score += (targets.character - 100) * 100;
@@ -203,8 +202,6 @@ export function calculateSeasonScore_S1(targets) {
   if (targets.relic_resonance > 10) score += (targets.relic_resonance - 10) * 1140;
   return score;
 }
-
-/** S2 賽季分數換算（暫沿用現有假設） */
 export function calculateSeasonScore_S2(targets) {
   let score = 0;
   if (targets.character > 100) score += (targets.character - 100) * 120;
@@ -214,27 +211,31 @@ export function calculateSeasonScore_S2(targets) {
   if (targets.relic_resonance > 10) score += (targets.relic_resonance - 10) * 1200;
   return score;
 }
-
-/** 原初之星換算（S1 公式） */
 export function convertPrimordialStar_S1(score) {
   return Math.floor(score / 100 + 10);
 }
 
-/** 計算最低可達角色等級（依目標時間/床） */
+/** 計算「最低可達角色等級」
+ *  定義（你指定的模型）：
+ *   - cum(k) = 抵達 k 級所需的累積經驗
+ *   - 目前在 L 級 → 已累積為 cum(L-1)
+ */
 export function computeReachableCharacterLevel(curLv, ownedExp, bedExpHourly, targetTimeStr) {
-  let reachable = curLv;
   const table = state.cumulativeCostData['character'];
-  if (!targetTimeStr || !table) return reachable;
+  if (!table || !Number.isFinite(curLv)) return curLv;
 
-  const hours = Math.max(0, (new Date(targetTimeStr).getTime() - Date.now()) / 36e5);
-  const currentCum = getCumulative(table, curLv - 1).cost_exp || 0;
-  const totalExp = currentCum + (ownedExp || 0) + (bedExpHourly || 0) * hours;
+  const hours = targetTimeStr
+    ? Math.max(0, (new Date(targetTimeStr).getTime() - Date.now()) / 36e5)
+    : 0;
+
+  const baseCum = (getCumulative(table, curLv - 1).cost_exp || 0); // cum(L-1)
+  const totalExp = baseCum + (Number(ownedExp) || 0) + (Number(bedExpHourly) || 0) * hours;
+
   const idx = table.findLastIndex(d => (d.cost_exp || 0) <= totalExp);
-  reachable = idx !== -1 ? table[idx].level : curLv;
-  return reachable;
+  return idx !== -1 ? table[idx].level : curLv;
 }
 
-/** 主計算：需求 / 時產收益 / 缺口（回傳渲染需要的物件） */
+/** 主計算：需求 / 時產收益 / 缺口（渲染用 payload） */
 export function computeAll(containers) {
   const required = {};
   const gains = {};
@@ -250,9 +251,9 @@ export function computeAll(containers) {
     targets[t.id] = v;
   });
 
-  // 可達角色等級（顯示用）
+  // 可達角色等級（顯示）
   const curCharLv = parseInt(document.getElementById('character-current')?.value) || 0;
-  const ownedExp = parseInt(document.getElementById('owned-exp')?.value) || 0; // 可加欄位後使用
+  const ownedExp = parseInt(document.getElementById('owned-exp')?.value) || 0;
   const bedExpHourly = parseFloat(document.getElementById('bed-exp-hourly')?.value) || 0;
   const targetTimeStr = document.getElementById('target-time')?.value;
 
@@ -260,7 +261,7 @@ export function computeAll(containers) {
   const reachableEl = document.getElementById('target-char-reachable-level');
   if (reachableEl) reachableEl.textContent = `最低可達: ${reachable > 0 ? reachable : '--'}`;
 
-  // 原初之星自動計算
+  // 原初之星（自動）
   const seasonId = state.seasonId;
   let score = 0;
   if (seasonId === 's1') score = calculateSeasonScore_S1(targets);
@@ -290,8 +291,7 @@ export function computeAll(containers) {
               const msg = `數據缺失: 遺物缺少 ${lvl} 級`;
               if (!missingDataErrors.sand) missingDataErrors.sand = msg;
               if (!missingDataErrors.rola) missingDataErrors.rola = msg;
-              missing = true;
-              break;
+              missing = true; break;
             }
           }
         }
@@ -329,23 +329,19 @@ export function computeAll(containers) {
       if (cat.id.startsWith('equipment_')) {
         costTable = state.cumulativeCostData.equipment;
         sourceTable = g.equipmentUpgradeCosts;
-        itemName = '裝備';
-        affected = ['stoneOre', 'rola', 'refiningStone'];
+        itemName = '裝備'; affected = ['stoneOre', 'rola', 'refiningStone'];
       } else if (cat.id.startsWith('skill_')) {
         costTable = state.cumulativeCostData.skill;
         sourceTable = g.skillUpgradeCosts;
-        itemName = '技能';
-        affected = ['essence'];
+        itemName = '技能'; affected = ['essence'];
       } else if (cat.id.startsWith('pet')) {
         costTable = state.cumulativeCostData.pet;
         sourceTable = g.petUpgradeCosts;
-        itemName = '幻獸';
-        affected = ['freezeDried'];
+        itemName = '幻獸'; affected = ['freezeDried'];
       } else {
         costTable = state.cumulativeCostData[cat.id];
         sourceTable = g.characterUpgradeCosts;
-        itemName = '角色';
-        affected = ['exp'];
+        itemName = '角色'; affected = ['exp'];
       }
 
       let missing = false;
@@ -372,16 +368,10 @@ export function computeAll(containers) {
     }
   });
 
-  // 若輸入錯誤（如遺物非 20） → 回傳錯訊
-  if (hasError) {
-    return { error: '輸入有誤 (例如遺物總數不為20)，請檢查。' };
-  }
-  // 若完全沒輸入 → 提示
-  if (!hasInput) {
-    return { required: {}, gains: {}, deficit: {}, materialErrors: missingDataErrors };
-  }
+  if (hasError) return { error: '輸入有誤 (例如遺物總數不為20)，請檢查。' };
+  if (!hasInput) return { required: {}, gains: {}, deficit: {}, materialErrors: missingDataErrors };
 
-  // 掛機收益（以手動時產 + 床、依目標時間）
+  // 掛機收益（目標時間）
   if (targetTimeStr) {
     const hours = Math.max(0, (new Date(targetTimeStr).getTime() - Date.now()) / 36e5);
     Object.entries(productionSources).forEach(([srcId, src]) => {
@@ -403,38 +393,39 @@ export function computeAll(containers) {
   return { required, gains, deficit, materialErrors: missingDataErrors };
 }
 
-/** 升級時間估算 + 通知排程（UI 顯示文字在 Controller 端更新） */
+/** 升級時間估算 + 通知排程（下一級）
+ *  你指定的定義：在 L 時升級需求 = cum(L) - cum(L-1) - ownedExp
+ */
 export function scheduleLevelUpNotification(currentLevel, ownedExp, bedExpHourly) {
-  if (state.notificationTimerId) {
-    clearTimeout(state.notificationTimerId);
-    state.notificationTimerId = null;
-  }
-  if (bedExpHourly <= 0 || currentLevel >= MAX_LEVEL) return { levelupTs: NaN, minutesNeeded: 0 };
+  if (state.notificationTimerId) clearTimeout(state.notificationTimerId);
+  state.notificationTimerId = null;
 
   const table = state.cumulativeCostData['character'];
-  const next = table?.find(d => d.level === currentLevel);
-  const cur = getCumulative(table, currentLevel - 1);
-  if (!next) return { levelupTs: NaN, minutesNeeded: 0 };
+  if (!table || !Number.isFinite(currentLevel) || currentLevel >= MAX_LEVEL) {
+    return { levelupTs: NaN, minutesNeeded: 0, expNeeded: NaN };
+  }
 
-  const nextCost = (next.cost_exp || 0) - (cur.cost_exp || 0);
-  const expNeeded = Math.max(0, nextCost - (Number(ownedExp) || 0));
-  if (expNeeded <= 0) return { levelupTs: Date.now(), minutesNeeded: 0 };
+  const cumPrev = (getCumulative(table, currentLevel - 1).cost_exp || 0);
+  const cumThis = (getCumulative(table, currentLevel).cost_exp || 0);
+  const expNeeded = Math.max(0, cumThis - cumPrev - (Number(ownedExp) || 0));
+
+  if (expNeeded <= 0) return { levelupTs: Date.now(), minutesNeeded: 0, expNeeded: 0 };
 
   const ratePerHour = Number(bedExpHourly);
-  if (!Number.isFinite(ratePerHour) || ratePerHour <= 0) return { levelupTs: NaN, minutesNeeded: 0 };
+  if (!Number.isFinite(ratePerHour) || ratePerHour <= 0) {
+    return { levelupTs: NaN, minutesNeeded: 0, expNeeded };
+  }
 
-  const ratePerSec = ratePerHour / 3600;
-  const secondsNeeded = Math.ceil(expNeeded / ratePerSec);
-  const minutesNeeded = Math.ceil(secondsNeeded / 60);
+  const minutesNeeded = Math.ceil((expNeeded / ratePerHour) * 60);
   const levelupTs = Date.now() + minutesNeeded * 60 * 1000;
 
-  // 瀏覽器通知（提前 3 分鐘）
+  // 提前 3 分鐘通知
   if ('Notification' in window && Notification.permission === 'granted') {
     const aligned = Math.ceil(levelupTs / 60000) * 60000;
     const notifyAt = aligned - 3 * 60 * 1000;
     const delay = notifyAt - Date.now();
     if (delay > 0) {
-      const MAX_DELAY = 0x7fffffff; // 約 24.8 天
+      const MAX_DELAY = 0x7fffffff; // ~24.8 天
       const schedule = (ms) => {
         if (ms > MAX_DELAY) {
           state.notificationTimerId = setTimeout(() => schedule(ms - MAX_DELAY), MAX_DELAY);
@@ -451,7 +442,39 @@ export function scheduleLevelUpNotification(currentLevel, ownedExp, bedExpHourly
       schedule(delay);
     }
   }
-  return { levelupTs, minutesNeeded };
+  return { levelupTs, minutesNeeded, expNeeded };
+}
+
+/** 計算到達「目標角色等級」ETA（以及總所需經驗）
+ *  目前在 L，目標 T：
+ *   目前累積 = cum(L-1) + ownedExp
+ *   需求 = cum(T) - (cum(L-1) + ownedExp)
+ */
+export function computeEtaToTargetLevel(currentLevel, ownedExp, bedExpHourly, targetLevel) {
+  const table = state.cumulativeCostData['character'];
+  if (!table || !Number.isFinite(targetLevel) || targetLevel <= 0) {
+    return { minutesNeeded: 0, etaTs: NaN, needExp: NaN, status: 'unset' };
+  }
+  if (targetLevel <= currentLevel) {
+    return { minutesNeeded: 0, etaTs: Date.now(), needExp: 0, status: 'reached' };
+  }
+
+  const curCum = (getCumulative(table, currentLevel - 1).cost_exp || 0); // cum(L-1)
+  const tgtCum = (getCumulative(table, targetLevel).cost_exp || 0);      // cum(T)
+  const needExp = Math.max(0, tgtCum - curCum - (Number(ownedExp) || 0));
+
+  if (needExp <= 0) {
+    return { minutesNeeded: 0, etaTs: Date.now(), needExp: 0, status: 'ready' };
+  }
+
+  const ratePerHour = Number(bedExpHourly);
+  if (!Number.isFinite(ratePerHour) || ratePerHour <= 0) {
+    return { minutesNeeded: 0, etaTs: NaN, needExp, status: 'noRate' };
+  }
+
+  const minutesNeeded = Math.ceil((needExp / ratePerHour) * 60);
+  const etaTs = Date.now() + minutesNeeded * 60 * 1000;
+  return { minutesNeeded, etaTs, needExp, status: 'ok' };
 }
 
 /** LocalStorage 儲存/載入 */
@@ -462,13 +485,13 @@ export function saveAllInputs() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
-// 取代原本的 loadAllInputs()
+/** 讀回 localStorage：可忽略某些鍵避免覆蓋（例如 season-select） */
 export function loadAllInputs(excludeKeys = []) {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw) return;
   const data = JSON.parse(raw);
   Object.keys(data).forEach(id => {
-    if (excludeKeys.includes(id)) return; // ★ 新增：跳過不想覆寫的欄位
+    if (excludeKeys.includes(id)) return;
     const n = document.getElementById(id);
     if (n) n.value = data[id];
   });

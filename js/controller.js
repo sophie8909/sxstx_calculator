@@ -3,32 +3,24 @@
 
 import {
   state, STORAGE_KEY, loadDataForSeason, preprocessCostData,
-  saveAllInputs, loadAllInputs, computeAll, scheduleLevelUpNotification,
-  calculateSeasonScore_S1, calculateSeasonScore_S2, convertPrimordialStar_S1
+  saveAllInputs, loadAllInputs, computeAll,
+  scheduleLevelUpNotification, computeEtaToTargetLevel,
+  getCumulative
 } from './model.js';
 
 import {
-  getContainers, renderAll, updateCurrentTime, updateRelicTotal, renderResults, renderLevelupTimeText
+  getContainers, renderAll, updateCurrentTime, updateRelicTotal,
+  renderResults, renderLevelupTimeText, renderTargetEtaText
 } from './view.js';
 
+/** 綁定全域輸入事件（即時更新 + 儲存） */
 function bindGlobalHandlers(containers) {
-  // 任一數值/時間變更 → 計算 + 儲存
   document.body.addEventListener('input', (e) => {
     const t = e.target;
-    if (t.matches('input[type=number], input[type=datetime-local]')) {
-      if (t.classList.contains('relic-dist-input')) updateRelicTotal();
-      const payload = computeAll(containers);
-      renderResults(containers, payload, state.missingFiles);
+    if (!t.matches('input[type=number], input[type=datetime-local]')) return;
 
-      // 推播估算
-      const curLv = parseInt(document.getElementById('character-current')?.value) || 0;
-      const ownedExp = parseInt(document.getElementById('owned-exp')?.value) || 0;
-      const bedHourly = parseFloat(document.getElementById('bed-exp-hourly')?.value) || 0;
-      const { levelupTs, minutesNeeded } = scheduleLevelUpNotification(curLv, ownedExp, bedHourly);
-      renderLevelupTimeText(minutesNeeded, levelupTs);
-
-      saveAllInputs();
-    }
+    if (t.classList.contains('relic-dist-input')) updateRelicTotal();
+    triggerRecalculate(containers);
   });
 
   // 啟用通知
@@ -49,7 +41,7 @@ function bindGlobalHandlers(containers) {
     notifBtn.textContent = '瀏覽器不支援通知'; notifBtn.disabled = true;
   }
 
-  // 清除本地紀錄
+  // 清除本地資料
   const clearBtn = document.getElementById('clear-data-btn');
   clearBtn.addEventListener('click', () => {
     if (confirm('確定要清除所有已儲存的本地紀錄嗎？此操作無法復原。')) {
@@ -59,6 +51,96 @@ function bindGlobalHandlers(containers) {
   });
 }
 
+/** 資料重算 */
+function triggerRecalculate(containers) {
+  const payload = computeAll(containers);
+  renderResults(containers, payload, state.missingFiles);
+
+  const curLv = parseInt(document.getElementById('character-current')?.value) || 0;
+  const ownedExpWanStr = document.getElementById('owned-exp-wan')?.value?.trim();
+  const ownedExpWan = ownedExpWanStr === '' ? NaN : parseFloat(ownedExpWanStr);
+  const bedHourly = parseFloat(document.getElementById('bed-exp-hourly')?.value) || 0;
+
+  // 計算實際經驗值（若輸入為空則不顯示）
+  const ownedExpInput = document.getElementById('owned-exp');
+  if (ownedExpInput) {
+    if (!isNaN(ownedExpWan)) {
+      ownedExpInput.value = Math.floor(ownedExpWan * 10000);
+    } else {
+      ownedExpInput.value = '';
+    }
+  }
+
+  // 推播估算（下一級）
+  const ownedExp = parseInt(ownedExpInput?.value) || 0;
+  const { levelupTs, minutesNeeded } = scheduleLevelUpNotification(curLv, ownedExp, bedHourly);
+  renderLevelupTimeText(minutesNeeded, levelupTs);
+
+  // 到達目標角色等級 ETA
+  const targetChar = parseInt(document.getElementById('target-character')?.value) || 0;
+  const { minutesNeeded: m2, etaTs } = computeEtaToTargetLevel(curLv, ownedExp, bedHourly, targetChar);
+  renderTargetEtaText(m2, etaTs);
+
+  // 更新下一級與目標等級所需經驗
+  updateExpRequirements(curLv, ownedExp, targetChar);
+
+  saveAllInputs();
+}
+
+/** 計算並更新「升至下一級 / 目標等級所需經驗」 */
+function updateExpRequirements(curLv, ownedExp, targetChar) {
+  const table = state.cumulativeCostData['character'];
+  if (!table || !table.length) return;
+
+  const cur = getCumulative(table, curLv - 1);
+  const next = getCumulative(table, curLv);
+  const target = getCumulative(table, targetChar - 1);
+
+  const needNextExp = Math.max(0, (next.cost_exp || 0) - (cur.cost_exp || 0) - ownedExp);
+  const needTargetExp = Math.max(0, (target.cost_exp || 0) - (cur.cost_exp || 0) - ownedExp);
+
+  const elNext = document.getElementById('bed-levelup-exp');
+  const elTarget = document.getElementById('bed-target-exp');
+  if (elNext) elNext.textContent = `升至下一級所需經驗: ${needNextExp.toLocaleString()}`;
+  if (elTarget) elTarget.textContent = `升至目標等級所需經驗: ${needTargetExp.toLocaleString()}`;
+}
+
+/** 每秒同步更新：經驗累積、時間推算 */
+function setupAutoUpdate(containers) {
+  setInterval(() => {
+    const curLv = parseInt(document.getElementById('character-current')?.value) || 0;
+    const ownedExpWanStr = document.getElementById('owned-exp-wan')?.value?.trim();
+    const ownedExpWan = ownedExpWanStr === '' ? NaN : parseFloat(ownedExpWanStr);
+    const bedHourly = parseFloat(document.getElementById('bed-exp-hourly')?.value) || 0;
+    const targetChar = parseInt(document.getElementById('target-character')?.value) || 0;
+
+    const ownedExpInput = document.getElementById('owned-exp');
+    if (!ownedExpInput) return;
+
+    // 若輸入空白 → 不更新經驗
+    if (isNaN(ownedExpWan)) return;
+
+    // 累加經驗
+    const hourly = bedHourly || 0;
+    const expPerSec = hourly / 3600;
+    const lastExp = parseFloat(ownedExpInput.value) || ownedExpWan * 10000;
+    const newExp = lastExp + expPerSec;
+    ownedExpInput.value = Math.floor(newExp);
+
+    const ownedExp = parseInt(ownedExpInput.value) || 0;
+
+    // 即時更新時間與需求
+    const { levelupTs, minutesNeeded } = scheduleLevelUpNotification(curLv, ownedExp, bedHourly);
+    renderLevelupTimeText(minutesNeeded, levelupTs);
+
+    const { minutesNeeded: m2, etaTs } = computeEtaToTargetLevel(curLv, ownedExp, bedHourly, targetChar);
+    renderTargetEtaText(m2, etaTs);
+
+    updateExpRequirements(curLv, ownedExp, targetChar);
+  }, 1000);
+}
+
+/** 切換賽季 */
 async function handleSeasonChange(containers) {
   const seasonSelector = document.getElementById('season-select');
   state.seasonId = seasonSelector.value;
@@ -67,45 +149,32 @@ async function handleSeasonChange(containers) {
   await loadDataForSeason(state.seasonId);
   preprocessCostData();
 
-  // 重新渲染「靜態區塊」（避免初始 mount 後容器被清空）
   renderAll(containers);
-
-  // 回填 LocalStorage 的值（賽季切換後仍保留）
   loadAllInputs(['season-select']);
 
-  // 初次更新遺物總數、時間、結果
   updateRelicTotal();
   const payload = computeAll(containers);
   renderResults(containers, payload, state.missingFiles);
 
-  // 儲存賽季選擇
   const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
   data['season-select'] = state.seasonId;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
+/** 初始化 */
 async function init() {
-  // 容器
   const containers = getContainers();
-
-  // 首渲染靜態 UI
   renderAll(containers);
-
-  // 綁定全域事件
   bindGlobalHandlers(containers);
 
-  // 恢復已存輸入（含賽季值）
   const saved = JSON.parse(localStorage.getItem('sxstxCalculatorData') || '{}');
   const seasonSelector = document.getElementById('season-select');
   seasonSelector.value = saved['season-select'] || 's1';
 
-  // 載入賽季資料 → 預處理
   await handleSeasonChange(containers);
-
-  // 監聽賽季切換
   seasonSelector.addEventListener('change', () => handleSeasonChange(containers));
 
-  // 時鐘
+  setupAutoUpdate(containers);
   setInterval(() => updateCurrentTime(containers.currentTimeDisplay), 1000);
   updateCurrentTime(containers.currentTimeDisplay);
 }

@@ -7,11 +7,11 @@ import { categories, targetLevelConfig, materials, productionSources } from './m
 /** 一次取得頁面需要用到的容器節點 */
 export function getContainers() {
   return {
-    // 左欄（新的）
+    // 左欄
     equipInputs: document.getElementById('equip-inputs'),
     skillInputs: document.getElementById('skill-inputs'),
 
-    // 中欄（新的）
+    // 中欄
     charBedInputs: document.getElementById('char-bed-inputs'),
     petInputs: document.getElementById('pet-inputs'),
     productionInputs: document.getElementById('production-inputs'),
@@ -27,7 +27,6 @@ export function getContainers() {
   };
 }
 
-
 /** 共用：建立「標籤 + 數字輸入」區塊 */
 export function createInputGroup(id, labelText, placeholder, isSub = false, extraHtml = '') {
   const wrap = el('div', isSub ? ['mb-4'] : []);
@@ -36,17 +35,16 @@ export function createInputGroup(id, labelText, placeholder, isSub = false, extr
 
   const input = el('input', ['input-field', 'rounded', 'w-full', 'p-2']);
   input.type = 'number'; input.id = id; input.placeholder = placeholder;
+  input.min = '0'; input.step = '1';
 
   wrap.append(label, input);
   if (extraHtml) { const extra = el('div'); extra.innerHTML = extraHtml; wrap.appendChild(extra); }
   return wrap;
 }
 
-/** 目標等級（桌面固定一行六格，原初之星不換行） */
+/** 目標等級（一行六格） */
 export function renderTargetLevels(container) {
-  // 設定容器為 6 欄栅格
   container.className = 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4';
-
   container.innerHTML = '';
   targetLevelConfig.forEach(t => {
     const badge = (t.id === 'character')
@@ -54,8 +52,6 @@ export function renderTargetLevels(container) {
     const isReadOnly = t.readonly === true;
 
     const group = createInputGroup(`target-${t.id}`, t.name, isReadOnly ? '自動計算' : '目標', false, badge);
-
-    // 讓 label 不換行（原初之星特別重要）
     const label = group.querySelector('label');
     label.classList.add('whitespace-nowrap');
 
@@ -67,38 +63,53 @@ export function renderTargetLevels(container) {
         `<span class="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 align-middle">自動</span>`
       );
     }
-
     container.appendChild(group);
   });
 }
 
+/** 右欄：素材（固定順序） */
+export function renderMaterials(container) {
+  const order = ['rola', 'stoneOre', 'essence', 'sand', 'freezeDried'];
+  container.innerHTML = '';
 
-/** 遺物分佈 */
-/** 遺物分佈（滿版：桌面 11 欄，與目標等級一致寬度） */
+  order.forEach((id) => {
+    const mat = materials[id];
+    if (!mat) return;
+
+    const row = el('div', ['flex', 'items-center']);
+    const label = el('label', ['w-full', 'block', 'text-sm', 'font-bold']);
+    label.htmlFor = `owned-${id}`;
+    label.textContent = `${mat.icon} ${mat.name}`;
+
+    const input = el('input', ['input-field', 'rounded', 'w-full', 'p-2']);
+    input.type = 'number';
+    input.min = '0';
+    input.step = '1';
+    input.id = `owned-${id}`;
+    input.placeholder = '0';
+
+    row.append(label, input);
+    container.appendChild(row);
+  });
+}
+
+
+/** 遺物分佈（10~20） */
 export function renderRelicDistribution(container) {
   container.innerHTML = '';
-  // 手機 2、平板 4、md 6、桌面一次 11 個（10~20）
   container.className = 'grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-11 gap-3';
-
   for (let i = 10; i <= 20; i++) {
-    // 用共用 input group，讓每格自己撐滿欄寬
     const g = createInputGroup(`relic-level-${i}`, `等級 ${i}`, '數量');
     const label = g.querySelector('label');
     const input = g.querySelector('input');
-
-    // 置中 & 滿版
-    g.classList.add('min-w-0');                // 防止擠壓時跑版
+    g.classList.add('min-w-0');
     label.classList.add('text-center', 'mb-1');
-    input.classList.add('w-full', 'text-center');
-
-    // 標記 class 給其它程式用
-    input.classList.add('relic-dist-input');
-
+    input.classList.add('w-full', 'text-center', 'relic-dist-input');
     container.appendChild(g);
   }
 }
 
-
+/** 裝備輸入 */
 export function renderEquipInputs(container) {
   const frag = document.createDocumentFragment();
   const categoriesEquip = categories.filter(c => c.group === '裝備等級');
@@ -111,6 +122,8 @@ export function renderEquipInputs(container) {
   frag.appendChild(wrap);
   container.appendChild(frag);
 }
+
+/** 技能輸入 */
 export function renderSkillInputs(container) {
   const frag = document.createDocumentFragment();
   const s1 = el('div'), s2 = el('div');
@@ -123,6 +136,8 @@ export function renderSkillInputs(container) {
   frag.appendChild(wrap);
   container.appendChild(frag);
 }
+
+/** 幻獸輸入 */
 export function renderPetInputs(container) {
   const frag = document.createDocumentFragment();
   const petRow = el('div', ['grid', 'grid-cols-2', 'sm:grid-cols-4', 'gap-4']);
@@ -133,12 +148,9 @@ export function renderPetInputs(container) {
   container.appendChild(frag);
 }
 
-
-
-/** 中欄：小推車（固定順序、樣式與右欄一致） */
+/** 中欄：小推車（手動時產） */
 export function renderProduction(container) {
   const order = ['rola', 'stoneOre', 'essence', 'sand', 'freezeDried'];
-
   order.forEach((key) => {
     const src = productionSources[key];
     if (!src) return;
@@ -154,101 +166,72 @@ export function renderProduction(container) {
     input.type = 'number';
     input.id = `manual-hourly-${key}`;
     input.placeholder = '時產量（手動輸入）';
+    input.min = '0'; input.step = '1';
 
     row.append(label, input);
     container.appendChild(row);
   });
 }
 
-/** 中欄：角色與床（新）— 風格同上，一列一項 */
+/** 中欄：角色與床（四行等寬對齊） */
 export function renderCharBed(container) {
   container.innerHTML = '';
 
-  // 角色等級（搬到這張卡來）
-  {
-    const row = el('div', ['flex', 'items-center']);
-    const label = el('label', ['w-full', 'block', 'text-sm', 'font-bold']);
-    label.htmlFor = 'character-current';
-    label.textContent = '📘 角色等級（目前）';
+  const LABEL_PX = 170;
+  const INPUT_PX = 200;
+  const INPUT_H = 'h-9';
 
-    const input = el('input', ['input-field', 'rounded', 'w-full', 'p-2']);
-    input.type = 'number';
-    input.id = 'character-current';
-    input.placeholder = '目前等級';
+  const row = (opts) => {
+    const { id, type='number', icon='⚙️', label='未命名', placeholder='', readOnly=false } = opts;
+    const wrap = el('div', ['w-full']);
+    const line = el('div', ['flex','items-center','justify-between','gap-2']);
+    const left = el('div', ['flex','items-center','gap-2','whitespace-nowrap']);
+    left.style.width = `${LABEL_PX}px`;
+    left.innerHTML = `<span class="text-lg">${icon}</span><span class="text-sm font-semibold">${label}</span>`;
+    const right = el('div', ['flex','items-center','justify-end']);
+    const input = el('input', ['input-field','rounded','p-2', INPUT_H]);
+    input.id = id; input.placeholder = placeholder; input.style.width = `${INPUT_PX}px`;
+    if (readOnly) {
+      input.type = 'text'; input.readOnly = true;
+      input.classList.add('bg-slate-50','border','border-slate-200','text-gray-700','cursor-default');
+      input.style.appearance = 'none';
+    } else {
+      input.type = type;
+    }
+    right.appendChild(input);
+    line.append(left, right);
+    wrap.appendChild(line);
+    return wrap;
+  };
 
-    row.append(label, input);
-    container.appendChild(row);
-  }
+  container.appendChild(row({ id: 'character-current', icon: '📘', label: '角色等級（目前）', placeholder: '目前等級' }));
+  container.appendChild(row({ id: 'owned-exp-wan', icon: '🧮', label: '目前持有經驗（輸入）', placeholder: '以萬為單位輸入' }));
+  container.appendChild(row({ id: 'owned-exp', icon: '📖', label: '對應實際經驗值', placeholder: '自動換算（唯讀）', readOnly: true }));
+  container.appendChild(row({ id: 'bed-exp-hourly', icon: '🛏️', label: '每小時經驗產量', placeholder: '0' }));
 
-  // 床：時產量 + 升級時間顯示
-  {
-    const row = el('div', ['flex', 'items-center']);
-    const label = el('label', ['w-full', 'block', 'text-sm', 'font-bold']);
-    label.htmlFor = 'bed-exp-hourly';
-    label.textContent = '🛏️ 每小時經驗產量';
-
-    const input = el('input', ['input-field', 'rounded', 'w-full', 'p-2']);
-    input.type = 'number';
-    input.id = 'bed-exp-hourly';
-    input.placeholder = '0';
-
-    row.append(label, input);
-    container.appendChild(row);
-
-    // 升級時間提示（放在輸入列下）
-    const info = el('div', ['text-xs', 'text-gray-500', 'mt-2']);
-    info.id = 'bed-levelup-time';
-    info.textContent = '預計升級時間: --';
-    container.appendChild(info);
-
-  }
+  const infoBox = el('div', ['mt-2','space-y-1','text-xs','text-gray-500']);
+  const needNext = el('div'); needNext.id = 'bed-levelup-exp'; needNext.textContent = '升至下一級所需經驗: --';
+  const etaNext = el('div'); etaNext.id = 'bed-levelup-time'; etaNext.textContent = '預計升級時間: --';
+  const needTarget = el('div'); needTarget.id = 'bed-target-exp'; needTarget.textContent = '升至目標等級所需經驗: --';
+  const etaTarget = el('div'); etaTarget.id = 'bed-target-eta'; etaTarget.textContent = '預計到達目標等級時間: --';
+  infoBox.append(needNext, etaNext, needTarget, etaTarget);
+  container.appendChild(infoBox);
 }
 
-/** 右欄：素材（固定順序） */
-export function renderMaterials(container) {
-  const order = ['rola', 'stoneOre', 'essence', 'sand', 'freezeDried', 'exp'];
-
-  order.forEach((id) => {
-    const mat = materials[id];
-    if (!mat) return;
-
-    const row = el('div', ['flex', 'items-center']);
-    const label = el('label', ['w-full', 'block', 'text-sm', 'font-bold']);
-    label.htmlFor = `owned-${id}`;
-    label.textContent = `${mat.icon} ${mat.name}`;
-
-    const input = el('input', ['input-field', 'rounded', 'w-full', 'p-2']);
-    input.type = 'number';
-    input.id = `owned-${id}`;
-    input.placeholder = '0';
-
-    row.append(label, input);
-    container.appendChild(row);
-  });
-}
-
+/** 主渲染（⚠️ 務必注意這個大括號，上一版少了它） */
 export function renderAll(containers) {
-  // 清空現有容器（存在才清）
   Object.values(containers).forEach(c => { if (c) c.innerHTML = ''; });
-
-  // 上方
   if (containers.targetLevels) renderTargetLevels(containers.targetLevels);
   if (containers.relicDistributionInputs) renderRelicDistribution(containers.relicDistributionInputs);
-
-  // 左欄
   if (containers.equipInputs) renderEquipInputs(containers.equipInputs);
   if (containers.skillInputs) renderSkillInputs(containers.skillInputs);
-
-  // 中欄
   if (containers.charBedInputs) renderCharBed(containers.charBedInputs);
   if (containers.petInputs) renderPetInputs(containers.petInputs);
   if (containers.productionInputs) renderProduction(containers.productionInputs);
-
-  // 右欄
   if (containers.ownedMaterials) renderMaterials(containers.ownedMaterials);
-}
+} // ←←← 這個就是缺少的大括號
 
-/** 現在時間（每秒呼叫一次） */
+/** 現在時間 */
 export function updateCurrentTime(container) {
   if (!container) return;
   const now = new Date();
@@ -271,11 +254,10 @@ export function updateRelicTotal() {
   }
 }
 
-/** 結果輸出（五個橫條 + 狀態底色） */
+/** 結果輸出（五個橫條） */
 export function renderResults(containers, payload, missingFiles = []) {
   const root = containers.results;
   root.innerHTML = '';
-
   if (missingFiles.length > 0) {
     root.insertAdjacentHTML('afterbegin',
       `<div class="bg-yellow-900/50 border-l-4 border-yellow-400 text-yellow-300 p-3 rounded-lg mb-3 text-sm">
@@ -290,41 +272,22 @@ export function renderResults(containers, payload, missingFiles = []) {
 
   const { required = {}, gains = {}, deficit = {}, materialErrors = {} } = payload;
   const displayOrder = ['rola', 'stoneOre', 'essence', 'sand', 'freezeDried'];
-
-  // ★ 改成「直向排列的五個橫條」
   const list = el('div', ['flex', 'flex-col', 'gap-3', 'w-full']);
-
   displayOrder.forEach((matId) => {
     const mat = materials[matId];
-
     const need = required[matId] || 0;
     const lack = deficit[matId] || 0;
     const gain = gains[matId] || 0;
     const hasError = !!materialErrors[matId];
-
-    // 狀態顏色：
-    // 紅：缺數據
-    // 綠：目前已充足（缺口為 0 且沒有靠掛機補；或 need=0）
-    // 藍：在目標時間前可達（缺口為 0 且有掛機產量貢獻）
-    // 橘：尚不足（仍有缺口）
     let classes = 'border rounded-lg w-full px-4 py-3';
-    if (hasError) {
-      classes += ' bg-red-100 border-red-300';
-    } else if (lack === 0 && (need === 0 || gain === 0)) {
-      classes += ' bg-green-100 border-green-300';
-    } else if (lack === 0 && gain > 0) {
-      classes += ' bg-blue-100 border-blue-300';
-    } else {
-      classes += ' bg-orange-100 border-orange-300';
-    }
-
+    if (hasError) classes += ' bg-red-100 border-red-300';
+    else if (need === 0) classes += ' bg-green-100 border-green-300';
+    else if (lack === 0 && gain > 0) classes += ' bg-blue-100 border-blue-300';
+    else if (lack === 0) classes += ' bg-green-100 border-green-300';
+    else classes += ' bg-orange-100 border-orange-300';
     const row = el('div', classes.split(' '));
-
-    // 左：名稱
     const left = el('div', ['flex', 'items-center', 'gap-2', 'min-w-0']);
     left.innerHTML = `<span class="text-xl">${mat.icon}</span><span class="font-bold text-slate-700">${mat.name}</span>`;
-
-    // 右：數值（橫向對齊）
     const right = el('div', ['ml-auto', 'flex', 'items-center', 'gap-6', 'text-sm']);
     if (hasError) {
       right.innerHTML = `<span class="text-red-700 font-semibold">${materialErrors[matId]}</span>`;
@@ -333,10 +296,8 @@ export function renderResults(containers, payload, missingFiles = []) {
         <span class="text-slate-700">總共需要: <strong>${fmt(need)}</strong></span>
         <span class="text-slate-700">還缺少: ${
           lack > 0 ? `<strong class="text-red-700">-${fmt(lack)}</strong>` : '<strong class="text-emerald-700">0（充足）</strong>'
-        }</span>
-      `;
+        }</span>`;
     }
-
     row.append(left, right);
     list.appendChild(row);
   });
@@ -348,18 +309,33 @@ export function renderResults(containers, payload, missingFiles = []) {
   }
 }
 
-
-/** 更新「預計升級時間」顯示 */
+/** 時間與經驗需求更新 */
 export function renderLevelupTimeText(minutesNeeded, levelupTs) {
   const disp = document.getElementById('bed-levelup-time');
   if (!disp) return;
   if (!Number.isFinite(levelupTs)) { disp.textContent = '預計升級時間: --'; return; }
   if (minutesNeeded <= 0) { disp.textContent = '預計升級時間: 可立即升級'; return; }
+  const timeStr = new Date(levelupTs).toLocaleString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+  disp.textContent = `預計升級時間: ${fmt(minutesNeeded)} 分鐘（約 ${timeStr}）`;
+}
 
-  const timeStr = new Date(levelupTs).toLocaleString('zh-TW', {
-    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
-  });
-  disp.textContent = `預計升級時間: ${timeStr}（約 ${fmt(minutesNeeded)} 分鐘）`;
+export function renderTargetEtaText(minutesNeeded, etaTs) {
+  const etaEl = document.getElementById('bed-target-eta');
+  if (!etaEl) return;
+  if (!Number.isFinite(etaTs)) { etaEl.textContent = '預計到達目標等級時間: --'; return; }
+  if (minutesNeeded <= 0) { etaEl.textContent = '預計到達目標等級時間: 可立即達成'; return; }
+  const timeStr = new Date(etaTs).toLocaleString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+  etaEl.textContent = `預計到達目標等級時間: ${fmt(minutesNeeded)} 分鐘（約 ${timeStr}）`;
+}
 
+export function renderLevelupExpText(expNeeded) {
+  const disp = document.getElementById('bed-levelup-exp');
+  if (!disp) return;
+  disp.textContent = Number.isFinite(expNeeded) ? `升至下一級所需經驗: ${fmt(expNeeded)}` : '升至下一級所需經驗: --';
+}
 
+export function renderTargetExpText(needExp) {
+  const disp = document.getElementById('bed-target-exp');
+  if (!disp) return;
+  disp.textContent = Number.isFinite(needExp) ? `升至目標等級所需經驗: ${fmt(needExp)}` : '升至目標等級所需經驗: --';
 }
