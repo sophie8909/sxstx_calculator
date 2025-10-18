@@ -116,24 +116,92 @@ export const state = {
   missingFiles: [],       // 載入失敗清單
   notificationTimerId: null,
 };
+// --- 放在 model.js ---
+// 小工具：正規化 key（去掉 BOM、trim）
+const normalizeKey = (k) => k ? k.replace(/^\uFEFF/, '').trim() : k;
 
-/** 讀取 CSV 並解析為物件陣列（第一列為標頭） */
+// 強韌版 CSV 解析：處理 BOM、CR/LF、千分位、空值
 export async function fetchAndParseCsv(url) {
-  const res = await fetch(url);
+  const res = await fetch(url, { cache: 'no-store' }); // 免快取，避免 GH Pages 舊檔
   if (!res.ok) throw new Error(`無法載入 CSV: ${url}`);
+
   const text = await res.text();
-  const lines = text.trim().split('\n');
-  const headers = lines[0].split(',').map(h => h.trim());
-  return lines.slice(1).map(line => {
+
+  // 統一成 LF，避免 \r 影響 split
+  const lines = text.replace(/\r\n?/g, '\n').trim().split('\n');
+  if (lines.length === 0) return [];
+
+  // 標頭去掉 BOM
+  const rawHeaders = lines[0].split(',').map(h => normalizeKey(h));
+  const headers = rawHeaders.map(h => h.toLowerCase()); // 全轉小寫，之後一致用小寫
+
+  const rows = lines.slice(1).map(line => {
     const values = line.split(',').map(v => v.trim());
     const obj = {};
     headers.forEach((h, i) => {
-      const num = parseFloat(values[i]);
-      obj[h] = isNaN(num) ? 0 : num;
+      const raw = (values[i] ?? '').trim();
+      // 去掉千分位逗號後再轉數字；空字串給 0；轉不動就保留字串
+      const num = Number(raw.replace(/,/g, ''));
+      obj[h] = Number.isFinite(num) ? num : (raw === '' ? 0 : raw);
     });
     return obj;
   });
+
+  return rows;
 }
+
+// 將成本資料轉為「累積表」—— 同時容錯任何大小寫 / BOM 的欄位名
+export function preprocessCostData() {
+  const src = state.gameData;
+  const out = {};
+  const tables = {
+    character: src.characterUpgradeCosts,
+    equipment: src.equipmentUpgradeCosts,
+    skill:     src.skillUpgradeCosts,
+    relic:     src.relicUpgradeCosts,
+    pet:       src.petUpgradeCosts,
+  };
+
+  for (const type in tables) {
+    const source = tables[type];
+    out[type] = [];
+    if (!source || source.length === 0) continue;
+
+    // 取出所有以 cost_ 開頭的欄位（忽略大小寫、BOM）
+    const firstRow = source[0];
+    const costKeys = Object.keys(firstRow)
+      .map(k => normalizeKey(k))
+      .filter(k => /^cost_/.test(k.toLowerCase()));
+
+    // 累積器
+    const cumulative = {};
+    costKeys.forEach(k => { cumulative[k] = 0; });
+
+    for (let i = 0; i < source.length; i++) {
+      const rawRow = source[i];
+      // 正規化 row：key 全去 BOM + toLowerCase
+      const row = {};
+      Object.keys(rawRow).forEach(k => {
+        const nk = normalizeKey(k).toLowerCase();
+        row[nk] = rawRow[k];
+      });
+
+      // level 也可能帶 BOM 或大小寫不同
+      const level = Number(row['level'] ?? row['等級'] ?? row['lvl'] ?? 0);
+
+      costKeys.forEach(k => {
+        const key = k.toLowerCase();
+        const v = Number(row[key] ?? 0);
+        cumulative[key] = (cumulative[key] || 0) + (Number.isFinite(v) ? v : 0);
+      });
+
+      out[type].push({ level, ...cumulative });
+    }
+  }
+
+  state.cumulativeCostData = out;
+}
+
 
 /** 載入指定賽季的資料（CSV 缺檔則套用 MOCK） */
 export async function loadDataForSeason(seasonId) {
@@ -151,34 +219,6 @@ export async function loadDataForSeason(seasonId) {
     }
   }
   state.gameData = loaded;
-}
-
-/** 將成本資料轉為「累積表」 */
-export function preprocessCostData() {
-  const src = state.gameData;
-  const out = {};
-  const tables = {
-    character: src.characterUpgradeCosts,
-    equipment: src.equipmentUpgradeCosts,
-    skill: src.skillUpgradeCosts,
-    relic: src.relicUpgradeCosts,
-    pet: src.petUpgradeCosts,
-  };
-
-  for (const type in tables) {
-    const source = tables[type];
-    out[type] = [];
-    let cumulative = {};
-    if (source && source.length > 0) {
-      Object.keys(source[0]).forEach(k => { if (k.startsWith('cost_')) cumulative[k] = 0; });
-    }
-    for (let i = 0; i < (source?.length || 0); i++) {
-      const row = source[i];
-      Object.keys(cumulative).forEach(k => cumulative[k] += (row[k] || 0));
-      out[type].push({ level: row.level, ...cumulative });
-    }
-  }
-  state.cumulativeCostData = out;
 }
 
 /** 取得指定等級的累積成本（若不存在取最近低等級） */
