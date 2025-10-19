@@ -286,25 +286,46 @@ export function convertPrimordialStar_S1(score) {
   return Math.floor(score / 100 + 10);
 }
 
-/** TODO:計算「最低可達角色等級」
- *  定義（你指定的模型）：
- *   - cum(k) = 抵達 k 級所需的累積經驗
- *   - 目前在 L 級 → 已累積為 cum(L-1)
+/**
+ * 計算「最低可達角色等級」
+ *
+ * 定義：
+ *   - cum(k-1) : 抵達 k 級所需的『累積』經驗。
+ *   - 當前等級 L ：玩家已經累積到 cum(L-1)（即剛達成 L 級的門檻）。
+ *   - ownedExp：目前持有、尚未用掉的經驗資源（包含手動輸入與床持續累加）。
+ *   - bedExpHourly：床每小時產出的經驗速率。
+ *   - targetTimeStr：目標時間（datetime-local 字串），若無則視為 0 小時。
+ *
  */
 export function computeReachableCharacterLevel(curLv, ownedExp, bedExpHourly, targetTimeStr) {
   const table = state.cumulativeCostData['character'];
   if (!table || !Number.isFinite(curLv)) return curLv;
 
+  // 1) 目標時間 → 小時差（負值視為 0）
   const hours = targetTimeStr
     ? Math.max(0, (new Date(targetTimeStr).getTime() - Date.now()) / 36e5)
     : 0;
 
-  const baseCum = (getCumulative(table, curLv - 1).cost_exp || 0); // cum(L-1)
-  const totalExp = baseCum + (Number(ownedExp) || 0) + (Number(bedExpHourly) || 0) * hours;
+  // 2) 目前已達成的累積經驗：cum(L)
+  const baseCum = (getCumulative(table, curLv-1)?.cost_exp || 0);
 
+  // 3) 可用經驗（持有 + 床產），負值一律當 0 避免汙染
+  const available =
+    Math.max(0, Number(ownedExp) || 0) +
+    Math.max(0, Number(bedExpHourly) || 0) * hours;
+
+  // 4) 總可支配的『累積』經驗值
+  const totalExp = baseCum + available;
+
+  // 5) 找出 cost_exp <= totalExp 的最大等級
   const idx = table.findLastIndex(d => (d.cost_exp || 0) <= totalExp);
-  return idx !== -1 ? table[idx].level : curLv;
+  const reachable = (idx !== -1 ? table[idx].level : curLv);
+
+  // 6) 不倒退，且不超過表中最大等級
+  const maxLevelInTable = table[table.length - 1]?.level ?? curLv;
+  return Math.min(Math.max(reachable, curLv), maxLevelInTable);
 }
+
 
 /** 主計算：需求 / 時產收益 / 缺口（渲染用 payload） */
 export function computeAll(containers) {
