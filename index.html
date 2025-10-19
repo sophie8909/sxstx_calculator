@@ -35,25 +35,41 @@
     </div>
     <!-- ===== 目標時間 / 現在時間 ===== -->
     <div class="card rounded-lg p-4 shadow-lg mb-6 w-full">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
-        <!-- 左：目標時間（固定選項 + 自訂） -->
+      <!-- 外層兩欄，滿版 -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- 左：目標時間 -->
         <div>
           <h3 class="text-lg font-semibold mb-2">目標時間</h3>
-          <select id="target-time-preset" class="input-field rounded p-2"></select>
-          <div id="custom-time-wrap" class="hidden">
-            <input type="datetime-local" id="target-time-custom" class="input-field rounded p-2" />
-          </div>
 
+          <!-- 橫向滿版：select 固定寬，右側 flex-1 -->
+          <div class="flex flex-col lg:flex-row lg:items-center gap-3 w-full">
+            <!-- 下拉：固定寬 -->
+            <select id="target-time-preset" class="input-field rounded p-2 w-[180px]"></select>
+
+            <!-- 唯讀時間條：吃滿剩餘寬度 -->
+            <div id="target-time-display"
+                class="flex-1 text-center bg-gray-900/50 p-2 rounded h-[42px] flex items-center justify-center text-[#e2e8f0]">
+              --
+            </div>
+
+            <!-- 自訂輸入：與上面時間條同高同寬（預設隱藏） -->
+            <input type="datetime-local" id="target-time-custom"
+                  class="input-field rounded p-2 h-[42px] flex-1 hidden" />
+
+            <!-- 實際運算值 -->
+            <input type="hidden" id="target-time" />
+          </div>
         </div>
 
-        <!-- 右：現在時間顯示 -->
+        <!-- 右：現在時間（滿版） -->
         <div>
           <h3 class="text-lg font-semibold mb-2">現在時間</h3>
           <div id="current-time-display"
-              class="text-center bg-gray-900/50 p-2 rounded h-[42px] flex items-center justify-center min-w-[210px] text-[#e2e8f0]">
+              class="text-center bg-gray-900/50 p-2 rounded h-[42px] flex items-center justify-center text-[#e2e8f0] w-full">
           </div>
         </div>
       </div>
+
     </div>
 
 

@@ -2,7 +2,7 @@
 // ★ 視圖層：負責渲染 DOM 與小型 UI 更新，不含業務邏輯 ★
 
 import { el, fmt } from './utils.js';
-import { categories, targetLevelConfig, materials, productionSources } from './model.js';
+import { categories, targetLevelConfig, materials, productionSources, STORAGE_KEY  } from './model.js';
 
 /** 一次取得頁面需要用到的容器節點 */
 export function getContainers() {
@@ -40,6 +40,81 @@ export function createInputGroup(id, labelText, placeholder, isSub = false, extr
   wrap.append(label, input);
   if (extraHtml) { const extra = el('div'); extra.innerHTML = extraHtml; wrap.appendChild(extra); }
   return wrap;
+}
+
+
+export function initTargetTimeControls() {
+  const presetSel   = document.getElementById('target-time-preset');
+  const displayBox  = document.getElementById('target-time-display');
+  const customInput = document.getElementById('target-time-custom');
+  let hidden        = document.getElementById('target-time');
+  if (!presetSel || !displayBox || !customInput) return;
+  if (!hidden) { hidden = document.createElement('input'); hidden.type='hidden'; hidden.id='target-time'; customInput.after(hidden); }
+
+  // 填入選項（若尚未填）
+  if (!presetSel.options.length) {
+    presetSel.innerHTML = `
+      <option value="">即時（不指定）</option>
+      <option value="s1_end">S1 結束</option>
+      <option value="s2_open">S2 開啟</option>
+      <option value="custom">自訂時間</option>
+    `;
+  }
+
+  // 預設映射（+08:00，避免 GitHub Pages/瀏覽器時區差）
+  const PRESET_MAP = {
+    '':       '', // 即時
+    s1_end:  '2025-10-13T07:59:59+08:00',
+    s2_open: '2025-11-10T07:59:59+08:00',
+  };
+
+  const fmt = (ts) => {
+    if (!ts) return '--';
+    const d = new Date(ts);
+    // 與 #current-time-display 一致的格式
+    return d.toLocaleString('sv-SE', {
+      year:'numeric', month:'2-digit', day:'2-digit',
+      hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false
+    });
+  };
+
+  const apply = () => {
+    const v = presetSel.value;
+    if (v === 'custom') {
+      // 顯示可輸入，隱藏灰條
+      customInput.classList.remove('hidden');
+      displayBox.classList.add('hidden');
+
+      // 把自訂值寫進 hidden（空值就空字串）
+      hidden.value = customInput.value || '';
+    } else {
+      // 顯示灰條，隱藏輸入
+      customInput.classList.add('hidden');
+      displayBox.classList.remove('hidden');
+
+      const ts = PRESET_MAP[v] || '';
+      hidden.value = ts;                 // 給 model 用
+      displayBox.textContent = fmt(ts);  // 顯示唯讀時間
+    }
+
+    // 存到 localStorage
+    const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    data['target-time-preset'] = v;
+    data['target-time-custom'] = customInput.value || '';
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  };
+
+  // 還原儲存
+  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+  presetSel.value = saved['target-time-preset'] ?? '';
+  customInput.value = saved['target-time-custom'] ?? '';
+
+  // 綁定
+  presetSel.addEventListener('change', apply);
+  customInput.addEventListener('input', apply);
+
+  // 初次套用
+  apply();
 }
 
 /** 目標等級（一行六格） */
