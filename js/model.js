@@ -286,7 +286,7 @@ export function convertPrimordialStar_S1(score) {
   return Math.floor(score / 100 + 10);
 }
 
-/** 計算「最低可達角色等級」
+/** TODO:計算「最低可達角色等級」
  *  定義（你指定的模型）：
  *   - cum(k) = 抵達 k 級所需的累積經驗
  *   - 目前在 L 級 → 已累積為 cum(L-1)
@@ -464,20 +464,18 @@ export function computeAll(containers) {
   return { required, gains, deficit, materialErrors: missingDataErrors };
 }
 
-/** 升級時間估算 + 通知排程（下一級）
- *  你指定的定義：在 L 時升級需求 = cum(L) - cum(L-1) - ownedExp
- */
-export function scheduleLevelUpNotification(currentLevel, ownedExp, bedExpHourly) {
-  if (state.notificationTimerId) clearTimeout(state.notificationTimerId);
-  state.notificationTimerId = null;
 
+export function expCalculation(currentLevel, ownedExp, bedExpHourly, targetLevel) {
   const table = state.cumulativeCostData['character'];
   if (!table || !Number.isFinite(currentLevel) || currentLevel >= MAX_LEVEL) {
     return { levelupTs: NaN, minutesNeeded: 0, expNeeded: NaN };
   }
+  if (targetLevel <= currentLevel) {
+    return { minutesNeeded: 0, etaTs: Date.now(), needExp: 0, status: 'reached' };
+  }
 
   const cumPrev = (getCumulative(table, currentLevel - 1).cost_exp || 0);
-  const cumThis = (getCumulative(table, currentLevel).cost_exp || 0);
+  const cumThis = (getCumulative(table, targetLevel - 1).cost_exp || 0);
   const expNeeded = Math.max(0, cumThis - cumPrev - (Number(ownedExp) || 0));
 
   if (expNeeded <= 0) return { levelupTs: Date.now(), minutesNeeded: 0, expNeeded: 0 };
@@ -489,6 +487,18 @@ export function scheduleLevelUpNotification(currentLevel, ownedExp, bedExpHourly
 
   const minutesNeeded = Math.ceil((expNeeded / ratePerHour) * 60);
   const levelupTs = Date.now() + minutesNeeded * 60 * 1000;
+
+  return { levelupTs, minutesNeeded, expNeeded };
+}
+
+
+
+/** 升級時間估算 + 通知排程（下一級）
+ *  你指定的定義：在 L 時升級需求 = cum(L) - cum(L-1) - ownedExp
+ */
+export function scheduleLevelUpNotification(currentLevel, ownedExp, bedExpHourly) {
+
+  const { levelupTs, minutesNeeded, expNeeded } = expCalculation(currentLevel, ownedExp, bedExpHourly, currentLevel + 1);
 
   // 提前 3 分鐘通知
   if ('Notification' in window && Notification.permission === 'granted') {
@@ -522,30 +532,9 @@ export function scheduleLevelUpNotification(currentLevel, ownedExp, bedExpHourly
  *   需求 = cum(T) - (cum(L-1) + ownedExp)
  */
 export function computeEtaToTargetLevel(currentLevel, ownedExp, bedExpHourly, targetLevel) {
-  const table = state.cumulativeCostData['character'];
-  if (!table || !Number.isFinite(targetLevel) || targetLevel <= 0) {
-    return { minutesNeeded: 0, etaTs: NaN, needExp: NaN, status: 'unset' };
-  }
-  if (targetLevel <= currentLevel) {
-    return { minutesNeeded: 0, etaTs: Date.now(), needExp: 0, status: 'reached' };
-  }
-
-  const curCum = (getCumulative(table, currentLevel - 1).cost_exp || 0); // cum(L-1)
-  const tgtCum = (getCumulative(table, targetLevel).cost_exp || 0);      // cum(T)
-  const needExp = Math.max(0, tgtCum - curCum - (Number(ownedExp) || 0));
-
-  if (needExp <= 0) {
-    return { minutesNeeded: 0, etaTs: Date.now(), needExp: 0, status: 'ready' };
-  }
-
-  const ratePerHour = Number(bedExpHourly);
-  if (!Number.isFinite(ratePerHour) || ratePerHour <= 0) {
-    return { minutesNeeded: 0, etaTs: NaN, needExp, status: 'noRate' };
-  }
-
-  const minutesNeeded = Math.ceil((needExp / ratePerHour) * 60);
-  const etaTs = Date.now() + minutesNeeded * 60 * 1000;
-  return { minutesNeeded, etaTs, needExp, status: 'ok' };
+  const { levelupTs, minutesNeeded, expNeeded } =
+    expCalculation(currentLevel, ownedExp, bedExpHourly, targetLevel);
+  return { minutesNeeded, etaTs: levelupTs, needExp: expNeeded, status: 'ok' };
 }
 
 /** LocalStorage 儲存/載入 */
