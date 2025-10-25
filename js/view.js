@@ -344,53 +344,33 @@ export function renderResults(containers, payload, missingFiles = []) {
     root.appendChild(list);
   }
 }
-
-/** 更新「預計升級時間」顯示（下一級） */
+/** 時間與經驗需求更新 */
 export function renderLevelupTimeText(minutesNeeded, levelupTs) {
   const disp = document.getElementById('bed-levelup-time');
   if (!disp) return;
   if (!Number.isFinite(levelupTs)) { disp.textContent = '預計升級時間: --'; return; }
   if (minutesNeeded <= 0) { disp.textContent = '預計升級時間: 可立即升級'; return; }
-  const timeStr = new Date(levelupTs).toLocaleString('zh-TW', {
-    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
-  });
-  disp.textContent = `預計升級時間: ${timeStr}（約 ${fmt(minutesNeeded)} 分鐘）`;
+  const timeStr = new Date(levelupTs).toLocaleString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+  disp.textContent = `預計升級時間: ${fmt(minutesNeeded)} 分鐘（約 ${timeStr}）`;
 }
 
-/** 更新「升至下一級所需經驗」顯示 */
-export function renderLevelupExpText(expNeeded) {
-  const disp = document.getElementById('bed-levelup-exp');
-  if (!disp) return;
-  disp.textContent = Number.isFinite(expNeeded)
-    ? `升至下一級所需經驗: ${fmt(expNeeded)}`
-    : '升至下一級所需經驗: --';
-}
-
-/** 更新「預計到達目標等級時間」顯示 */
 export function renderTargetEtaText(minutesNeeded, etaTs) {
-  const etaEl = document.getElementById('bed-target-eta'); // 避免遮蔽 utils.el
+  const etaEl = document.getElementById('bed-target-eta');
   if (!etaEl) return;
-
-  if (!Number.isFinite(etaTs)) {
-    etaEl.textContent = '預計到達目標等級時間: --';
-    return;
-  }
-  if (minutesNeeded <= 0) {
-    etaEl.textContent = '預計到達目標等級時間: 可立即達成';
-    return;
-  }
-  const timeStr = new Date(etaTs).toLocaleString('zh-TW', {
-    year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit'
-  });
+  if (!Number.isFinite(etaTs)) { etaEl.textContent = '預計到達目標等級時間: --'; return; }
+  if (minutesNeeded <= 0) { etaEl.textContent = '預計到達目標等級時間: 可立即達成'; return; }
+  const timeStr = new Date(etaTs).toLocaleString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
   etaEl.textContent = `預計到達目標等級時間: ${fmt(minutesNeeded)} 分鐘（約 ${timeStr}）`;
 }
 
-/** 更新「升至目標等級所需經驗」顯示 */
+export function renderLevelupExpText(expNeeded) {
+  const disp = document.getElementById('bed-levelup-exp');
+  if (!disp) return;
+  disp.textContent = Number.isFinite(expNeeded) ? `升至下一級所需經驗: ${fmt(expNeeded)}` : '升至下一級所需經驗: --';
+}
+
 export function renderTargetExpText(needExp) {
   const disp = document.getElementById('bed-target-exp');
   if (!disp) return;
-  disp.textContent = Number.isFinite(needExp)
-    ? `升至目標等級所需經驗: ${fmt(needExp)}`
-    : '升至目標等級所需經驗: --';
+  disp.textContent = Number.isFinite(needExp) ? `升至目標等級所需經驗: ${fmt(needExp)}` : '升至目標等級所需經驗: --';
 }

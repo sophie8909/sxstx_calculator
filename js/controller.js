@@ -4,8 +4,7 @@
 import {
   state, STORAGE_KEY, loadDataForSeason, preprocessCostData,
   saveAllInputs, loadAllInputs, computeAll,
-  scheduleLevelUpNotification, computeEtaToTargetLevel,
-  getCumulative
+  computeEtaToNextLevel, computeEtaToTargetLevel, getCumulative
 } from './model.js';
 
 import {
@@ -23,23 +22,14 @@ function bindGlobalHandlers(containers) {
     triggerRecalculate(containers);
   });
 
-  // 啟用通知
-  const notifBtn = document.getElementById('enable-notifications-btn');
-  if ('Notification' in window) {
-    notifBtn.addEventListener('click', () => {
-      Notification.requestPermission().then(p => {
-        if (p === 'granted') {
-          notifBtn.textContent = '通知已啟用';
-          notifBtn.disabled = true;
-          new Notification('通知已啟用', { body: '角色升級前 3 分鐘將提醒您！' });
-        } else {
-          notifBtn.textContent = '通知被拒絕'; notifBtn.disabled = true;
-        }
-      });
-    });
-  } else {
-    notifBtn.textContent = '瀏覽器不支援通知'; notifBtn.disabled = true;
-  }
+   const enableBtn = document.getElementById('enable-notifications-next-btn');
+  enableBtn?.addEventListener('click', () => enableLevelUpNotifications());
+
+  const enableTargetBtn = document.getElementById('enable-notifications-target-btn');
+  enableTargetBtn?.addEventListener('click', () => (enableTargetLevelNotifications()));
+
+  const disableBtn = document.getElementById('disable-notifications-btn');
+  disableBtn?.addEventListener('click', () => disableLevelUpNotifications());
 
   // 清除本地資料
   const clearBtn = document.getElementById('clear-data-btn');
@@ -73,7 +63,9 @@ function triggerRecalculate(containers) {
 
   // 推播估算（下一級）
   const ownedExp = parseInt(ownedExpInput?.value) || 0;
-  const { levelupTs, minutesNeeded } = scheduleLevelUpNotification(curLv, ownedExp, bedHourly);
+
+  const { levelupTs, minutesNeeded } = computeEtaToNextLevel(curLv, ownedExp, bedHourly);
+  console.log(levelupTs, minutesNeeded);
   renderLevelupTimeText(minutesNeeded, levelupTs);
 
   // 到達目標角色等級 ETA
@@ -129,8 +121,7 @@ function setupAutoUpdate(containers) {
 
     const ownedExp = parseInt(ownedExpInput.value) || 0;
 
-    // 即時更新時間與需求
-    const { levelupTs, minutesNeeded } = scheduleLevelUpNotification(curLv, ownedExp, bedHourly);
+    const { levelupTs, minutesNeeded } = computeEtaToNextLevel(curLv, ownedExp, bedHourly);
     renderLevelupTimeText(minutesNeeded, levelupTs);
 
     const { minutesNeeded: m2, etaTs } = computeEtaToTargetLevel(curLv, ownedExp, bedHourly, targetChar);
@@ -143,7 +134,7 @@ function setupAutoUpdate(containers) {
 /** 切換賽季 */
 async function handleSeasonChange(containers) {
   const seasonSelector = document.getElementById('season-select');
-  state.seasonId = seasonSelector.value;
+  state.seasonId = seasonSelector?.value || 's2';
 
   containers.results.innerHTML = '<p class="text-gray-500 text-center py-8">正在載入新賽季數據...</p>';
   await loadDataForSeason(state.seasonId);
@@ -161,7 +152,79 @@ async function handleSeasonChange(containers) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
-/** 初始化 */
+async function enableLevelUpNotifications() {
+  const curLv = parseInt(document.getElementById('character-current')?.value) || 0;
+  const ownedWanStr = document.getElementById('owned-exp-wan')?.value?.trim();
+  const ownedWan = ownedWanStr === '' ? NaN : parseFloat(ownedWanStr);
+  const bedHourly = parseFloat(document.getElementById('bed-exp-hourly')?.value) || 0;
+  const ownedExpInput = document.getElementById('owned-exp');
+  const targetLevelInput = document.getElementById('target-level');
+  const targetLevel = parseInt(targetLevelInput?.value) || curLv;
+  
+  // 通知時間設定
+  const notifyTimeSelect = document.getElementById('notify-time-select');
+  let notifyTime = 0;
+  if (notifyTimeSelect.value == 'min0') {
+    notifyTime = 0;
+  } else if (notifyTimeSelect.value == 'min1') {
+    notifyTime = 1;
+  } else if (notifyTimeSelect.value == 'min2') {
+    notifyTime = 2;
+  } else if (notifyTimeSelect.value == 'min3') {
+    notifyTime = 3;
+  } else if (notifyTimeSelect.value == 'min5') {
+    notifyTime = 5;
+  }
+  if (ownedExpInput && isNaN(ownedWan)) return;
+  const ownedExp = parseInt(ownedExpInput?.value) || 0;
+  import('./model.js').then(({ scheduleLevelUpNotification }) => {
+    scheduleLevelUpNotification(curLv, ownedExp, bedHourly, targetLevel,notifyTime);
+    alert('已啟用升級（下一級）通知');
+  });
+}
+
+
+async function enableTargetLevelNotifications() {
+  const curLv = parseInt(document.getElementById('character-current')?.value) || 0;
+  const ownedWanStr = document.getElementById('owned-exp-wan')?.value?.trim();
+  const ownedWan = ownedWanStr === '' ? NaN : parseFloat(ownedWanStr);
+  const bedHourly = parseFloat(document.getElementById('bed-exp-hourly')?.value) || 0;
+  const ownedExpInput = document.getElementById('owned-exp');
+  const targetLevelInput = document.getElementById('target-level');
+  const targetLevel = parseInt(targetLevelInput?.value) || curLv;
+  
+  // 通知時間設定
+  const notifyTimeSelect = document.getElementById('notify-time-select');
+  let notifyTime = 0;
+  if (notifyTimeSelect.value == 'min0') {
+    notifyTime = 0;
+  } else if (notifyTimeSelect.value == 'min1') {
+    notifyTime = 1;
+  } else if (notifyTimeSelect.value == 'min2') {
+    notifyTime = 2;
+  } else if (notifyTimeSelect.value == 'min3') {
+    notifyTime = 3;
+  } else if (notifyTimeSelect.value == 'min5') {
+    notifyTime = 5;
+  }
+  if (ownedExpInput && isNaN(ownedWan)) return;
+  const ownedExp = parseInt(ownedExpInput?.value) || 0;
+  import('./model.js').then(({ scheduleTargetLevelNotification }) => {
+    scheduleTargetLevelNotification(curLv, ownedExp, bedHourly, targetLevel,notifyTime);
+    alert('已啟用升級（目標級）通知');
+  });
+}
+
+async function disableLevelUpNotifications() {
+  import('./model.js').then(({ clearLevelUpNotification }) => {
+    clearLevelUpNotification();
+    alert('已清除升級通知');
+  });
+}
+
+/* -----------------------------
+ * 初始化
+ * ---------------------------*/
 async function init() {
   const containers = getContainers();
   renderAll(containers);
@@ -169,7 +232,8 @@ async function init() {
 
   const saved = JSON.parse(localStorage.getItem('sxstxCalculatorData') || '{}');
   const seasonSelector = document.getElementById('season-select');
-  seasonSelector.value = saved['season-select'] || 's1';
+  if (seasonSelector) seasonSelector.value = saved['season-select'] || 's2';
+
 
   await handleSeasonChange(containers);
   seasonSelector.addEventListener('change', () => handleSeasonChange(containers));
