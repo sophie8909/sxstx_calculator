@@ -2,7 +2,7 @@
 // ★ 視圖層：負責渲染 DOM 與小型 UI 更新，不含業務邏輯 ★
 
 import { el, fmt } from './utils.js';
-import { categories, targetLevelConfig, materials, productionSources, STORAGE_KEY  } from './model.js';
+import { categories, seasonOptions, targetLevelConfig, materials, productionSources, STORAGE_KEY  } from './model.js';
 
 /** 一次取得頁面需要用到的容器節點 */
 export function getContainers() {
@@ -21,6 +21,7 @@ export function getContainers() {
     results: document.getElementById('results'),
 
     // 上方
+    primordialStarCumulative: document.getElementById('primordial-star-cumulative'),
     targetLevels: document.getElementById('target-levels'),
     relicDistributionInputs: document.getElementById('relic-distribution-inputs'),
     currentTimeDisplay: document.getElementById('current-time-display'),
@@ -115,6 +116,30 @@ export function initTargetTimeControls() {
 
   // 初次套用
   apply();
+}
+
+
+/** 原初之星（累計） 
+ * 輸入過去賽季的原初之星數量，JS 會自動計算出累計總數並渲染輸入框
+*/
+export function renderPrimordialStarCumulative(container) {
+  container.className = 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-4';
+  container.innerHTML = '';
+  seasonOptions.forEach(season => {
+    const isReadOnly = season.readonly === true;
+    const group = createInputGroup(`primordial-star-${season.id}`, `${season.name} 原初之星`, isReadOnly ? '自動計算' : '數量', false);
+    const label = group.querySelector('label');
+    label.classList.add('whitespace-nowrap');
+    if (isReadOnly) {
+      const input = group.querySelector('input');
+      input.setAttribute('disabled', 'disabled');
+      input.setAttribute('aria-readonly', 'true');
+      label.insertAdjacentHTML('beforeend',
+        `<span class="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 align-middle">自動</span>`
+      );
+    }
+    container.appendChild(group);
+  });
 }
 
 /** 目標等級（一行六格） */
@@ -293,9 +318,10 @@ export function renderCharBed(container) {
   container.appendChild(infoBox);
 }
 
-/** 主渲染（⚠️ 務必注意這個大括號，上一版少了它） */
+/** 主渲染 */
 export function renderAll(containers) {
   Object.values(containers).forEach(c => { if (c) c.innerHTML = ''; });
+  if (containers.primordialStarCumulative) renderPrimordialStarCumulative(containers.primordialStarCumulative);
   if (containers.targetLevels) renderTargetLevels(containers.targetLevels);
   if (containers.relicDistributionInputs) renderRelicDistribution(containers.relicDistributionInputs);
   if (containers.equipInputs) renderEquipInputs(containers.equipInputs);
@@ -304,7 +330,7 @@ export function renderAll(containers) {
   if (containers.petInputs) renderPetInputs(containers.petInputs);
   if (containers.productionInputs) renderProduction(containers.productionInputs);
   if (containers.ownedMaterials) renderMaterials(containers.ownedMaterials);
-} // ←←← 這個就是缺少的大括號
+}
 
 /** 現在時間 */
 export function updateCurrentTime(container) {

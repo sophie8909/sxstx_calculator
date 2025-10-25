@@ -29,6 +29,13 @@ export const categories = [
   { id: 'pet4', name: '幻獸四', group: '幻獸等級' },
 ];
 
+
+export const seasonOptions = [
+  { id: 's1', name: 'S1 澤之國', readonly: false },
+  { id: 's2', name: 'S2 龍之國', readonly: false },
+  { id: 'total', name: '總計', readonly: true },
+];
+
 /** 頂部目標等級群 */
 export const targetLevelConfig = [
   { id: 'character', name: '角色等級' },
@@ -370,7 +377,7 @@ export function computeAll(containers) {
   const reachableEl = document.getElementById('target-char-reachable-level');
   if (reachableEl) reachableEl.textContent = `最低可達: ${reachable > 0 ? reachable : '--'}`;
 
-  // 原初之星（自動）
+  // 本季可得原初之星（自動）
   const seasonId = state.seasonId;
   let score = 0;
   if (seasonId === 's1') score = calculateSeasonScore_S1(targets);
@@ -380,6 +387,27 @@ export function computeAll(containers) {
   else if (seasonId === 's2') ps = convertPrimordialStar_S2(score);
   const psInput = document.getElementById('target-primordial_star');
   if (psInput) psInput.value = ps;
+
+  // 帶入本季原初之星
+  const thisSeasonPs = ps;
+  seasonOptions.forEach(season => {
+    if (season.id === seasonId) {
+      const el = document.getElementById(`primordial-star-${season.id}`);
+      if (el) el.value = thisSeasonPs;
+    }
+  });
+
+  // 累計原初之星（手動輸入各賽季）
+  let totalPs = 0; 
+  seasonOptions.forEach(season => {
+    if (season.id == 'total') return;
+    const v = parseInt(document.getElementById(`primordial-star-${season.id}`)?.value) || 0;
+    totalPs += v;
+    console.log('season', season.id, 'v', v);
+  });
+  const totalPsEl = document.getElementById('primordial-star-total');
+  if (totalPsEl) totalPsEl.value = totalPs;
+
 
   // 遺物成本（需 20 件）
   const targetRelicRes = targets.relic_resonance || 0;
