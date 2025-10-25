@@ -101,6 +101,30 @@
         <div class="overflow-y-auto custom-scrollbar p-4 min-h-0">
           <div id="char-bed-inputs" class="space-y-3"></div>
         </div>
+        <div class="flex flex-wrap items-center justify-center gap-4 mb-3">
+          <label for="notify-time-select" class="font-semibold">升級通知提前時間:</label>
+          <select id="notify-time-select" class="input-field rounded p-2">
+            <option value="min0">升級時</option>
+            <option value="min1">1 分鐘</option>
+            <option value="min2">2 分鐘</option>
+            <option value="min3" selected>3 分鐘</option>
+            <option value="min5">5 分鐘</option>
+          </select>
+        </div>
+        <div class="flex flex-wrap items-center justify-center gap-4 mb-3">
+          <button id="enable-notifications-next-btn"
+            class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg text-xs">
+            啟用升級通知
+          </button>
+          <!-- <button id="enable-notifications-target-btn"
+            class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg text-xs">
+            啟用升目標級通知
+          </button> -->
+          <button id="disable-notifications-btn"
+            class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg text-xs">
+            清除升級通知
+          </button>
+        </div>
       </div>
         
 
@@ -178,10 +202,6 @@
       <div class="max-w-7xl mx-auto px-4
                   flex flex-col items-center justify-center text-center text-gray-500 text-sm">
         <div class="flex flex-wrap items-center justify-center gap-4 mb-3">
-          <button id="enable-notifications-btn"
-            class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg text-xs">
-            啟用升級通知
-          </button>
           <button id="clear-data-btn"
             class="bg-red-800 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg text-xs">
             清除本地紀錄

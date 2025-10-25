@@ -4,7 +4,7 @@
 import {
   state, STORAGE_KEY, loadDataForSeason, preprocessCostData,
   saveAllInputs, loadAllInputs, computeAll,
-  scheduleLevelUpNotification, computeEtaToTargetLevel, getCumulative
+  computeEtaToNextLevel, computeEtaToTargetLevel, getCumulative
 } from './model.js';
 
 import {
@@ -47,7 +47,8 @@ function triggerRecalculate(containers) {
   if (ownedExpInput) ownedExpInput.value = isNaN(ownedWan) ? '' : Math.floor(ownedWan * 10000);
   const ownedExp = parseInt(ownedExpInput?.value) || 0;
 
-  const { levelupTs, minutesNeeded } = scheduleLevelUpNotification(curLv, ownedExp, bedHourly);
+  const { levelupTs, minutesNeeded } = computeEtaToNextLevel(curLv, ownedExp, bedHourly);
+  console.log(levelupTs, minutesNeeded);
   renderLevelupTimeText(minutesNeeded, levelupTs);
 
   const targetChar = parseInt(document.getElementById('target-character')?.value) || 0;
@@ -97,7 +98,7 @@ function setupAutoUpdate(containers) {
     ownedExpInput.value = Math.floor(newExp);
     const ownedExp = parseInt(ownedExpInput.value) || 0;
 
-    const { levelupTs, minutesNeeded } = scheduleLevelUpNotification(curLv, ownedExp, bedHourly);
+    const { levelupTs, minutesNeeded } = computeEtaToNextLevel(curLv, ownedExp, bedHourly);
     renderLevelupTimeText(minutesNeeded, levelupTs);
 
     const { minutesNeeded: m2, etaTs } = computeEtaToTargetLevel(curLv, ownedExp, bedHourly, targetChar);
@@ -258,7 +259,7 @@ function bindGlobalHandlers(containers) {
  * ---------------------------*/
 async function handleSeasonChange(containers) {
   const seasonSelector = document.getElementById('season-select');
-  state.seasonId = seasonSelector?.value || 's1';
+  state.seasonId = seasonSelector?.value || 's2';
 
   containers.results.innerHTML =
     '<p class="text-gray-500 text-center py-8">正在載入新賽季數據...</p>';
@@ -279,6 +280,76 @@ async function handleSeasonChange(containers) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
+async function enableLevelUpNotifications() {
+  const curLv = parseInt(document.getElementById('character-current')?.value) || 0;
+  const ownedWanStr = document.getElementById('owned-exp-wan')?.value?.trim();
+  const ownedWan = ownedWanStr === '' ? NaN : parseFloat(ownedWanStr);
+  const bedHourly = parseFloat(document.getElementById('bed-exp-hourly')?.value) || 0;
+  const ownedExpInput = document.getElementById('owned-exp');
+  const targetLevelInput = document.getElementById('target-level');
+  const targetLevel = parseInt(targetLevelInput?.value) || curLv;
+  
+  // 通知時間設定
+  const notifyTimeSelect = document.getElementById('notify-time-select');
+  let notifyTime = 0;
+  if (notifyTimeSelect.value == 'min0') {
+    notifyTime = 0;
+  } else if (notifyTimeSelect.value == 'min1') {
+    notifyTime = 1;
+  } else if (notifyTimeSelect.value == 'min2') {
+    notifyTime = 2;
+  } else if (notifyTimeSelect.value == 'min3') {
+    notifyTime = 3;
+  } else if (notifyTimeSelect.value == 'min5') {
+    notifyTime = 5;
+  }
+  if (ownedExpInput && isNaN(ownedWan)) return;
+  const ownedExp = parseInt(ownedExpInput?.value) || 0;
+  import('./model.js').then(({ scheduleLevelUpNotification }) => {
+    scheduleLevelUpNotification(curLv, ownedExp, bedHourly, targetLevel,notifyTime);
+    alert('已啟用升級（下一級）通知');
+  });
+}
+
+
+async function enableTargetLevelNotifications() {
+  const curLv = parseInt(document.getElementById('character-current')?.value) || 0;
+  const ownedWanStr = document.getElementById('owned-exp-wan')?.value?.trim();
+  const ownedWan = ownedWanStr === '' ? NaN : parseFloat(ownedWanStr);
+  const bedHourly = parseFloat(document.getElementById('bed-exp-hourly')?.value) || 0;
+  const ownedExpInput = document.getElementById('owned-exp');
+  const targetLevelInput = document.getElementById('target-level');
+  const targetLevel = parseInt(targetLevelInput?.value) || curLv;
+  
+  // 通知時間設定
+  const notifyTimeSelect = document.getElementById('notify-time-select');
+  let notifyTime = 0;
+  if (notifyTimeSelect.value == 'min0') {
+    notifyTime = 0;
+  } else if (notifyTimeSelect.value == 'min1') {
+    notifyTime = 1;
+  } else if (notifyTimeSelect.value == 'min2') {
+    notifyTime = 2;
+  } else if (notifyTimeSelect.value == 'min3') {
+    notifyTime = 3;
+  } else if (notifyTimeSelect.value == 'min5') {
+    notifyTime = 5;
+  }
+  if (ownedExpInput && isNaN(ownedWan)) return;
+  const ownedExp = parseInt(ownedExpInput?.value) || 0;
+  import('./model.js').then(({ scheduleTargetLevelNotification }) => {
+    scheduleTargetLevelNotification(curLv, ownedExp, bedHourly, targetLevel,notifyTime);
+    alert('已啟用升級（目標級）通知');
+  });
+}
+
+async function disableLevelUpNotifications() {
+  import('./model.js').then(({ clearLevelUpNotification }) => {
+    clearLevelUpNotification();
+    alert('已清除升級通知');
+  });
+}
+
 /* -----------------------------
  * 初始化
  * ---------------------------*/
@@ -289,7 +360,8 @@ async function init() {
 
   const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
   const seasonSelector = document.getElementById('season-select');
-  if (seasonSelector) seasonSelector.value = saved['season-select'] || 's1';
+  if (seasonSelector) seasonSelector.value = saved['season-select'] || 's2';
+
 
   await handleSeasonChange(containers);
   seasonSelector?.addEventListener('change', () => handleSeasonChange(containers));
