@@ -48,7 +48,6 @@ function triggerRecalculate(containers) {
   const ownedExp = parseInt(ownedExpInput?.value) || 0;
 
   const { levelupTs, minutesNeeded } = computeEtaToNextLevel(curLv, ownedExp, bedHourly);
-  console.log(levelupTs, minutesNeeded);
   renderLevelupTimeText(minutesNeeded, levelupTs);
 
   const targetChar = parseInt(document.getElementById('target-character')?.value) || 0;
@@ -245,6 +244,7 @@ function bindGlobalHandlers(containers) {
     }
   }, { passive: true });
 
+
   document.addEventListener('change', (e) => {
     const t = e.target;
     if (t.tagName === 'INPUT' || t.tagName === 'SELECT') {
@@ -362,6 +362,21 @@ async function init() {
   const seasonSelector = document.getElementById('season-select');
   if (seasonSelector) seasonSelector.value = saved['season-select'] || 's2';
 
+  const levelUpNotifyBtn = document.getElementById('enable-levelup-notify-btn');
+  levelUpNotifyBtn?.addEventListener('click', () => enableLevelUpNotifications());
+  // const targetLevelNotifyBtn = document.getElementById('enable-targetlevel-notify-btn');
+  // targetLevelNotifyBtn?.addEventListener('click', () => enableTargetLevelNotifications());
+  const disableNotifyBtn = document.getElementById('disable-notify-btn');
+  disableNotifyBtn?.addEventListener('click', () => disableLevelUpNotifications());
+
+  const clearLocalDataBtn = document.getElementById('clear-local-data-btn');
+  clearLocalDataBtn?.addEventListener('click', () => {
+    if (confirm('確定要清除所有本地儲存的輸入資料嗎？')) {
+      localStorage.removeItem(STORAGE_KEY);
+      alert('本地儲存的輸入資料已清除，頁面將重新載入。');
+      location.reload();
+    }
+  });
 
   await handleSeasonChange(containers);
   seasonSelector?.addEventListener('change', () => handleSeasonChange(containers));

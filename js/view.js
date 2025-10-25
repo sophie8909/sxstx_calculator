@@ -400,18 +400,8 @@ export function renderTargetEtaText(minutesNeeded, etaTs) {
   if (minutesNeeded <= 0) { etaEl.textContent = '預計到達目標等級時間: 可立即達成'; return; }
   const timeStr = new Date(etaTs).toLocaleString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
   etaEl.textContent = `預計到達目標等級時間: ${fmt(minutesNeeded)} 分鐘（約 ${timeStr}）`;
-  const timeStr = new Date(levelupTs).toLocaleString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
-  disp.textContent = `預計升級時間: ${fmt(minutesNeeded)} 分鐘（約 ${timeStr}）`;
 }
 
-export function renderTargetEtaText(minutesNeeded, etaTs) {
-  const etaEl = document.getElementById('bed-target-eta');
-  if (!etaEl) return;
-  if (!Number.isFinite(etaTs)) { etaEl.textContent = '預計到達目標等級時間: --'; return; }
-  if (minutesNeeded <= 0) { etaEl.textContent = '預計到達目標等級時間: 可立即達成'; return; }
-  const timeStr = new Date(etaTs).toLocaleString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
-  etaEl.textContent = `預計到達目標等級時間: ${fmt(minutesNeeded)} 分鐘（約 ${timeStr}）`;
-}
 
 export function renderLevelupExpText(expNeeded) {
   const disp = document.getElementById('bed-levelup-exp');
