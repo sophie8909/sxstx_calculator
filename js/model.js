@@ -269,24 +269,39 @@ export function getCumulative(costTable, level) {
 export function calculateSeasonScore_S1(targets) {
   let score = 0;
   if (targets.character > 100) score += (targets.character - 100) * 100;
-  if (targets.equipment_resonance > 100) score += (targets.equipment_resonance - 100) * 190;
-  if (targets.skill_resonance > 100) score += (targets.skill_resonance - 100) * 104;
-  if (targets.pet_resonance > 100) score += (targets.pet_resonance - 100) * 56;
-  if (targets.relic_resonance > 10) score += (targets.relic_resonance - 10) * 1140;
+  if (targets.equipment_resonance > 100) score += (targets.equipment_resonance - 100) * 38 * 5;
+  if (targets.skill_resonance > 100) score += (targets.skill_resonance - 100) * 14 * 8;
+  if (targets.pet_resonance > 100) score += (targets.pet_resonance - 100) * 14 * 4;
+  if (targets.relic_resonance > 10) score += (targets.relic_resonance - 10) * 57 * 20;
   return score;
 }
 export function calculateSeasonScore_S2(targets) {
   let score = 0;
-  if (targets.character > 100) score += (targets.character - 100) * 120;
-  if (targets.equipment_resonance > 100) score += (targets.equipment_resonance - 100) * 200;
-  if (targets.skill_resonance > 100) score += (targets.skill_resonance - 100) * 110;
-  if (targets.pet_resonance > 100) score += (targets.pet_resonance - 100) * 60;
-  if (targets.relic_resonance > 10) score += (targets.relic_resonance - 10) * 1200;
+  if (targets.character > 130)
+  {
+    score += (targets.character - 130) * 100;
+    // TODO: 超過目前等級的經驗換算 n% 加 n 分
+  }
+  // 裝備每一賽季等級 + 18 分，共 5 件
+  if (targets.equipment_resonance > 130) score += (targets.equipment_resonance - 130) * 18 * 5;
+  // 技能每一賽季等級 + 7 分，共 8 個
+  if (targets.skill_resonance > 130) score += (targets.skill_resonance - 130) * 7 * 8;
+  // 幻獸每一賽季等級 + 8 分，共 4 隻
+  if (targets.pet_resonance > 130) score += (targets.pet_resonance - 130) * 8 * 4;
+  // 遺物每一賽季等級 + 33 分，共 20 件
+  if (targets.relic_resonance > 13) score += (targets.relic_resonance - 13) * 33 * 20;
   return score;
 }
 export function convertPrimordialStar_S1(score) {
   return Math.floor(score / 100 + 10);
 }
+
+// TODO: 基礎分數待確認
+export function convertPrimordialStar_S2(score) {
+  return Math.floor(score / 27 + 45);
+}
+
+
 
 /**
  * 計算「最低可達角色等級」
@@ -360,7 +375,9 @@ export function computeAll(containers) {
   let score = 0;
   if (seasonId === 's1') score = calculateSeasonScore_S1(targets);
   else if (seasonId === 's2') score = calculateSeasonScore_S2(targets);
-  const ps = convertPrimordialStar_S1(score);
+  let ps = 0;
+  if (seasonId === 's1') ps = convertPrimordialStar_S1(score);
+  else if (seasonId === 's2') ps = convertPrimordialStar_S2(score);
   const psInput = document.getElementById('target-primordial_star');
   if (psInput) psInput.value = ps;
 
