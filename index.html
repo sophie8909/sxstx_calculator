@@ -212,17 +212,62 @@
             清除本地紀錄
           </button>
         </div>
-
+        <div class="mb-2">
+          目前本站總瀏覽人次： <span id="site-total">—</span> ｜ 本頁瀏覽人次： <span id="page-views">—</span>。
+        </div>
         <p class="max-w-2xl leading-relaxed">
-          本計算機為非官方工具，僅供玩家參考使用。網頁製作：菲亞。資料來源：羽菟o、夜奈喵、六歲、ななや。
+          本計算機為非官方工具，僅供玩家參考使用。網頁製作：菲亞。資料來源：ななや、六歲、羽菟o、夜奈喵。
+        </p>
+        <p class="mt-2">
+          GitHub Repo：
+          <a href="https://github.com/sophie8909/sxstx_calculator"> 
+            https://github.com/sophie8909/sxstx_calculator
+          </a>
         </p>
       </div>
     </footer>
 
 
   </div>
+  <!-- 🔢 CountAPI：全站 & 單頁（路徑） -->
+  <script>
+    (async () => {
+      // 命名空間：建議與 repo 名一致，避免與他站衝突
+      const NS = 'sxstx_calculator';
+      // 全站總計用固定 key
+      const SITE_KEY = 'site_total';
+      // 單頁：用 pathname 當 key（把非字元轉底線，避免 API 解析問題）
+      const PAGE_KEY = location.pathname.replace(/\W/g, '_') || 'index';
 
+      const siteEl = document.getElementById('site-total');
+      const pageEl = document.getElementById('page-views');
+
+      const hit = async (key) => {
+        const url = `https://api.countapi.xyz/hit/${NS}/${key}`;
+        const r = await fetch(url, { cache: 'no-store' });
+        if (!r.ok) throw new Error('CountAPI error ' + r.status);
+        return r.json();
+      };
+
+      try {
+        // 全站 +1 並顯示
+        const s = await hit(SITE_KEY);
+        siteEl.textContent = Number(s.value || 0).toLocaleString();
+      } catch (e) {
+        console.error(e); siteEl.textContent = '—';
+      }
+
+      try {
+        // 本頁 +1 並顯示
+        const p = await hit(PAGE_KEY);
+        pageEl.textContent = Number(p.value || 0).toLocaleString();
+      } catch (e) {
+        console.error(e); pageEl.textContent = '—';
+      }
+    })();
+  </script>
   <!-- 入口點（控制器） -->
   <script type="module" src="./js/controller.js"></script>
 </body>
+
 </html>
