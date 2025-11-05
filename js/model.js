@@ -404,7 +404,6 @@ export function computeAll(containers) {
     if (season.id == 'total') return;
     const v = parseInt(document.getElementById(`primordial-star-${season.id}`)?.value) || 0;
     totalPs += v;
-    console.log('season', season.id, 'v', v);
   });
   const totalPsEl = document.getElementById('primordial-star-total');
   if (totalPsEl) totalPsEl.value = totalPs;
