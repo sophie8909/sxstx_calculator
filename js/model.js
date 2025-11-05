@@ -139,7 +139,8 @@ export const DATA_FILES_CONFIG = {
 
 /** 內部狀態 */
 export const state = {
-  seasonId: 's1',
+  seasonId: 's2',         // 預設賽季
+  serverName: '淨心護甲', // 預設伺服器
   gameData: {},           // 原始表
   cumulativeCostData: {}, // 累積成本表
   missingFiles: [],       // 載入失敗清單

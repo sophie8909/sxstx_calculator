@@ -22,7 +22,7 @@ const TIME_PRESETS_SHEET = {
   // 例：'https://docs.google.com/spreadsheets/d/e/2PACX-XXXX/pub'   （注意：最後不要帶 ?output=csv）
   base: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRMlpHJpHMNQTCxhYgj2fmvazou_cQpAiVa-w5tg7WR2EJTn4EExoLwojYM3BoS8FSTpxvaKIQdmPQC/pub',
   // 這個 gid 指到「時間選項」那個工作表
-  gid: '1719043006', // ← 換成你的 gid
+  gid: '717680438', // ← 換成你的 gid
 };
 
 // 從 Google 試算表撈「時間選項」的 fallback（讀取失敗用）
@@ -130,12 +130,22 @@ async function fetchTimePresetsFromSheet() {
       const server = cols[serverIdx] || '';
       const desc = cols[descIdx] || '';
       const time = cols[timeIdx] || '';
-      if (!server && !desc) continue;
+      if (!server && !desc && !time) continue;
+
+      // ✅ 統一改成「該日期的早上 8:00」
+      let datePart = time;
+      // 如果包含時區或時間資訊，就只取日期部分
+      if (time.includes('T')) {
+        datePart = time.split('T')[0];
+      }
+      // 台灣時間早上 8:00
+      const isoTime = `${datePart}T08:00:00+08:00`;
 
       out.push({
         key: `${server}_${i}`,
-        label: `${desc}${server ? ` (${server})` : ''}`,
-        iso: time,
+        server_name: server,
+        label: `${desc} (${server})`,
+        iso: isoTime,
       });
     }
     return out;
@@ -144,6 +154,9 @@ async function fetchTimePresetsFromSheet() {
     return TIME_PRESETS_FALLBACK.slice();
   }
 }
+
+
+
 
 /* -----------------------------
  * 目標時間控制（動態選單 from Google）
@@ -170,8 +183,15 @@ async function initTargetTimeControls(containers) {
 
   // 填入 select
   presetSel.innerHTML = '';
+  // 只有 server_name 為選取 server 的選項
+  const selectedServer = state.serverName;
+
   allPresets.forEach(p => {
     const opt = document.createElement('option');
+    if (p.server_name && p.server_name !== selectedServer) {
+      // 跳過非選取伺服器的選項
+      return;
+    }
     opt.value = p.key;
     opt.textContent = p.label;
     presetSel.appendChild(opt);

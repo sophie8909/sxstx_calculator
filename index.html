@@ -32,7 +32,13 @@
         <option value="s2">S2 龍之國</option>
         <option value="s1">S1 澤之國</option>
       </select>
+      <label for="server-select" class="mr-2 font-semibold">伺服器：</label>
+      <!-- 將由 JS 動態填入選項 -->
+      <select id="server-select" class="input-field rounded p-2 w-[180px]">
+        <!-- 動態選項 -->
+      </select>
     </div>
+
     <!-- ===== 目標時間 / 現在時間 ===== -->
     <div class="card rounded-lg p-4 shadow-lg mb-6 w-full">
       <!-- 外層兩欄，滿版 -->
@@ -212,9 +218,9 @@
             清除本地紀錄
           </button>
         </div>
-        <div class="mb-2">
+        <!-- <div class="mb-2">
           目前本站總瀏覽人次： <span id="site-total">—</span> ｜ 本頁瀏覽人次： <span id="page-views">—</span>。
-        </div>
+        </div> -->
         <p class="max-w-2xl leading-relaxed">
           本計算機為非官方工具，僅供玩家參考使用。網頁製作：菲亞。資料來源：ななや、六歲、羽菟o、夜奈喵。
         </p>
@@ -230,7 +236,7 @@
 
   </div>
   <!-- 🔢 CountAPI：全站 & 單頁（路徑） -->
-  <script>
+  <!-- <script>
     (async () => {
       // 命名空間：建議與 repo 名一致，避免與他站衝突
       const NS = 'sxstx_calculator';
@@ -265,7 +271,7 @@
         console.error(e); pageEl.textContent = '—';
       }
     })();
-  </script>
+  </script> -->
   <!-- 入口點（控制器） -->
   <script type="module" src="./js/controller.js"></script>
 </body>
