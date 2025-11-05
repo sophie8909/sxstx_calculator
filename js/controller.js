@@ -13,22 +13,28 @@ import {
 } from './view.js';
 
 /* ============================================================
- *  Google 試算表（Published CSV）設定：時間選項來源
- *  將 base 換成你的公開 CSV base，gid 換成時間選項的工作表 gid。
- *  表頭格式：key,label,iso,season(可省)
+ *  Google 試算表（Published CSV）設定：時間選項 / 伺服器來源
+ *  試算表欄位：server_name, description, time
  * ============================================================ */
 const TIME_PRESETS_SHEET = {
-  // 你的 Published CSV base（不含 gid）
-  // 例：'https://docs.google.com/spreadsheets/d/e/2PACX-XXXX/pub'   （注意：最後不要帶 ?output=csv）
   base: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRMlpHJpHMNQTCxhYgj2fmvazou_cQpAiVa-w5tg7WR2EJTn4EExoLwojYM3BoS8FSTpxvaKIQdmPQC/pub',
-  // 這個 gid 指到「時間選項」那個工作表
-  gid: '717680438', // ← 換成你的 gid
+  gid: '717680438',
 };
 
-// 從 Google 試算表撈「時間選項」的 fallback（讀取失敗用）
+// 讀不到試算表時的備援資料（時間已改成 08:00）
 const TIME_PRESETS_FALLBACK = [
-  { key: 's1_end',  label: 'S1 結束：2025/10/13 07:59:59', iso: '2025-10-13T07:59:59', season: 's1' },
-  { key: 's2_open', label: 'S2 開啟：2025/11/10 07:59:59', iso: '2025-11-10T07:59:59', season: 's2' },
+  {
+    key: 's1_end',
+    server_name: '淨心護甲',
+    label: 'S1 結束（淨心護甲）',
+    iso: '2025-10-13T08:00:00+08:00'
+  },
+  {
+    key: 's2_open',
+    server_name: '淨心護甲',
+    label: 'S2 開啟（淨心護甲）',
+    iso: '2025-11-10T08:00:00+08:00'
+  },
 ];
 
 /* -----------------------------
@@ -44,14 +50,17 @@ function triggerRecalculate(containers) {
   const bedHourly = parseFloat(document.getElementById('bed-exp-hourly')?.value) || 0;
 
   const ownedExpInput = document.getElementById('owned-exp');
-  if (ownedExpInput) ownedExpInput.value = isNaN(ownedWan) ? '' : Math.floor(ownedWan * 10000);
+  if (ownedExpInput) {
+    ownedExpInput.value = isNaN(ownedWan) ? '' : Math.floor(ownedWan * 10000);
+  }
   const ownedExp = parseInt(ownedExpInput?.value) || 0;
 
   const { levelupTs, minutesNeeded } = computeEtaToNextLevel(curLv, ownedExp, bedHourly);
   renderLevelupTimeText(minutesNeeded, levelupTs);
 
   const targetChar = parseInt(document.getElementById('target-character')?.value) || 0;
-  const { minutesNeeded: m2, etaTs } = computeEtaToTargetLevel(curLv, ownedExp, bedHourly, targetChar);
+  const { minutesNeeded: m2, etaTs } =
+    computeEtaToTargetLevel(curLv, ownedExp, bedHourly, targetChar);
   renderTargetEtaText(m2, etaTs);
 
   updateExpRequirements(curLv, ownedExp, targetChar);
@@ -97,19 +106,51 @@ function setupAutoUpdate(containers) {
     ownedExpInput.value = Math.floor(newExp);
     const ownedExp = parseInt(ownedExpInput.value) || 0;
 
-    const { levelupTs, minutesNeeded } = computeEtaToNextLevel(curLv, ownedExp, bedHourly);
+    const { levelupTs, minutesNeeded } =
+      computeEtaToNextLevel(curLv, ownedExp, bedHourly);
     renderLevelupTimeText(minutesNeeded, levelupTs);
 
-    const { minutesNeeded: m2, etaTs } = computeEtaToTargetLevel(curLv, ownedExp, bedHourly, targetChar);
+    const { minutesNeeded: m2, etaTs } =
+      computeEtaToTargetLevel(curLv, ownedExp, bedHourly, targetChar);
     renderTargetEtaText(m2, etaTs);
+
     updateExpRequirements(curLv, ownedExp, targetChar);
   }, 1000);
+}
+
+/* -----------------------------
+ * 從 Google 試算表讀取「伺服器選項」
+ * 表頭：server_name, description, time
+ * 顯示文字：server_name
+ * ---------------------------*/
+async function fetchServerOptionsFromSheet() {
+  const url = `${TIME_PRESETS_SHEET.base}?output=csv&gid=${encodeURIComponent(TIME_PRESETS_SHEET.gid)}`;
+  try {
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
+    const text = await res.text();
+    const lines = text.trim().split('\n');
+    const headers = lines[0].split(',').map(s => s.trim().toLowerCase());
+    const serverIdx = headers.indexOf('server_name');
+
+    const out = new Set();
+    for (let i = 1; i < lines.length; i++) {
+      const cols = lines[i].split(',').map(s => s.trim());
+      const server = cols[serverIdx] || '';
+      if (server) out.add(server);
+    }
+    return Array.from(out);
+  } catch (err) {
+    console.warn('[server options] fetch failed, using fallback', err);
+    return ['淨心護甲'];
+  }
 }
 
 /* -----------------------------
  * 從 Google 試算表讀取「時間選項」
  * 表頭：server_name, description, time
  * 顯示文字：{description} ({server_name})
+ * 時間一律轉成：該日期 08:00（+08:00）
  * ---------------------------*/
 async function fetchTimePresetsFromSheet() {
   const url = `${TIME_PRESETS_SHEET.base}?output=csv&gid=${encodeURIComponent(TIME_PRESETS_SHEET.gid)}`;
@@ -132,19 +173,17 @@ async function fetchTimePresetsFromSheet() {
       const time = cols[timeIdx] || '';
       if (!server && !desc && !time) continue;
 
-      // ✅ 統一改成「該日期的早上 8:00」
+      // 只取日期，然後補成 08:00:00+08:00
       let datePart = time;
-      // 如果包含時區或時間資訊，就只取日期部分
       if (time.includes('T')) {
         datePart = time.split('T')[0];
       }
-      // 台灣時間早上 8:00
       const isoTime = `${datePart}T08:00:00+08:00`;
 
       out.push({
         key: `${server}_${i}`,
         server_name: server,
-        label: `${desc} (${server})`,
+        label: `${desc}${server ? ` (${server})` : ''}`,
         iso: isoTime,
       });
     }
@@ -155,20 +194,48 @@ async function fetchTimePresetsFromSheet() {
   }
 }
 
+/* -----------------------------
+ * 初始化伺服器下拉選單 #server-select
+ * 並把選取結果存到 state.serverName
+ * ---------------------------*/
+async function initServerSelector(containers) {
+  const serverSel = document.getElementById('server-select');
+  if (!serverSel) return;
 
+  const servers = await fetchServerOptionsFromSheet();
+  serverSel.innerHTML = '';
+  servers.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s;
+    opt.textContent = s;
+    serverSel.appendChild(opt);
+  });
 
+  // 恢復之前選過的伺服器
+  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+  const savedServer = saved['server-select'];
+  if (savedServer && [...serverSel.options].some(o => o.value === savedServer)) {
+    serverSel.value = savedServer;
+    state.serverName = savedServer;
+  } else {
+    serverSel.selectedIndex = 0;
+    state.serverName = serverSel.value;
+  }
+
+  serverSel.addEventListener('change', () => {
+    state.serverName = serverSel.value;
+    const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    data['server-select'] = serverSel.value;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+
+    // 換伺服器時重新載入對應的目標時間選項
+    initTargetTimeControls(containers);
+    triggerRecalculate(containers);
+  });
+}
 
 /* -----------------------------
- * 目標時間控制（動態選單 from Google）
- * 使用節點：
- *  - #target-time-preset  (select)
- *  - #target-time-custom  (input[type=datetime-local])：自訂模式顯示
- *  - #target-time-display (div)：預設模式顯示
- *  - #target-time         (input[type=hidden])：進計算
- * 行為：
- *  - 讀 Google → 填入選項（顯示 {description} ({server_name})）
- *  - 選「自訂時間」：若空白先帶入「現在時間」
- *  - 任何變動 → 存檔 + 重算
+ * 目標時間控制
  * ---------------------------*/
 async function initTargetTimeControls(containers) {
   const presetSel = document.getElementById('target-time-preset');
@@ -178,20 +245,14 @@ async function initTargetTimeControls(containers) {
 
   if (!presetSel || !displayBox || !customInput || !hiddenField) return;
 
-  // 讀 Google 時間選項
   const allPresets = await fetchTimePresetsFromSheet();
-
-  // 填入 select
-  presetSel.innerHTML = '';
-  // 只有 server_name 為選取 server 的選項
   const selectedServer = state.serverName;
 
+  // 填入 select：只放「目前伺服器」的選項
+  presetSel.innerHTML = '';
   allPresets.forEach(p => {
+    if (p.server_name && p.server_name !== selectedServer) return;
     const opt = document.createElement('option');
-    if (p.server_name && p.server_name !== selectedServer) {
-      // 跳過非選取伺服器的選項
-      return;
-    }
     opt.value = p.key;
     opt.textContent = p.label;
     presetSel.appendChild(opt);
@@ -219,7 +280,7 @@ async function initTargetTimeControls(containers) {
       customInput.classList.remove('hidden');
       displayBox.classList.add('hidden');
 
-      // 自訂時間若為空 → 自動填入目前時間
+      // 自訂時間若為空 → 先帶入現在時間
       if (!customInput.value) {
         const now = new Date();
         const localISO = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
@@ -235,7 +296,21 @@ async function initTargetTimeControls(containers) {
       const found = allPresets.find(p => p.key === v);
       const ts = found?.iso || '';
       hiddenField.value = ts;
-      displayBox.textContent = ts ? ts.replace('T', ' ') : '--';
+
+      if (ts) {
+        const d = new Date(ts);
+        displayBox.textContent = d.toLocaleString('zh-TW', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false
+        });
+      } else {
+        displayBox.textContent = '--';
+      }
     }
 
     const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
@@ -253,7 +328,7 @@ async function initTargetTimeControls(containers) {
 }
 
 /* -----------------------------
- * 全域事件：任何輸入或選擇變更都觸發重算
+ * 全域事件：任何輸入 / 選擇變更都重算
  * ---------------------------*/
 function bindGlobalHandlers(containers) {
   document.addEventListener('input', (e) => {
@@ -263,7 +338,6 @@ function bindGlobalHandlers(containers) {
       triggerRecalculate(containers);
     }
   }, { passive: true });
-
 
   document.addEventListener('change', (e) => {
     const t = e.target;
@@ -283,13 +357,15 @@ async function handleSeasonChange(containers) {
 
   containers.results.innerHTML =
     '<p class="text-gray-500 text-center py-8">正在載入新賽季數據...</p>';
+
   await loadDataForSeason(state.seasonId);
   preprocessCostData();
 
   renderAll(containers);
   loadAllInputs(['season-select']);
 
-  // ※ 時間選項來自 Google（依賽季過濾）
+  // 先初始化伺服器選單，再依伺服器載入目標時間選項
+  await initServerSelector(containers);
   await initTargetTimeControls(containers);
 
   updateRelicTotal();
@@ -300,66 +376,29 @@ async function handleSeasonChange(containers) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
+/* -----------------------------
+ * 通知相關（保留原本行為）
+ * ---------------------------*/
 async function enableLevelUpNotifications() {
   const curLv = parseInt(document.getElementById('character-current')?.value) || 0;
   const ownedWanStr = document.getElementById('owned-exp-wan')?.value?.trim();
   const ownedWan = ownedWanStr === '' ? NaN : parseFloat(ownedWanStr);
   const bedHourly = parseFloat(document.getElementById('bed-exp-hourly')?.value) || 0;
   const ownedExpInput = document.getElementById('owned-exp');
-  const targetLevelInput = document.getElementById('target-level');
-  const targetLevel = parseInt(targetLevelInput?.value) || curLv;
-  
-  // 通知時間設定
+
   const notifyTimeSelect = document.getElementById('notify-time-select');
   let notifyTime = 0;
-  if (notifyTimeSelect.value == 'min0') {
-    notifyTime = 0;
-  } else if (notifyTimeSelect.value == 'min1') {
-    notifyTime = 1;
-  } else if (notifyTimeSelect.value == 'min2') {
-    notifyTime = 2;
-  } else if (notifyTimeSelect.value == 'min3') {
-    notifyTime = 3;
-  } else if (notifyTimeSelect.value == 'min5') {
-    notifyTime = 5;
-  }
+  if (notifyTimeSelect.value === 'min1') notifyTime = 1;
+  else if (notifyTimeSelect.value === 'min2') notifyTime = 2;
+  else if (notifyTimeSelect.value === 'min3') notifyTime = 3;
+  else if (notifyTimeSelect.value === 'min5') notifyTime = 5;
+
   if (ownedExpInput && isNaN(ownedWan)) return;
   const ownedExp = parseInt(ownedExpInput?.value) || 0;
+
   import('./model.js').then(({ scheduleLevelUpNotification }) => {
-    scheduleLevelUpNotification(curLv, ownedExp, bedHourly, targetLevel,notifyTime);
+    scheduleLevelUpNotification(curLv, ownedExp, bedHourly, curLv + 1, notifyTime);
     alert('已啟用升級（下一級）通知');
-  });
-}
-
-
-async function enableTargetLevelNotifications() {
-  const curLv = parseInt(document.getElementById('character-current')?.value) || 0;
-  const ownedWanStr = document.getElementById('owned-exp-wan')?.value?.trim();
-  const ownedWan = ownedWanStr === '' ? NaN : parseFloat(ownedWanStr);
-  const bedHourly = parseFloat(document.getElementById('bed-exp-hourly')?.value) || 0;
-  const ownedExpInput = document.getElementById('owned-exp');
-  const targetLevelInput = document.getElementById('target-level');
-  const targetLevel = parseInt(targetLevelInput?.value) || curLv;
-  
-  // 通知時間設定
-  const notifyTimeSelect = document.getElementById('notify-time-select');
-  let notifyTime = 0;
-  if (notifyTimeSelect.value == 'min0') {
-    notifyTime = 0;
-  } else if (notifyTimeSelect.value == 'min1') {
-    notifyTime = 1;
-  } else if (notifyTimeSelect.value == 'min2') {
-    notifyTime = 2;
-  } else if (notifyTimeSelect.value == 'min3') {
-    notifyTime = 3;
-  } else if (notifyTimeSelect.value == 'min5') {
-    notifyTime = 5;
-  }
-  if (ownedExpInput && isNaN(ownedWan)) return;
-  const ownedExp = parseInt(ownedExpInput?.value) || 0;
-  import('./model.js').then(({ scheduleTargetLevelNotification }) => {
-    scheduleTargetLevelNotification(curLv, ownedExp, bedHourly, targetLevel,notifyTime);
-    alert('已啟用升級（目標級）通知');
   });
 }
 
@@ -384,8 +423,7 @@ async function init() {
 
   const levelUpNotifyBtn = document.getElementById('enable-levelup-notify-btn');
   levelUpNotifyBtn?.addEventListener('click', () => enableLevelUpNotifications());
-  // const targetLevelNotifyBtn = document.getElementById('enable-targetlevel-notify-btn');
-  // targetLevelNotifyBtn?.addEventListener('click', () => enableTargetLevelNotifications());
+
   const disableNotifyBtn = document.getElementById('disable-notify-btn');
   disableNotifyBtn?.addEventListener('click', () => disableLevelUpNotifications());
 
