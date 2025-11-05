@@ -29,7 +29,6 @@ export const categories = [
   { id: 'pet4', name: '幻獸四', group: '幻獸等級' },
 ];
 
-
 export const seasonOptions = [
   { id: 's1', name: 'S1 澤之國', readonly: false },
   { id: 's2', name: 'S2 龍之國', readonly: false },
@@ -98,22 +97,6 @@ export const MOCK_GAME_DATA = {
 const DATA_BASE = new URL('../data/', import.meta.url);
 const dataUrl = (name) => new URL(name, DATA_BASE).href;
 
-// export const DATA_FILES_CONFIG = {
-//   s1: {
-//     characterUpgradeCosts: dataUrl('character_upgrade_costs_s1.csv'),
-//     equipmentUpgradeCosts: dataUrl('equipment_upgrade_costs_s1.csv'),
-//     skillUpgradeCosts:     dataUrl('skill_upgrade_costs_s1.csv'),
-//     relicUpgradeCosts:     dataUrl('relic_upgrade_costs_s1.csv'),
-//     petUpgradeCosts:       dataUrl('pet_upgrade_costs_s1.csv'),
-//   },
-//   s2: {
-//     characterUpgradeCosts: dataUrl('character_upgrade_costs_s2.csv'),
-//     equipmentUpgradeCosts: dataUrl('equipment_upgrade_costs_s2.csv'),
-//     skillUpgradeCosts:     dataUrl('skill_upgrade_costs_s2.csv'),
-//     relicUpgradeCosts:     dataUrl('relic_upgrade_costs_s2.csv'),
-//     petUpgradeCosts:       dataUrl('pet_upgrade_costs_s2.csv'),
-//   },
-// };
 /** Google 試算表基底連結（固定不動） */
 const GOOGLE_SHEET_BASE =
   'https://docs.google.com/spreadsheets/d/e/2PACX-1vRMlpHJpHMNQTCxhYgj2fmvazou_cQpAiVa-w5tg7WR2EJTn4EExoLwojYM3BoS8FSTpxvaKIQdmPQC/pub';
@@ -136,7 +119,6 @@ export const DATA_FILES_CONFIG = {
   },
 };
 
-
 /** 內部狀態 */
 export const state = {
   seasonId: 's2',         // 預設賽季
@@ -146,8 +128,8 @@ export const state = {
   missingFiles: [],       // 載入失敗清單
   notificationTimerIdLevelUp: null, // 升級通知計時器 ID
   notificationTimerIdTargetLevel: null, // 目標等級通知計時器 ID
-
 };
+
 // --- 放在 model.js ---
 // 小工具：正規化 key（去掉 BOM、trim）
 const normalizeKey = (k) => k ? k.replace(/^\uFEFF/, '').trim() : k;
@@ -156,17 +138,13 @@ const normalizeKey = (k) => k ? k.replace(/^\uFEFF/, '').trim() : k;
 export async function fetchAndParseCsv(url) {
   const res = await fetch(url, { cache: 'no-store' }); // 免快取，避免 GH Pages 舊檔
   if (!res.ok) throw new Error(`無法載入 CSV: ${url}`);
-
   const text = await res.text();
-
   // 統一成 LF，避免 \r 影響 split
   const lines = text.replace(/\r\n?/g, '\n').trim().split('\n');
   if (lines.length === 0) return [];
-
   // 標頭去掉 BOM
   const rawHeaders = lines[0].split(',').map(h => normalizeKey(h));
   const headers = rawHeaders.map(h => h.toLowerCase()); // 全轉小寫，之後一致用小寫
-
   const rows = lines.slice(1).map(line => {
     const values = line.split(',').map(v => v.trim());
     const obj = {};
@@ -178,7 +156,6 @@ export async function fetchAndParseCsv(url) {
     });
     return obj;
   });
-
   return rows;
 }
 
@@ -193,22 +170,18 @@ export function preprocessCostData() {
     relic:     src.relicUpgradeCosts,
     pet:       src.petUpgradeCosts,
   };
-
   for (const type in tables) {
     const source = tables[type];
     out[type] = [];
     if (!source || source.length === 0) continue;
-
     // 取出所有以 cost_ 開頭的欄位（忽略大小寫、BOM）
     const firstRow = source[0];
     const costKeys = Object.keys(firstRow)
       .map(k => normalizeKey(k))
       .filter(k => /^cost_/.test(k.toLowerCase()));
-
     // 累積器
     const cumulative = {};
     costKeys.forEach(k => { cumulative[k] = 0; });
-
     for (let i = 0; i < source.length; i++) {
       const rawRow = source[i];
       // 正規化 row：key 全去 BOM + toLowerCase
@@ -217,20 +190,16 @@ export function preprocessCostData() {
         const nk = normalizeKey(k).toLowerCase();
         row[nk] = rawRow[k];
       });
-
       // level 也可能帶 BOM 或大小寫不同
       const level = Number(row['level'] ?? row['等級'] ?? row['lvl'] ?? 0);
-
       costKeys.forEach(k => {
         const key = k.toLowerCase();
         const v = Number(row[key] ?? 0);
         cumulative[key] = (cumulative[key] || 0) + (Number.isFinite(v) ? v : 0);
       });
-
       out[type].push({ level, ...cumulative });
     }
   }
-
   state.cumulativeCostData = out;
 }
 
@@ -244,11 +213,9 @@ export async function loadDataForSeason(seasonId) {
   const cfg = DATA_FILES_CONFIG[seasonId] || DATA_FILES_CONFIG.s1;
   const loaded = {};
   state.missingFiles = [];
-
   for (const key of Object.keys(cfg)) {
     const gid = cfg[key];
     const url = makeCsvUrl(gid);
-
     try {
       loaded[key] = await fetchAndParseCsv(url);
     } catch (err) {
@@ -257,10 +224,8 @@ export async function loadDataForSeason(seasonId) {
       state.missingFiles.push(key);
     }
   }
-
   state.gameData = loaded;
 }
-
 
 /** 取得指定等級的累積成本（若不存在取最近低等級） */
 export function getCumulative(costTable, level) {
@@ -285,10 +250,8 @@ export function calculateSeasonScore_S1(targets) {
 }
 export function calculateSeasonScore_S2(targets) {
   let score = 0;
-  if (targets.character > 130)
-  {
+  if (targets.character > 130) {
     score += (targets.character - 130) * 100;
-    // TODO: 超過目前等級的經驗換算 n% 加 n 分
   }
   // 裝備每一賽季等級 + 18 分，共 5 件
   if (targets.equipment_resonance > 130) score += (targets.equipment_resonance - 130) * 18 * 5;
@@ -303,13 +266,10 @@ export function calculateSeasonScore_S2(targets) {
 export function convertPrimordialStar_S1(score) {
   return Math.floor(score / 100 + 10);
 }
-
 // TODO: 基礎分數待確認
 export function convertPrimordialStar_S2(score) {
   return Math.floor(score / 27 + 45);
 }
-
-
 
 /**
  * 計算「最低可達角色等級」
@@ -320,37 +280,29 @@ export function convertPrimordialStar_S2(score) {
  *   - ownedExp：目前持有、尚未用掉的經驗資源（包含手動輸入與床持續累加）。
  *   - bedExpHourly：床每小時產出的經驗速率。
  *   - targetTimeStr：目標時間（datetime-local 字串），若無則視為 0 小時。
- *
  */
 export function computeReachableCharacterLevel(curLv, ownedExp, bedExpHourly, targetTimeStr) {
   const table = state.cumulativeCostData['character'];
   if (!table || !Number.isFinite(curLv)) return curLv;
-
   // 1) 目標時間 → 小時差（負值視為 0）
   const hours = targetTimeStr
     ? Math.max(0, (new Date(targetTimeStr).getTime() - Date.now()) / 36e5)
     : 0;
-
   // 2) 目前已達成的累積經驗：cum(L)
-  const baseCum = (getCumulative(table, curLv-1)?.cost_exp || 0);
-
+  const baseCum = (getCumulative(table, curLv - 1)?.cost_exp || 0);
   // 3) 可用經驗（持有 + 床產），負值一律當 0 避免汙染
   const available =
     Math.max(0, Number(ownedExp) || 0) +
     Math.max(0, Number(bedExpHourly) || 0) * hours;
-
   // 4) 總可支配的『累積』經驗值
   const totalExp = baseCum + available;
-
   // 5) 找出 cost_exp <= totalExp 的最大等級
   const idx = table.findLastIndex(d => (d.cost_exp || 0) <= totalExp);
   const reachable = (idx !== -1 ? table[idx].level : curLv);
-
   // 6) 不倒退，且不超過表中最大等級
   const maxLevelInTable = table[table.length - 1]?.level ?? curLv;
   return Math.min(Math.max(reachable, curLv), maxLevelInTable);
 }
-
 
 /** 主計算：需求 / 時產收益 / 缺口（渲染用 payload） */
 export function computeAll(containers) {
@@ -360,24 +312,20 @@ export function computeAll(containers) {
   const missingDataErrors = {};
   let hasError = false;
   let hasInput = false;
-
   // 目標等級
   const targets = {};
   targetLevelConfig.forEach(t => {
     const v = parseInt(document.getElementById(`target-${t.id}`)?.value) || 0;
     targets[t.id] = v;
   });
-
   // 可達角色等級（顯示）
   const curCharLv = parseInt(document.getElementById('character-current')?.value) || 0;
   const ownedExp = parseInt(document.getElementById('owned-exp')?.value) || 0;
   const bedExpHourly = parseFloat(document.getElementById('bed-exp-hourly')?.value) || 0;
   const targetTimeStr = document.getElementById('target-time')?.value;
-
   const reachable = computeReachableCharacterLevel(curCharLv, ownedExp, bedExpHourly, targetTimeStr);
   const reachableEl = document.getElementById('target-char-reachable-level');
   if (reachableEl) reachableEl.textContent = `最低可達: ${reachable > 0 ? reachable : '--'}`;
-
   // 本季可得原初之星（自動）
   const seasonId = state.seasonId;
   let score = 0;
@@ -388,7 +336,6 @@ export function computeAll(containers) {
   else if (seasonId === 's2') ps = convertPrimordialStar_S2(score);
   const psInput = document.getElementById('target-primordial_star');
   if (psInput) psInput.value = ps;
-
   // 帶入本季原初之星
   const thisSeasonPs = ps;
   seasonOptions.forEach(season => {
@@ -397,7 +344,6 @@ export function computeAll(containers) {
       if (el) el.value = thisSeasonPs;
     }
   });
-
   // 累計原初之星（手動輸入各賽季）
   let totalPs = 0; 
   seasonOptions.forEach(season => {
@@ -407,8 +353,6 @@ export function computeAll(containers) {
   });
   const totalPsEl = document.getElementById('primordial-star-total');
   if (totalPsEl) totalPsEl.value = totalPs;
-
-
   // 遺物成本（需 20 件）
   const targetRelicRes = targets.relic_resonance || 0;
   let relicCount = 0;
@@ -416,7 +360,6 @@ export function computeAll(containers) {
     const count = parseInt(document.getElementById(`relic-level-${i}`)?.value) || 0;
     if (count > 0) hasInput = true;
     relicCount += count;
-
     for (let j = 0; j < count; j++) {
       const current = i;
       const finalTarget = Math.max(current, targetRelicRes);
@@ -449,18 +392,15 @@ export function computeAll(containers) {
     }
   }
   if (relicCount > 0 && relicCount !== 20) hasError = true;
-
   // 角色 / 裝備 / 技能 / 幻獸成本
   categories.forEach(cat => {
     const current = parseInt(document.getElementById(`${cat.id}-current`)?.value) || 0;
     if (current > 0) hasInput = true;
-
     let targetRes = 0;
     if (cat.id === 'character') targetRes = targets.character || 0;
     else if (cat.id.startsWith('equipment_')) targetRes = targets.equipment_resonance || 0;
     else if (cat.id.startsWith('skill_')) targetRes = targets.skill_resonance || 0;
     else if (cat.id.startsWith('pet')) targetRes = targets.pet_resonance || 0;
-
     const finalTarget = Math.max(current, targetRes);
     if (finalTarget > current) {
       let costTable, sourceTable, itemName, affected = [];
@@ -482,7 +422,6 @@ export function computeAll(containers) {
         sourceTable = g.characterUpgradeCosts;
         itemName = '角色'; affected = ['exp'];
       }
-
       let missing = false;
       if (sourceTable) {
         for (let lvl = current; lvl < finalTarget; lvl++) {
@@ -506,10 +445,8 @@ export function computeAll(containers) {
       }
     }
   });
-
   if (hasError) return { error: '輸入有誤 (例如遺物總數不為20)，請檢查。' };
   if (!hasInput) return { required: {}, gains: {}, deficit: {}, materialErrors: missingDataErrors };
-
   // 掛機收益（目標時間）
   if (targetTimeStr) {
     const hours = Math.max(0, (new Date(targetTimeStr).getTime() - Date.now()) / 36e5);
@@ -520,7 +457,6 @@ export function computeAll(containers) {
     });
     if (bedExpHourly > 0) gains['exp'] = (gains['exp'] || 0) + Math.floor(bedExpHourly * hours);
   }
-
   // 缺口：需求 - (持有 + 掛機)
   for (const matId in materials) {
     const need = required[matId] || 0;
@@ -528,10 +464,8 @@ export function computeAll(containers) {
     const g = gains[matId] || 0;
     deficit[matId] = Math.max(0, need - owned - g);
   }
-
   return { required, gains, deficit, materialErrors: missingDataErrors };
 }
-
 
 /** 清除升級通知排程 */
 export function clearLevelUpNotification(options = { levelUp: true, targetLevel: true }) {
@@ -549,7 +483,6 @@ export function clearLevelUpNotification(options = { levelUp: true, targetLevel:
   }
 }
 
-
 export function expCalculation(currentLevel, ownedExp, bedExpHourly, targetLevel) {
   const table = state.cumulativeCostData['character'];
   if (!table || !Number.isFinite(currentLevel) || currentLevel >= MAX_LEVEL) {
@@ -558,113 +491,26 @@ export function expCalculation(currentLevel, ownedExp, bedExpHourly, targetLevel
   if (targetLevel <= currentLevel) {
     return { minutesNeeded: 0, etaTs: Date.now(), needExp: 0, status: 'reached' };
   }
-
   const cumPrev = (getCumulative(table, currentLevel - 1).cost_exp || 0);
   const cumThis = (getCumulative(table, targetLevel - 1).cost_exp || 0);
   const expNeeded = Math.max(0, cumThis - cumPrev - (Number(ownedExp) || 0));
-
   if (expNeeded <= 0) return { levelupTs: Date.now(), minutesNeeded: 0, expNeeded: 0 };
-
   const ratePerHour = Number(bedExpHourly);
   if (!Number.isFinite(ratePerHour) || ratePerHour <= 0) {
     return { levelupTs: NaN, minutesNeeded: 0, expNeeded };
   }
-
   const minutesNeeded = Math.ceil((expNeeded / ratePerHour) * 60);
   const levelupTs = Date.now() + minutesNeeded * 60 * 1000;
-
   return { levelupTs, minutesNeeded, expNeeded };
 }
 
-/** 排定升級通知 */
-export function scheduleLevelUpNotification(currentLevel, ownedExp, bedExpHourly, targetLevel, notifyTime) {
-  clearLevelUpNotification({ levelUp: true });
-  // 提前 notifyTime 分鐘通知即將升到下一級
-  const { levelupTs } = expCalculation(currentLevel, ownedExp, bedExpHourly);
-  if (!Number.isFinite(levelupTs)) return;
-  if ('Notification' in window && Notification.permission === 'granted') {
-    console.log(`scheduleLevelUpNotification called with levelupTs=${levelupTs}`);
-    const aligned = Math.ceil(levelupTs / 60000) * 60000;
-    const notifyAt = aligned - notifyTime * 60 * 1000;
-    const delay = notifyAt - Date.now();
-    console.log(`計算後的 notifyAt=${notifyAt}，delay=${delay} ms`);
-    if (delay > 0) {
-      const MAX_DELAY = 0x7fffffff; // ~24.8 天
-      const schedule = (ms) => {
-        console.log(`scheduleLevelUpNotification called with ms=${ms}`);
-        // 超過最大延遲就拆成多個 setTimeout
-        if (ms > MAX_DELAY) {
-          state.notificationTimerIdLevelUp = setTimeout(() => schedule(ms - MAX_DELAY), MAX_DELAY);
-        } else {
-          state.notificationTimerIdLevelUp = setTimeout(() => {
-            new Notification('杖劍傳說提醒', {
-              body: `您的角色約 ${notifyTime} 分鐘後可升級至 ${currentLevel + 1} 級！`,
-              icon: 'https://placehold.co/192x192/31c9be/ffffff?text=LV',
-            });
-            state.notificationTimerIdLevelUp = null;
-          }, ms);
-          
-        }
-        console.log(`已排定升級通知${state.notificationTimerIdLevelUp}，將在 ${new Date(notifyAt).toLocaleString()} 發出`);
-      };
-      schedule(delay);
-    }
-  }
-}
-
-/** 目標等級通知 */
-export function scheduleTargetLevelNotification(currentLevel, ownedExp, bedExpHourly, targetLevel, notifyTime) {
-  clearLevelUpNotification({ targetLevel: true });
-  const { minutesNeeded: m2, etaTs } = expCalculation(currentLevel, ownedExp, bedExpHourly, targetLevel);
-  const levelupTs = etaTs;
-  console.log(`computeEtaToTargetLevel returned levelupTs=${levelupTs}, minutesNeeded=${m2}`);
-  if (!Number.isFinite(levelupTs)) return;
-  console.log(`scheduleTargetLevelNotification called for targetLevel=${targetLevel}`);
-  // 提前 notifyTime 分鐘通知即將升到目標等級
-  if ('Notification' in window && Notification.permission === 'granted') {
-    console.log(`scheduleTargetLevelNotification called with levelupTs=${levelupTs}`);
-    const aligned = Math.ceil(levelupTs / 60000) * 60000;
-    const notifyAt = aligned - notifyTime * 60 * 1000;
-    const delay = notifyAt - Date.now();
-    console.log(`計算後的 notifyAt=${notifyAt}，delay=${delay} ms`);
-    if (delay > 0) {
-      const MAX_DELAY = 0x7fffffff; // ~24.8 天
-      const schedule = (ms) => {
-        console.log(`scheduleTargetLevelNotification called with ms=${ms}`);
-        // 超過最大延遲就拆成多個 setTimeout
-        if (ms > MAX_DELAY) {
-          state.notificationTimerIdTargetLevel = setTimeout(() => schedule(ms - MAX_DELAY), MAX_DELAY);
-        } else {
-          state.notificationTimerIdTargetLevel = setTimeout(() => {
-            new Notification('杖劍傳說提醒', {
-              body: `您的角色約 ${notifyTime} 分鐘後可升級至 ${targetLevel} 級！`,
-              icon: 'https://placehold.co/192x192/31c9be/ffffff?text=LV',
-            });
-            state.notificationTimerIdTargetLevel = null;
-          }, ms);
-        }
-        console.log(`已排定升級通知${state.notificationTimerIdTargetLevel}，將在 ${new Date(notifyAt).toLocaleString()} 發出`);
-      };
-      schedule(delay);
-    }
-  }
-}
-
-/** 升級時間估算 
- *  你指定的定義：在 L 時升級需求 = cum(L) - cum(L-1) - ownedExp
- */
+/** 計算到達下一級 ETA */
 export function computeEtaToNextLevel(currentLevel, ownedExp, bedExpHourly) {
-
   const { levelupTs, minutesNeeded, expNeeded } = expCalculation(currentLevel, ownedExp, bedExpHourly, currentLevel + 1);
-
   return { levelupTs, minutesNeeded, expNeeded };
 }
 
-/** 計算到達「目標角色等級」ETA（以及總所需經驗）
- *  目前在 L，目標 T：
- *   目前累積 = cum(L-1) + ownedExp
- *   需求 = cum(T) - (cum(L-1) + ownedExp)
- */
+/** 計算到達「目標角色等級」ETA（以及總所需經驗） */
 export function computeEtaToTargetLevel(currentLevel, ownedExp, bedExpHourly, targetLevel) {
   const { levelupTs, minutesNeeded, expNeeded } = expCalculation(currentLevel, ownedExp, bedExpHourly, targetLevel);
   return { etaTs: levelupTs, minutesNeeded, needExp: expNeeded };
@@ -688,4 +534,71 @@ export function loadAllInputs(excludeKeys = []) {
     const n = document.getElementById(id);
     if (n) n.value = data[id];
   });
+}
+
+/**
+ * 通用通知排程
+ *
+ * 這個函式整合了升級通知與目標等級通知的共通邏輯，根據 type 決定使用哪種算法以及存放哪一個 timer id。
+ * @param {number} currentLevel - 當前角色等級
+ * @param {number} ownedExp - 目前持有經驗
+ * @param {number} bedExpHourly - 每小時經驗產量
+ * @param {number} targetLevel - 目標等級
+ * @param {number} notifyTime - 提前通知的分鐘數
+ * @param {'levelUp'|'targetLevel'} type - 通知類型
+ */
+function scheduleNotification(currentLevel, ownedExp, bedExpHourly, targetLevel, notifyTime, type) {
+  // 先取消該類型的既有排程
+  clearLevelUpNotification(type === 'targetLevel' ? { targetLevel: true } : { levelUp: true });
+  // 根據類型選擇估算函式
+  let levelupTs;
+  if (type === 'targetLevel') {
+    const { etaTs } = computeEtaToTargetLevel(currentLevel, ownedExp, bedExpHourly, targetLevel);
+    levelupTs = etaTs;
+  } else {
+    const { levelupTs: ts } = expCalculation(currentLevel, ownedExp, bedExpHourly, currentLevel + 1);
+    levelupTs = ts;
+  }
+  if (!Number.isFinite(levelupTs)) return;
+  if ('Notification' in window && Notification.permission === 'granted') {
+    const aligned = Math.ceil(levelupTs / 60000) * 60000;
+    const notifyAt = aligned - notifyTime * 60 * 1000;
+    const delay = notifyAt - Date.now();
+    if (delay > 0) {
+      const MAX_DELAY = 0x7fffffff; // 最長延遲約 24.8 天
+      const schedule = (ms) => {
+        if (ms > MAX_DELAY) {
+          const tid = setTimeout(() => schedule(ms - MAX_DELAY), MAX_DELAY);
+          if (type === 'targetLevel') state.notificationTimerIdTargetLevel = tid;
+          else state.notificationTimerIdLevelUp = tid;
+        } else {
+          const tid = setTimeout(() => {
+            const nextLevel = type === 'targetLevel' ? targetLevel : currentLevel + 1;
+            new Notification('杖劍傳說提醒', {
+              body: `您的角色約 ${notifyTime} 分鐘後可升級至 ${nextLevel} 級！`,
+              icon: 'https://placehold.co/192x192/31c9be/ffffff?text=LV',
+            });
+            if (type === 'targetLevel') {
+              state.notificationTimerIdTargetLevel = null;
+            } else {
+              state.notificationTimerIdLevelUp = null;
+            }
+          }, ms);
+          if (type === 'targetLevel') state.notificationTimerIdTargetLevel = tid;
+          else state.notificationTimerIdLevelUp = tid;
+        }
+      };
+      schedule(delay);
+    }
+  }
+}
+
+/** 排定下一級升級通知 */
+export function scheduleLevelUpNotification(currentLevel, ownedExp, bedExpHourly, targetLevel, notifyTime) {
+  scheduleNotification(currentLevel, ownedExp, bedExpHourly, targetLevel, notifyTime, 'levelUp');
+}
+
+/** 排定目標等級通知 */
+export function scheduleTargetLevelNotification(currentLevel, ownedExp, bedExpHourly, targetLevel, notifyTime) {
+  scheduleNotification(currentLevel, ownedExp, bedExpHourly, targetLevel, notifyTime, 'targetLevel');
 }

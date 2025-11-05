@@ -44,8 +44,12 @@ function getTzOffsetMinutes(instant, timeZone) {
   const dtf = new Intl.DateTimeFormat('en-US', {
     timeZone,
     hour12: false,
-    year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit', second: '2-digit'
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
   });
   const parts = dtf.formatToParts(instant);
   const map = {};
