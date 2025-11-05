@@ -162,28 +162,47 @@ async function fetchTimePresetsFromSheet() {
     const headers = lines[0].split(',').map(s => s.trim().toLowerCase());
 
     const serverIdx = headers.indexOf('server_name');
-    const descIdx = headers.indexOf('description');
-    const timeIdx = headers.indexOf('time');
+    const descIdx   = headers.indexOf('description');
+    const timeIdx   = headers.indexOf('time');
 
     const out = [];
     for (let i = 1; i < lines.length; i++) {
-      const cols = lines[i].split(',').map(s => s.trim());
+      const cols  = lines[i].split(',').map(s => s.trim());
       const server = cols[serverIdx] || '';
-      const desc = cols[descIdx] || '';
-      const time = cols[timeIdx] || '';
+      const desc   = cols[descIdx]   || '';
+      const time   = cols[timeIdx]   || '';
       if (!server && !desc && !time) continue;
 
       // 只取日期，然後補成 08:00:00+08:00
-      let datePart = time;
+      let datePart = '';
+
       if (time.includes('T')) {
+        // 已經有 ISO 形式 → 只取日期
         datePart = time.split('T')[0];
+      } else {
+        // 例如「2025/10/13」或「2025-10-13」
+        const m = time.match(/(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})/);
+        if (m) {
+          const [, y, mo, d] = m;
+          datePart = `${y}-${mo.padStart(2, '0')}-${d.padStart(2, '0')}`;
+        } else {
+          // 再不行就交給 Date 試著 parse，一樣只取日期
+          const d2 = new Date(time);
+          if (!Number.isNaN(d2.getTime())) {
+            datePart = d2.toISOString().slice(0, 10);
+          } else {
+            // 完全看不懂就略過那一列
+            continue;
+          }
+        }
       }
+
       const isoTime = `${datePart}T08:00:00+08:00`;
 
       out.push({
         key: `${server}_${i}`,
         server_name: server,
-        label: `${desc}${server ? ` (${server})` : ''}`,
+        label: `${desc}`,
         iso: isoTime,
       });
     }
