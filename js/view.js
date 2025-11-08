@@ -82,7 +82,18 @@ export function createInputGroup(id, labelText, placeholder, isSub = false, extr
 export function renderPrimordialStarCumulative(container) {
   container.className = 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-4';
   container.innerHTML = '';
+  const seasonSelect = document.getElementById('season-select');
+  let currentSeason = 0;
+  seasonOptions.forEach((s) => {
+    if (s.id === seasonSelect.value) {
+      currentSeason = s.season;
+    }
+  });
+
+
+  // 只顯示當前賽季及以前賽季
   seasonOptions.forEach((season) => {
+    if (season.season > currentSeason) return; // 跳過未來賽季
     const isReadOnly = season.readonly === true;
     const group = createInputGroup(
       `primordial-star-${season.id}`,
