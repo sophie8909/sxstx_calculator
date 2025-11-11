@@ -430,6 +430,7 @@ export function renderResults(containers, payload, missingFiles = []) {
     } else {
       right.innerHTML = `
         <span class="text-slate-700">總共需要: <strong>${fmt(need)}</strong></span>
+        <span class="text-slate-700">預計產出: <strong>${fmt(gain)}</strong></span>
         <span class="text-slate-700">還缺少: ${
           lack > 0
             ? `<strong class="text-red-700">-${fmt(lack)}</strong>`
