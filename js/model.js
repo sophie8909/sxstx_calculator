@@ -472,6 +472,10 @@ export function computeAll(containers) {
     const owned = parseInt(document.getElementById(`owned-${matId}`)?.value) || 0;
     const g = gains[matId] || 0;
     deficit[matId] = Math.max(0, need - owned - g);
+    // 凍乾額外處理，一凍乾 = 50 經驗
+    if (matId === 'freezeDried' && deficit[matId] > 0) {
+      deficit[matId] = Math.ceil(deficit[matId] / 50);
+    }
   }
   return { required, gains, deficit, materialErrors: missingDataErrors };
 }
