@@ -95,13 +95,14 @@ export const MOCK_GAME_DATA = {
 };
 
 // 1) 資源代號（需與試算表第一欄一致）
-export const MATERIAL_TYPES = ['stone', 'essence', 'sand', 'rola'];
+export const MATERIAL_TYPES = ['stone', 'essence', 'sand', 'rola', 'freeze_dried'];
 
 export const MATERIAL_DISPLAY_NAMES = {
   stone: '粗煉石',
   essence: '歷戰精華',
   sand: '時之砂',
   rola: '羅拉',
+  freeze_dried: '幻獸凍乾',
 };
 
 // 2) 使用者 UI 的預設「每日次數 / 購買量」
@@ -136,28 +137,11 @@ const GOOGLE_SHEET_BASE =
 
 /** 各賽季資料設定，只保留 gid */
 export const DATA_FILES_CONFIG = {
-  s1: {
-    characterUpgradeCosts: 32106530,  // 角色等級
-    equipmentUpgradeCosts: 1167380870,  // 裝備
-    skillUpgradeCosts:     1445528269,  // 技能
-    relicUpgradeCosts:     821938531,  // 遺物
-    petUpgradeCosts:       1771319253,  // 幻獸
-  },
-  s2: {
-    characterUpgradeCosts: 314585849,
-    equipmentUpgradeCosts: 75474263,
-    skillUpgradeCosts:     682954597,
-    relicUpgradeCosts:     1548103854,
-    petUpgradeCosts:       1910677696,
-  },
-  // 未來賽季可在此加入
-  // s3: {
-  //   characterUpgradeCosts: ,
-  //   equipmentUpgradeCosts: ,
-  //   skillUpgradeCosts:     ,
-  //   relicUpgradeCosts:     ,
-  //   petUpgradeCosts:       ,
-  // },
+  characterUpgradeCosts: 314585849,  // 角色等級
+  equipmentUpgradeCosts: 1205841685,  // 裝備
+  skillUpgradeCosts:     682954597,  // 技能
+  relicUpgradeCosts:     1548103854,  // 遺物
+  petUpgradeCosts:       1910677696,  // 幻獸
 };
 
 const MATERIAL_AVG_SHEETS = {
@@ -266,22 +250,34 @@ function makeCsvUrl(gid) {
 
 /** 載入對應賽季的資料 */
 export async function loadDataForSeason(seasonId) {
-  const cfg = DATA_FILES_CONFIG[seasonId] || DATA_FILES_CONFIG.s1;
+  const targetSeason = seasonId;         // 's1' / 's2' / 's3'
   const loaded = {};
   state.missingFiles = [];
-  for (const key of Object.keys(cfg)) {
-    const gid = cfg[key];
+
+  for (const [key, gid] of Object.entries(DATA_FILES_CONFIG)) {
     const url = makeCsvUrl(gid);
     try {
-      loaded[key] = await fetchAndParseCsv(url);
+      const rows = await fetchAndParseCsv(url);
+
+      // 所有表都加了 season 欄位的情況
+      const filtered = rows.filter((row) => {
+        const s = String(row.season || '').toLowerCase();
+        // 若這一列沒有 season（例如共用），就全賽季通用
+        if (!s) return true;
+        return s === targetSeason.toLowerCase();
+      });
+
+      loaded[key] = filtered;
     } catch (err) {
       console.warn(`❌ 無法載入 ${key} (${url})，改用模擬數據`, err);
       loaded[key] = MOCK_GAME_DATA[key];
       state.missingFiles.push(key);
     }
   }
+
   state.gameData = loaded;
 }
+
 
 
 // 讀單一 CSV：格式為
@@ -338,7 +334,7 @@ export function getMaterialSourceConfig() {
     sourceMaterials: {
       dungeon: ['stone', 'essence', 'sand', 'rola'],
       explore: ['stone', 'essence', 'sand', 'rola'],
-      shop: ['stone', 'essence', 'sand'], // 商店沒有 rola
+      shop: ['stone', 'essence', 'sand', 'freeze_dried'], // 商店沒有 rola
     },
   };
 }
