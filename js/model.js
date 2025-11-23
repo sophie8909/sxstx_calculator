@@ -385,7 +385,7 @@ export function calculateSeasonScore_S2(targets) {
 
 export function calculateSeasonScore_S3(targets) {
   let score = 0;
-  const season_level = 130;
+  const season_level = 160;
   // 角色每一賽季等級 + 100 分
   if (targets.character > season_level) {
     score += (targets.character - season_level) * 100;
