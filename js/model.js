@@ -354,40 +354,63 @@ export function getCumulative(costTable, level) {
   return idx !== -1 ? { ...empty, ...costTable[idx] } : empty;
 }
 
-/** S1 / S2 賽季分數（原本就有，保留） */
+/** 賽季分數計算 **/
 export function calculateSeasonScore_S1(targets) {
   let score = 0;
-  if (targets.character > 100) score += (targets.character - 100) * 100;
-  if (targets.equipment_resonance > 100) score += (targets.equipment_resonance - 100) * 38 * 5;
-  if (targets.skill_resonance > 100) score += (targets.skill_resonance - 100) * 14 * 8;
-  if (targets.pet_resonance > 100) score += (targets.pet_resonance - 100) * 14 * 4;
-  if (targets.relic_resonance > 10) score += (targets.relic_resonance - 10) * 57 * 20;
+  const season_level = 100;
+  if (targets.character > season_level) score += (targets.character - season_level) * 100;
+  if (targets.equipment_resonance > season_level) score += (targets.equipment_resonance - season_level) * 38 * 5;
+  if (targets.skill_resonance > season_level) score += (targets.skill_resonance - season_level) * 14 * 8;
+  if (targets.pet_resonance > season_level) score += (targets.pet_resonance - season_level) * 14 * 4;
+  if (targets.relic_resonance > season_level/10) score += (targets.relic_resonance - season_level/10) * 57 * 20;
   return score;
 }
 export function calculateSeasonScore_S2(targets) {
   let score = 0;
-  if (targets.character > 130) {
-    score += (targets.character - 130) * 100;
+  const season_level = 130;
+  // 角色每一賽季等級 + 100 分
+  if (targets.character > season_level) {
+    score += (targets.character - season_level) * 100;
   }
   // 裝備每一賽季等級 + 18 分，共 5 件
-  if (targets.equipment_resonance > 130) score += (targets.equipment_resonance - 130) * 18 * 5;
+  if (targets.equipment_resonance > season_level) score += (targets.equipment_resonance - season_level) * 18 * 5;
   // 技能每一賽季等級 + 7 分，共 8 個
-  if (targets.skill_resonance > 130) score += (targets.skill_resonance - 130) * 7 * 8;
+  if (targets.skill_resonance > season_level) score += (targets.skill_resonance - season_level) * 7 * 8;
   // 幻獸每一賽季等級 + 8 分，共 4 隻
-  if (targets.pet_resonance > 130) score += (targets.pet_resonance - 130) * 8 * 4;
+  if (targets.pet_resonance > season_level) score += (targets.pet_resonance - season_level) * 8 * 4;
   // 遺物每一賽季等級 + 33 分，共 20 件
-  if (targets.relic_resonance > 13) score += (targets.relic_resonance - 13) * 33 * 20;
+  if (targets.relic_resonance > season_level/10) score += (targets.relic_resonance - season_level/10) * 33 * 20;
   return score;
 }
+
+export function calculateSeasonScore_S3(targets) {
+  let score = 0;
+  const season_level = 130;
+  // 角色每一賽季等級 + 100 分
+  if (targets.character > season_level) {
+    score += (targets.character - season_level) * 100;
+  }
+  // 裝備每一賽季等級 + 14 分，共 5 件
+  if (targets.equipment_resonance > season_level) score += (targets.equipment_resonance - season_level) * 14 * 5;
+  // 技能每一賽季等級 + 5 分，共 8 個
+  if (targets.skill_resonance > season_level) score += (targets.skill_resonance - season_level) * 5 * 8;
+  // 幻獸每一賽季等級 + 6 分，共 4 隻
+  if (targets.pet_resonance > season_level) score += (targets.pet_resonance - season_level) * 6 * 4;
+  // 遺物每一賽季等級 + 26 分，共 20 件
+  if (targets.relic_resonance > season_level/10) score += (targets.relic_resonance - season_level/10) * 26 * 20;
+  return score;
+}
+
+/** 賽季等級轉換原初之星 **/
 export function convertPrimordialStar_S1(score) {
   return Math.floor(score / 100 + 10);
 }
 export function convertPrimordialStar_S2(score) {
   return Math.floor(score / 27 + 45);
 }
-// export function convertPrimordialStar_S3(score) {
-//   return Math.floor(score / 30 + 50);
-// }
+export function convertPrimordialStar_S3(score) {
+  return Math.floor(score / 13 + 65);
+}
 
 /**
  * 計算「最低可達角色等級」
@@ -449,9 +472,11 @@ export function computeAll(containers) {
   let score = 0;
   if (seasonId === 's1') score = calculateSeasonScore_S1(targets);
   else if (seasonId === 's2') score = calculateSeasonScore_S2(targets);
+  else if (seasonId === 's3') score = calculateSeasonScore_S3(targets);
   let ps = 0;
   if (seasonId === 's1') ps = convertPrimordialStar_S1(score);
   else if (seasonId === 's2') ps = convertPrimordialStar_S2(score);
+  else if (seasonId === 's3') ps = convertPrimordialStar_S3(score);
   const psInput = document.getElementById('target-primordial_star');
   if (psInput) psInput.value = ps;
   // 帶入本季原初之星
