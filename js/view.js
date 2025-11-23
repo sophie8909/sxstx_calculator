@@ -8,7 +8,8 @@ import {
   seasonOptions,
   targetLevelConfig,
   materials,
-  productionSources
+  productionSources,
+  getMaterialSourceConfig
 } from './model.js';
 
 /**
@@ -25,6 +26,7 @@ export function getContainers() {
     charBedInputs: document.getElementById('char-bed-inputs'),
     petInputs: document.getElementById('pet-inputs'),
     productionInputs: document.getElementById('production-inputs'),
+    materialSource: document.getElementById('material-source-container'),
 
     // 右欄
     ownedMaterials: document.getElementById('owned-materials'),
@@ -334,6 +336,153 @@ export function renderCharBed(container) {
   container.appendChild(infoBox);
 }
 
+/* ============================================================
+ * 素材來源估算：畫面渲染
+ * ============================================================ */
+
+export function renderMaterialSource(containers) {
+  const cfg = getMaterialSourceConfig();
+  const { displayNames, dailyDefaults, avgDefaults, sourceMaterials } = cfg;
+
+  const wrapper = containers.materialSource;
+  if (!wrapper) return;
+
+  const dungeonHtml = renderMaterialSourceTable(
+    'dungeon',
+    '素材秘境估算',
+    sourceMaterials.dungeon,
+    displayNames,
+    dailyDefaults,
+    avgDefaults,
+    { showAvg: true }
+  );
+
+  const exploreHtml = renderMaterialSourceTable(
+    'explore',
+    '地圖探索估算',
+    sourceMaterials.explore,
+    displayNames,
+    dailyDefaults,
+    avgDefaults,
+    { showAvg: true }
+  );
+
+  const shopHtml = renderMaterialSourceTable(
+    'shop',
+    '商店估算',
+    sourceMaterials.shop,
+    displayNames,
+    dailyDefaults,
+    avgDefaults,
+    { showAvg: false } // 商店只有每日購買，不需要 average 欄
+  );
+
+  wrapper.innerHTML = `
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-lg font-bold text-emerald-700">素材來源估算（總覽）</h3>
+      <div class="flex items-center gap-2 text-sm">
+        <span class="font-semibold">剩餘天數：</span>
+        <input
+          id="days-remaining"
+          type="number"
+          class="border rounded px-2 py-1 w-20 text-right bg-gray-50"
+          readonly
+        />
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      ${dungeonHtml}
+      ${exploreHtml}
+      ${shopHtml}
+    </div>
+  `;
+}
+
+function renderMaterialSourceTable(
+  source,
+  title,
+  materialList,
+  displayNames,
+  dailyDefaults,
+  avgDefaults,
+  options
+) {
+  const showAvg = options.showAvg;
+  const dd = dailyDefaults[source] || {};
+  const ad = avgDefaults[source] || {};
+
+  const headerCols = showAvg
+    ? '<th>素材</th><th>每日次數</th><th>平均每次</th><th>約可獲得</th>'
+    : '<th>素材</th><th>每日購買</th><th>約可獲得</th>';
+
+  const rows = materialList
+    .map((mat) => {
+      const name = displayNames[mat] || mat;
+      const daily = dd[mat] ?? 0;
+      const avg = ad[mat] ?? 0;
+
+      if (showAvg) {
+        return `
+          <tr class="border-b">
+            <td class="py-1 text-center">${name}</td>
+            <td class="py-1 text-center">
+              <input type="number"
+                class="input-field rounded px-1 py-0.5 w-20 text-right material-source-input"
+                data-source="${source}" data-material="${mat}" data-role="daily"
+                value="${daily}" />
+            </td>
+            <td class="py-1 text-center">
+              <input type="number"
+                class="input-field rounded px-1 py-0.5 w-24 text-right material-source-input"
+                data-source="${source}" data-material="${mat}" data-role="avg"
+                value="${avg}" />
+            </td>
+            <td class="py-1 text-right">
+              <span class="material-source-total"
+                data-source="${source}" data-material="${mat}">0</span>
+            </td>
+          </tr>
+        `;
+      } else {
+        // shop
+        return `
+          <tr class="border-b">
+            <td class="py-1 text-center">${name}</td>
+            <td class="py-1 text-center">
+              <input type="number"
+                class="input-field rounded px-1 py-0.5 w-24 text-right material-source-input"
+                data-source="${source}" data-material="${mat}" data-role="dailyBuy"
+                value="${daily}" />
+            </td>
+            <td class="py-1 text-right">
+              <span class="material-source-total"
+                data-source="${source}" data-material="${mat}">0</span>
+            </td>
+          </tr>
+        `;
+      }
+    })
+    .join('');
+
+  return `
+    <section>
+      <h4 class="font-semibold mb-2 text-center">${title}</h4>
+      <table class="w-full text-sm border-collapse">
+        <thead>
+          <tr class="border-b">
+            ${headerCols}
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+        </tbody>
+      </table>
+    </section>
+  `;
+}
+
+
 /**
  * 主渲染：依序調用各子渲染函式。
  */
@@ -353,12 +502,15 @@ export function renderAll(containers) {
 }
 
 /**
- * 現在時間：以「sv-SE」格式更新顯示當前時間。
+ * 現在時間：以「zh-TW」格式更新顯示當前時間。
  */
 export function updateCurrentTime(container) {
   if (!container) return;
+
   const now = new Date();
-  container.textContent = now.toLocaleString('sv-SE', {
+
+  // 顯示文字（用台灣在地格式，看起來比較直覺）
+  const text = now.toLocaleString('zh-TW', {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -367,7 +519,18 @@ export function updateCurrentTime(container) {
     second: '2-digit',
     hour12: false,
   });
+
+  // 如果是 input/textarea → 填在 value
+  if ('value' in container) {
+    container.value = text;
+  }
+
+  // 同時也更新 textContent，支援 div / span 之類的
+  if ('textContent' in container) {
+    container.textContent = text;
+  }
 }
+
 
 /**
  * 遺物分佈總數：統計總數並更新顏色樣式。

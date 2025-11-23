@@ -175,6 +175,8 @@
         </div>
       </div>
     </div>
+   
+
     
     
     <!-- 右：素材資訊 + 計算總覽（等高對齊） -->
@@ -199,33 +201,33 @@
         </div>
       </div>
     </div>
-    
-    
-    
-    
-    <!-- ===== 底部：功能按鈕 ===== -->
-    <footer class="col-span-full w-full mt-10">
-      <div class="max-w-7xl mx-auto px-4
-                  flex flex-col items-center justify-center text-center text-gray-500 text-sm">
-        <div class="flex flex-wrap items-center justify-center gap-4 mb-3">
-          <button id="clear-local-data-btn"
-            class="bg-red-800 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg text-xs">
-            清除本地紀錄
-          </button>
-        </div>
-        <p class="max-w-2xl leading-relaxed">
-          本計算機為非官方工具，僅供玩家參考使用。網頁製作：菲亞。資料來源：ななや、六歲、羽菟o、夜奈喵。
-        </p>
-        <p class="mt-2">
-          GitHub Repo：
-          <a href="https://github.com/sophie8909/sxstx_calculator"> 
-            https://github.com/sophie8909/sxstx_calculator
-          </a>
-        </p>
-      </div>
-    </footer>
-    
   </div>
+  <!-- 素材來源估算（由 view.js 動態渲染內容） -->
+  <div class="card rounded-lg p-4 shadow-lg mb-6 w-full">
+    <div id="material-source-container"></div>
+  </div>
+  
+  <!-- ===== 底部：功能按鈕 ===== -->
+  <footer class="col-span-full w-full mt-10">
+    <div class="max-w-7xl mx-auto px-4
+                flex flex-col items-center justify-center text-center text-gray-500 text-sm">
+      <div class="flex flex-wrap items-center justify-center gap-4 mb-3">
+        <button id="clear-local-data-btn"
+          class="bg-red-800 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg text-xs">
+          清除本地紀錄
+        </button>
+      </div>
+      <p class="max-w-2xl leading-relaxed">
+        本計算機為非官方工具，僅供玩家參考使用。網頁製作：菲亞。資料來源：ななや、六歲、羽菟o、夜奈喵。
+      </p>
+      <p class="mt-2">
+        GitHub Repo：
+        <a href="https://github.com/sophie8909/sxstx_calculator"> 
+          https://github.com/sophie8909/sxstx_calculator
+        </a>
+      </p>
+    </div>
+  </footer>
   <!-- 入口點（控制器） -->
   <script type="module" src="./js/controller.js"></script>
 </body>

@@ -94,6 +94,38 @@ export const MOCK_GAME_DATA = {
   })),
 };
 
+// 1) 資源代號（需與試算表第一欄一致）
+export const MATERIAL_TYPES = ['stone', 'essence', 'sand', 'rola'];
+
+export const MATERIAL_DISPLAY_NAMES = {
+  stone: '粗煉石',
+  essence: '歷戰精華',
+  sand: '時之砂',
+  rola: '羅拉',
+};
+
+// 2) 使用者 UI 的預設「每日次數 / 購買量」
+export const MATERIAL_DAILY_DEFAULTS = {
+  dungeon: {
+    stone: 4,
+    essence: 2,
+    sand: 4,
+    rola: 2,
+  },
+  explore: {
+    stone: 20,
+    essence: 4,
+    sand: 0,
+    rola: 12,
+  },
+  // shop 視為「每日購買量」
+  shop: {
+    stone: 7312,
+    essence: 7162,
+    sand: 7837,
+  },
+};
+
 /** 各賽季 CSV 路徑（model.js 在 /js/，data 在 /data/） */
 const DATA_BASE = new URL('../data/', import.meta.url);
 const dataUrl = (name) => new URL(name, DATA_BASE).href;
@@ -128,6 +160,13 @@ export const DATA_FILES_CONFIG = {
   // },
 };
 
+const MATERIAL_AVG_SHEETS = {
+  dungeon: { base: GOOGLE_SHEET_BASE, gid: '751788076' },
+  explore: { base: GOOGLE_SHEET_BASE, gid: '1733617634' },
+  shop:    { base: GOOGLE_SHEET_BASE, gid: '2064242339' },
+};
+
+
 /** 內部狀態 */
 export const state = {
   seasonId: 's2',         // 預設賽季
@@ -139,6 +178,14 @@ export const state = {
   notificationTimerIdTargetLevel: null, // 目標等級通知計時器 ID
 };
 
+// 存放從 CSV 讀回來的平均值
+if (!state.materialAvgDefaults) {
+  state.materialAvgDefaults = {
+    dungeon: {},
+    explore: {},
+    shop: {},
+  };
+}
 // --- 放在 model.js ---
 // 小工具：正規化 key（去掉 BOM、trim）
 const normalizeKey = (k) => k ? k.replace(/^\uFEFF/, '').trim() : k;
@@ -236,6 +283,66 @@ export async function loadDataForSeason(seasonId) {
   state.gameData = loaded;
 }
 
+
+// 讀單一 CSV：格式為
+// A: 資源代號 stone / essence / sand / rola
+// B: average
+async function fetchMaterialAvgCSV({ base, gid }) {
+  const url = `${base}?output=csv&gid=${encodeURIComponent(gid)}`;
+  const res = await fetch(url, { cache: 'no-store' });
+  if (!res.ok) throw new Error(`[material avg] fetch failed ${res.status}`);
+
+  const text = await res.text();
+  const lines = text.trim().split('\n');
+  // 第一列是標題：resource,average 或類似
+  const rows = lines.slice(1);
+
+  const out = {};
+  for (const line of rows) {
+    if (!line.trim()) continue;
+    const [idRaw, avgRaw] = line.split(',').map(s => s.trim());
+    if (!idRaw) continue;
+
+    const id = idRaw.toLowerCase(); // stone / essence / sand / rola
+    const avg = parseFloat(avgRaw);
+    out[id] = Number.isNaN(avg) ? 0 : avg;
+  }
+  return out;
+}
+
+// 一次載入三個來源的平均值到 state
+export async function loadMaterialAvgDefaults() {
+  const entries = await Promise.all(
+    Object.entries(MATERIAL_AVG_SHEETS).map(async ([source, cfg]) => {
+      try {
+        const avgMap = await fetchMaterialAvgCSV(cfg);
+        return [source, avgMap];
+      } catch (err) {
+        console.warn('[material avg] use zeros for', source, err);
+        return [source, {}];
+      }
+    })
+  );
+
+  for (const [source, avgMap] of entries) {
+    state.materialAvgDefaults[source] = avgMap;
+  }
+}
+
+// 給 controller / view 用的統一介面
+export function getMaterialSourceConfig() {
+  return {
+    displayNames: MATERIAL_DISPLAY_NAMES,
+    dailyDefaults: MATERIAL_DAILY_DEFAULTS,
+    avgDefaults: state.materialAvgDefaults,
+    sourceMaterials: {
+      dungeon: ['stone', 'essence', 'sand', 'rola'],
+      explore: ['stone', 'essence', 'sand', 'rola'],
+      shop: ['stone', 'essence', 'sand'], // 商店沒有 rola
+    },
+  };
+}
+
 /** 取得指定等級的累積成本（若不存在取最近低等級） */
 export function getCumulative(costTable, level) {
   const empty = {};
@@ -275,10 +382,12 @@ export function calculateSeasonScore_S2(targets) {
 export function convertPrimordialStar_S1(score) {
   return Math.floor(score / 100 + 10);
 }
-// TODO: 基礎分數待確認
 export function convertPrimordialStar_S2(score) {
   return Math.floor(score / 27 + 45);
 }
+// export function convertPrimordialStar_S3(score) {
+//   return Math.floor(score / 30 + 50);
+// }
 
 /**
  * 計算「最低可達角色等級」
