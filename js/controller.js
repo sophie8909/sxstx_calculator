@@ -28,8 +28,8 @@ import {
 } from './view.js';
 
 /* ============================================================
- *  Google 試算表（Published CSV）設定：時間選項 / 伺服器來源
- *  試算表欄位：server_name, description, time
+ * Google 試算表（Published CSV）設定：時間選項 / 伺服器來源
+ * 試算表欄位：server_name, description, time
  * ============================================================ */
 const TIME_PRESETS_SHEET = {
   base: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRMlpHJpHMNQTCxhYgj2fmvazou_cQpAiVa-w5tg7WR2EJTn4EExoLwojYM3BoS8FSTpxvaKIQdmPQC/pub',
@@ -83,6 +83,8 @@ function triggerRecalculate(containers) {
 }
 
 // 讀取素材來源的 input（每日次數 / 平均值 / 商店每日購買）
+// 檔案: controller.js (此函式無需變動，但它是獲取 rolaCost 的關鍵)
+
 function getMaterialInput(source, material, role) {
   const el = document.querySelector(
     `.material-source-input[data-source="${source}"][data-material="${material}"][data-role="${role}"]`
@@ -441,6 +443,9 @@ function updateDaysRemainingFromTarget() {
 }
 
 
+
+
+
 function updateMaterialSourceRow(source, material) {
   const days = parseInt(
     document.getElementById('days-remaining')?.value || '0',
@@ -465,7 +470,6 @@ function updateMaterialSourceRow(source, material) {
 
   totalSpan.textContent = total ? total.toLocaleString() : '0';
 }
-
 function updateAllMaterialSources() {
   const dungeonMats = ['stone', 'essence', 'sand', 'rola'];
   const exploreMats = ['stone', 'essence', 'sand', 'rola'];
@@ -474,35 +478,68 @@ function updateAllMaterialSources() {
   dungeonMats.forEach((m) => updateMaterialSourceRow('dungeon', m));
   exploreMats.forEach((m) => updateMaterialSourceRow('explore', m));
   shopMats.forEach((m) => updateMaterialSourceRow('shop', m));
+
+  updateShopRolaCost();
 }
+
+
+function updateShopRolaCost() {
+  const days =
+    parseInt(document.getElementById('days-remaining')?.value || '0', 10) || 0;
+
+  // 素材清單應與 view.js 中的 shopMats 一致，包含 freeze_dried
+  const shopMats = ['stone', 'essence', 'sand', 'freeze_dried']; 
+  let dailyCost = 0;
+
+  shopMats.forEach((mat) => {
+    // 從新的輸入欄位獲取使用者輸入的羅拉單價
+    const unit = getMaterialInput('shop', mat, 'rolaCost'); 
+    
+    // 從舊的輸入欄位獲取每日購買量
+    const dailyBuy = getMaterialInput('shop', mat, 'dailyBuy'); 
+    
+    dailyCost += dailyBuy * unit;
+  });
+
+  const dailyEl = document.getElementById('shop-rola-daily-cost');
+  const totalEl = document.getElementById('shop-rola-total-cost');
+
+  if (dailyEl) dailyEl.textContent = dailyCost ? dailyCost.toLocaleString() : '0';
+  if (totalEl) totalEl.textContent = (dailyCost * days).toLocaleString();
+}
+
 
 
 /* -----------------------------
  * 全域事件：任何輸入 / 選擇變更都重算
  * ---------------------------*/
 function bindGlobalHandlers(containers) {
-  document.addEventListener('input', (e) => {
-    const t = e.target;
-    if (t.tagName === 'INPUT') {
-      // 素材來源估算欄位
-      if (t.classList.contains('material-source-input')) {
-        const src = t.dataset.source;
-        const mat = t.dataset.material;
-        if (src && mat) updateMaterialSourceRow(src, mat);
-      }
 
-      if (t.classList.contains('relic-dist-input')) updateRelicTotal();
-      triggerRecalculate(containers);
-    }
-  }, { passive: true });
+  document.addEventListener('input',
+    (e) => {
+      const t = e.target;
+      if (t.tagName === 'INPUT') {
+        // 素材來源估算欄位
+        if (t.classList.contains('material-source-input')) {
+          const src = t.dataset.source;
+          const mat = t.dataset.material;
+          if (src && mat) updateMaterialSourceRow(src, mat);
+          if (src === 'shop') updateShopRolaCost();
+        }
+
+        if (t.classList.contains('relic-dist-input')) updateRelicTotal();
+        triggerRecalculate(containers);
+      }
+    }, { passive: true });
 
   document.addEventListener('change', (e) => {
     const t = e.target;
     if (t.tagName === 'INPUT' || t.tagName === 'SELECT') {
       if (t.classList.contains('material-source-input')) {
-          const src = t.dataset.source;
-          const mat = t.dataset.material;
-          if (src && mat) updateMaterialSourceRow(src, mat);
+        const src = t.dataset.source;
+        const mat = t.dataset.material;
+        if (src && mat) updateMaterialSourceRow(src, mat);
+        if (src === 'shop') updateShopRolaCost();
       }
 
       if (t.classList.contains('relic-dist-input')) updateRelicTotal();
@@ -510,6 +547,7 @@ function bindGlobalHandlers(containers) {
     }
   }, { passive: true });
 }
+
 
 /* -----------------------------
  * 賽季切換

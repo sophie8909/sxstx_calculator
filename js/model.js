@@ -119,12 +119,8 @@ export const MATERIAL_DAILY_DEFAULTS = {
     sand: 0,
     rola: 12,
   },
-  // shop 視為「每日購買量」
-  shop: {
-    stone: 7312,
-    essence: 7162,
-    sand: 7837,
-  },
+  // shop 預設留空，待 CSV 載入後依 average 填入
+  shop: {},
 };
 
 /** 各賽季 CSV 路徑（model.js 在 /js/，data 在 /data/） */
@@ -142,6 +138,7 @@ export const DATA_FILES_CONFIG = {
   skillUpgradeCosts:     682954597,  // 技能
   relicUpgradeCosts:     1548103854,  // 遺物
   petUpgradeCosts:       1910677696,  // 幻獸
+  shop:                  2064242339,  // 商店 (假設的 gid，請替換為實際值)
 };
 
 const MATERIAL_AVG_SHEETS = {
@@ -199,6 +196,22 @@ export async function fetchAndParseCsv(url) {
   return rows;
 }
 
+// 商店資料預處理：把 average / cost_rola 變成可快速查詢的物件
+export function preprocessShopData(rows) {
+  const result = {};
+  rows.forEach(r => {
+    const id = (r.id || "").trim().toLowerCase();
+    if (!id) return;
+    console.log(`r.id=${id}, average=${r.average}, cost_rola=${r.cost_rola}`);
+    result[id] = {
+      average: Number(r.average || 0),
+      cost_rola: Number(r.cost_rola || 0),
+    };
+  });
+  return result;
+}
+
+
 // 將成本資料轉為「累積表」—— 同時容錯任何大小寫 / BOM 的欄位名
 export function preprocessCostData() {
   const src = state.gameData;
@@ -254,25 +267,32 @@ export async function loadDataForSeason(seasonId) {
   const loaded = {};
   state.missingFiles = [];
 
-  for (const [key, gid] of Object.entries(DATA_FILES_CONFIG)) {
-    const url = makeCsvUrl(gid);
-    try {
-      const rows = await fetchAndParseCsv(url);
+    for (const [key, gid] of Object.entries(DATA_FILES_CONFIG)) {
+      const url = makeCsvUrl(gid);
+      console.log(`[data load] loading ${key} from ${url} for season ${targetSeason}`);
+      try {
+        const rows = await fetchAndParseCsv(url);
 
-      // 所有表都加了 season 欄位的情況
-      const filtered = rows.filter((row) => {
-        const s = String(row.season || '').toLowerCase();
-        // 若這一列沒有 season（例如共用），就全賽季通用
-        if (!s) return true;
-        return s === targetSeason.toLowerCase();
-      });
+        // 所有表都加了 season 欄位的情況
+        const filtered = rows.filter((row) => {
+          const s = String(row.season || '').toLowerCase();
+          // 若這一列沒有 season（例如共用），就全賽季通用
+          if (!s) return true;
+          return s === targetSeason.toLowerCase();
+        });
 
-      loaded[key] = filtered;
-    } catch (err) {
-      console.warn(`❌ 無法載入 ${key} (${url})，改用模擬數據`, err);
-      loaded[key] = MOCK_GAME_DATA[key];
-      state.missingFiles.push(key);
-    }
+        if (key === 'shop') {
+          // 將 shop 的資料寫入 state.gameData
+          state.gameData.shop = buildShopDataForSeason(filtered, seasonId);
+        } else {
+          loaded[key] = filtered;
+        }
+
+      } catch (err) {
+        console.warn(`❌ 無法載入 ${key} (${url})，改用模擬數據`, err);
+        loaded[key] = MOCK_GAME_DATA[key];
+        state.missingFiles.push(key);
+      }
   }
 
   state.gameData = loaded;
@@ -324,6 +344,45 @@ export async function loadMaterialAvgDefaults() {
     state.materialAvgDefaults[source] = avgMap;
   }
 }
+
+// 由商店 CSV 生成：
+// - state.gameData.shop[id] = { average, costRola }
+// - MATERIAL_DAILY_DEFAULTS.shop[id] = average
+function buildShopDataForSeason(rows, seasonId) {
+  console.log(`[shop data] building for season ${seasonId}`);
+  const shop = {};
+
+  // 先清空舊的預設
+  Object.keys(MATERIAL_DAILY_DEFAULTS.shop).forEach((k) => {
+    delete MATERIAL_DAILY_DEFAULTS.shop[k];
+  });
+
+  console.log(`[shop data] processing ${rows} `);
+  rows.forEach((r) => {
+    console.log(`[shop data] processing row: `, r);
+    const rowSeason = (r.season || "").toLowerCase();
+    if (rowSeason && rowSeason !== seasonId.toLowerCase()) return;
+
+    const id = (r.id || "").trim().toLowerCase(); // stone / essence / sand / freeze_dried
+    if (!id) return;
+
+    const avg = Number(r.average || 0);
+    const costRola = Number(r.cost_rola || 0);
+
+    shop[id] = {
+      average: avg,
+      costRola,
+    };
+
+    // 這就是 UI「每日購買量」的預設值
+    MATERIAL_DAILY_DEFAULTS.shop[id] = avg;
+    console.log(`[shop data] loaded ${id}: avg=${avg}, costRola=${costRola}`);
+  });
+
+  return shop;
+}
+
+
 
 // 給 controller / view 用的統一介面
 export function getMaterialSourceConfig() {
@@ -412,11 +471,11 @@ export function convertPrimordialStar_S3(score) {
  * 計算「最低可達角色等級」
  *
  * 定義：
- *   - cum(k-1) : 抵達 k 級所需的『累積』經驗。
- *   - 當前等級 L ：玩家已經累積到 cum(L-1)（即剛達成 L 級的門檻）。
- *   - ownedExp：目前持有、尚未用掉的經驗資源（包含手動輸入與床持續累加）。
- *   - bedExpHourly：床每小時產出的經驗速率。
- *   - targetTimeStr：目標時間（datetime-local 字串），若無則視為 0 小時。
+ * - cum(k-1) : 抵達 k 級所需的『累積』經驗。
+ * - 當前等級 L ：玩家已經累積到 cum(L-1)（即剛達成 L 級的門檻）。
+ * - ownedExp：目前持有、尚未用掉的經驗資源（包含手動輸入與床持續累加）。
+ * - bedExpHourly：床每小時產出的經驗速率。
+ * - targetTimeStr：目標時間（datetime-local 字串），若無則視為 0 小時。
  */
 export function computeReachableCharacterLevel(curLv, ownedExp, bedExpHourly, targetTimeStr) {
   const table = state.cumulativeCostData['character'];

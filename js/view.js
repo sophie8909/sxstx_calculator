@@ -414,7 +414,16 @@ function renderMaterialSourceTable(
 
   const headerCols = showAvg
     ? '<th>素材</th><th>每日次數</th><th>平均每次</th><th>約可獲得</th>'
-    : '<th>素材</th><th>每日購買</th><th>約可獲得</th>';
+    : '<th>素材</th><th>每日購買</th><th>羅拉花費</th><th>約可獲得</th>';
+  const shopSummary =
+  source === 'shop'
+    ? `
+      <div class="mt-3 p-2 bg-gray-50 rounded border text-right text-sm">
+        <div>每日花費羅拉：<span id="shop-rola-daily-cost">0</span></div>
+        <div>總花費羅拉（依剩餘天數）：<span id="shop-rola-total-cost">0</span></div>
+      </div>
+    `
+    : '';
 
   const rows = materialList
     .map((mat) => {
@@ -455,6 +464,14 @@ function renderMaterialSourceTable(
                 data-source="${source}" data-material="${mat}" data-role="dailyBuy"
                 value="${daily}" />
             </td>
+            
+            <td class="py-1 text-center">
+              <input type="number"
+                class="input-field rounded px-1 py-0.5 w-24 text-right material-source-input"
+                data-source="${source}" data-material="${mat}" data-role="rolaCost"
+                value="0" />
+            </td>
+            
             <td class="py-1 text-right">
               <span class="material-source-total"
                 data-source="${source}" data-material="${mat}">0</span>
@@ -478,6 +495,7 @@ function renderMaterialSourceTable(
           ${rows}
         </tbody>
       </table>
+      ${shopSummary}
     </section>
   `;
 }
