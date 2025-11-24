@@ -6,9 +6,6 @@ import { MAX_LEVEL, categories, targetLevelConfig, materials, productionSources 
 import { getCumulative } from './costProcessor.js';
 import { costKeyToMaterialId } from '../utils.js'; // 引入 utils.js
 
-// 加速道具的等效小時數 (統一放在此處)
-const SPEED_UP_HOURS_PER_ITEM = 2;
-
 // 通知相關的輔助函式 (移到此處以避免 model.js 過長)
 
 /** 清除升級通知排程 */
@@ -128,30 +125,6 @@ export function convertPrimordialStar_S3(score) {
 }
 
 /**
- * 計算總加速小時數
- * @param {number} speedUpStoneCount - 加速石數量
- * @param {number} dailyFreeSpeedUpCount - 每日免費加速次數
- * @returns {number} 總加速小時數
- */
-export function calculateTotalSpeedUpHours(speedUpStoneCount, dailyFreeSpeedUpCount) {
-  return (speedUpStoneCount + dailyFreeSpeedUpCount) * SPEED_UP_HOURS_PER_ITEM;
-}
-
-/**
- * 計算將加速經驗併入後的「瞬時持有經驗」
- * @param {number} ownedExp - 原始持有經驗
- * @param {number} bedExpHourly - 臥室每小時經驗收益
- * @param {number} speedUpStoneCount - 加速石數量
- * @param {number} dailyFreeSpeedUpCount - 每日免費加速次數
- * @returns {number} 加上加速經驗後的總瞬時持有經驗
- */
-export function calculateFinalOwnedExp(ownedExp, bedExpHourly, speedUpStoneCount, dailyFreeSpeedUpCount) {
-  const totalSpeedUpHours = calculateTotalSpeedUpHours(speedUpStoneCount, dailyFreeSpeedUpCount);
-  const speedUpExpGain = Math.floor(bedExpHourly * totalSpeedUpHours);
-  return (Number(ownedExp) || 0) + speedUpExpGain;
-}
-
-/**
  * 主計算：需求 / 時產收益 / 缺口（渲染用 payload）
  * (此函式仍需透過 DOM 獲取輸入，待 controller 拆分完後可簡化簽名)
  */
@@ -174,17 +147,6 @@ export function computeAll(containers) {
   const bedExpHourly = parseFloat(document.getElementById('bed-exp-hourly')?.value) || 0;
   const targetTimeStr = document.getElementById('target-time')?.value;
   // --- 收集輸入結束 ---
-
-  // 加速輸入
-  const speedUpStoneCount = parseInt(document.getElementById('speed-up-stone-count')?.value) || 0;
-  const dailyFreeSpeedUpCount = parseInt(document.getElementById('daily-free-speed-up-count')?.value) || 0;
-  const SPEED_UP_HOURS_PER_ITEM = 2;
-
-  // 總加速小時數 = (加速石數量 + 每日免費加速次數) * 2小時
-  const totalSpeedUpHours = 
-    (speedUpStoneCount + dailyFreeSpeedUpCount) * SPEED_UP_HOURS_PER_ITEM;
-
-    console.log('Total Speed Up Hours:', totalSpeedUpHours);
 
   // --- 2. 計算自動欄位：可達等級、原初之星 ---
   const reachable = computeReachableCharacterLevel(curCharLv, ownedExp, bedExpHourly, targetTimeStr);
@@ -296,28 +258,14 @@ export function computeAll(containers) {
   if (!hasInput) return { required: {}, gains: {}, deficit: {}, materialErrors: missingDataErrors };
   
   // --- 5. 掛機收益計算 ---
-  // 1) 時間差計算的小時數
-  const idleHours = targetTimeStr
-    ? Math.max(0, (new Date(targetTimeStr).getTime() - Date.now()) / 36e5)
-    : 0;
-
-  // 2) 總產出小時數 = 時間差小時數 + 加速小時數
-  const totalProductionHours = idleHours + totalSpeedUpHours; 
-
-  if (totalProductionHours > 0) {
-    // A. 小推車素材收益
+  if (targetTimeStr) {
+    const hours = Math.max(0, (new Date(targetTimeStr).getTime() - Date.now()) / 36e5);
     Object.entries(productionSources).forEach(([srcId, src]) => {
       const hourly = parseFloat(document.getElementById(`manual-hourly-${srcId}`)?.value) || 0;
       const mat = src.materialId;
-      // 使用總產出小時數計算
-      gains[mat] = (gains[mat] || 0) + Math.floor(hourly * totalProductionHours);
+      gains[mat] = (gains[mat] || 0) + Math.floor(hourly * hours);
     });
-
-    // B. 角色經驗收益
-    if (bedExpHourly > 0) {
-      // 使用總產出小時數計算
-      gains['exp'] = (gains['exp'] || 0) + Math.floor(bedExpHourly * totalProductionHours);
-    }
+    if (bedExpHourly > 0) gains['exp'] = (gains['exp'] || 0) + Math.floor(bedExpHourly * hours);
   }
   
   // --- 6. 缺口計算 ---
