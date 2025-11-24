@@ -2,8 +2,7 @@
 // ★ 視圖層：負責渲染 DOM 與小型 UI 更新，不含業務邏輯 ★
 
 import { el, fmt } from './utils.js';
-
-// 匯入所有需要的常數和函式
+// 移除未使用的 STORAGE_KEY 匯入以精簡依賴
 import {
   categories,
   seasonOptions,
@@ -11,8 +10,7 @@ import {
   materials,
   productionSources,
   getMaterialSourceConfig
-} from './model/model.js'; // ★ 路徑已更新 ★
-
+} from './model.js';
 
 /**
  * 一次取得頁面需要用到的容器節點。
