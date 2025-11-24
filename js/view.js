@@ -321,6 +321,23 @@ export function renderCharBed(container) {
   container.appendChild(row({ id: 'owned-exp-wan', icon: '🧮', label: '目前持有經驗（輸入）', placeholder: '以萬為單位輸入' }));
   container.appendChild(row({ id: 'owned-exp', icon: '📖', label: '對應實際經驗值', placeholder: '自動換算（唯讀）', readOnly: true }));
   container.appendChild(row({ id: 'bed-exp-hourly', icon: '🛏️', label: '每小時經驗產量', placeholder: '0' }));
+
+  // 加速石數量
+  container.appendChild(row({ 
+    id: 'speed-up-stone-count', 
+    icon: '🚀', 
+    label: '加速石數量（2H/個）', 
+    placeholder: '持有數量' 
+  }));
+
+  // 每日免費加速次數
+  container.appendChild(row({ 
+    id: 'daily-free-speed-up-count', 
+    icon: '🎁', 
+    label: '免費加速次數（2H/次）', 
+    placeholder: '預設剩餘天數' 
+  }));
+
   const infoBox = el('div', ['mt-2', 'space-y-1', 'text-xs', 'text-gray-500']);
   const needNext = el('div');
   needNext.id = 'bed-levelup-exp';

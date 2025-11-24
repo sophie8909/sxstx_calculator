@@ -17,6 +17,11 @@ import {
 } from './model/model.js'; 
 
 import {
+  // 匯入新的經驗計算輔助函式
+  calculateFinalOwnedExp,
+} from './model/calculator.js'; // 確保路徑正確
+
+import {
   getContainers,
   renderAll,
   updateCurrentTime,
@@ -92,12 +97,25 @@ function triggerRecalculate(containers) {
   }
   const ownedExp = parseInt(ownedExpInput?.value) || 0;
 
-  const { levelupTs, minutesNeeded } = computeEtaToNextLevel(curLv, ownedExp, bedHourly);
+  const speedUpStoneCount = parseInt(document.getElementById('speed-up-stone-count')?.value) || 0;
+  const dailyFreeSpeedUpCount = parseInt(document.getElementById('daily-free-speed-up-count')?.value) || 0;
+  
+  // ★★★ 將加速經驗計算移至 calculator.js，並取得「加上加速經驗後的總經驗」 ★★★
+  const finalOwnedExp = calculateFinalOwnedExp(ownedExp, bedHourly, speedUpStoneCount, dailyFreeSpeedUpCount);
+
+  // 移除了：
+  // const SPEED_UP_HOURS_PER_ITEM = 2;
+  // const totalSpeedUpHours = (speedUpStoneCount + dailyFreeSpeedUpCount) * SPEED_UP_HOURS_PER_ITEM;
+  // const speedUpExpGain = Math.floor(bedHourly * totalSpeedUpHours);
+  // const finalOwnedExp = ownedExp + speedUpExpGain; // 將加速經驗計入「瞬時持有經驗」
+
+  
+  const { levelupTs, minutesNeeded } = computeEtaToNextLevel(curLv, finalOwnedExp, bedHourly);
   renderLevelupTimeText(minutesNeeded, levelupTs);
 
   const targetChar = parseInt(document.getElementById('target-character')?.value) || 0;
   const { minutesNeeded: m2, etaTs } =
-    computeEtaToTargetLevel(curLv, ownedExp, bedHourly, targetChar);
+    computeEtaToTargetLevel(curLv, finalOwnedExp, bedHourly, targetChar);
   renderTargetEtaText(m2, etaTs);
 
   updateExpRequirements(curLv, ownedExp, targetChar);
@@ -347,6 +365,15 @@ async function init() {
   renderMaterialSource(containers);
   updateDaysRemainingFromTarget();
   updateAllMaterialSources();
+
+  const daysRemaining = parseInt(document.getElementById('days-remaining')?.value || '0', 10);
+  const dailyFreeInput = document.getElementById('daily-free-speed-up-count');
+  const savedDailyFree = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}')['daily-free-speed-up-count'];
+
+  if (dailyFreeInput && !savedDailyFree) {
+    // 如果沒有儲存值，則使用剩餘天數作為預設值
+    dailyFreeInput.value = daysRemaining;
+  }
 
   // 自動更新經驗與現在時間
   setupAutoUpdate(containers);
