@@ -4,7 +4,7 @@
 import {
   state,
   STORAGE_KEY,
-  seasonOptions,              // ← 新增：從 model.js 動態帶入賽季清單
+  seasonOptions,
   loadDataForSeason,
   preprocessCostData,
   saveAllInputs,
@@ -14,7 +14,7 @@ import {
   computeEtaToTargetLevel,
   getCumulative,
   loadMaterialAvgDefaults,
-} from './model.js';
+} from './model/model.js'; 
 
 import {
   getContainers,
@@ -26,6 +26,28 @@ import {
   renderTargetEtaText,
   renderMaterialSource,
 } from './view.js';
+
+// ★★★ 匯入 Controller 子模組的所有必要函式 ★★★
+import { 
+  initServerSelector, 
+  initTargetTimeControls 
+} from './controller/configLoader.js';
+
+import { 
+  updateExpRequirements, 
+  setupAutoUpdate, 
+  enableLevelUpNotifications, 
+  disableLevelUpNotifications 
+} from './controller/timeControls.js';
+
+import { 
+  getMaterialInput, 
+  updateDaysRemainingFromTarget, 
+  updateAllMaterialSources,
+  // 必須匯入被 bindGlobalHandlers 呼叫的細節函式
+  updateMaterialSourceRow, 
+  updateShopRolaCost, 
+} from './controller/materialSource.js';
 
 /* ============================================================
  * Google 試算表（Published CSV）設定：時間選項 / 伺服器來源
@@ -82,71 +104,7 @@ function triggerRecalculate(containers) {
   saveAllInputs();
 }
 
-// 讀取素材來源的 input（每日次數 / 平均值 / 商店每日購買）
-// 檔案: controller.js (此函式無需變動，但它是獲取 rolaCost 的關鍵)
 
-function getMaterialInput(source, material, role) {
-  const el = document.querySelector(
-    `.material-source-input[data-source="${source}"][data-material="${material}"][data-role="${role}"]`
-  );
-
-  if (!el) return 0;
-
-  const v = parseFloat(el.value);
-  return Number.isNaN(v) ? 0 : v;
-}
-
-
-/* -----------------------------
- * 顯示升級所需經驗
- * ---------------------------*/
-function updateExpRequirements(curLv, ownedExp, targetChar) {
-  const table = state.cumulativeCostData['character'];
-  if (!table || !table.length) return;
-
-  const cur = getCumulative(table, curLv - 1);
-  const nxt = getCumulative(table, curLv);
-  const tgt = getCumulative(table, targetChar - 1);
-
-  const needNextExp = Math.max(0, (nxt.cost_exp || 0) - (cur.cost_exp || 0) - ownedExp);
-  const needTargetExp = Math.max(0, (tgt.cost_exp || 0) - (cur.cost_exp || 0) - ownedExp);
-
-  const elNext = document.getElementById('bed-levelup-exp');
-  const elTarget = document.getElementById('bed-target-exp');
-  if (elNext) elNext.textContent = `升至下一級所需經驗: ${needNextExp.toLocaleString()}`;
-  if (elTarget) elTarget.textContent = `升至目標等級所需經驗: ${needTargetExp.toLocaleString()}`;
-}
-
-/* -----------------------------
- * 每秒同步更新經驗
- * ---------------------------*/
-function setupAutoUpdate(containers) {
-  setInterval(() => {
-    const curLv = parseInt(document.getElementById('character-current')?.value) || 0;
-    const ownedWanStr = document.getElementById('owned-exp-wan')?.value?.trim();
-    const ownedWan = ownedWanStr === '' ? NaN : parseFloat(ownedWanStr);
-    const bedHourly = parseFloat(document.getElementById('bed-exp-hourly')?.value) || 0;
-    const targetChar = parseInt(document.getElementById('target-character')?.value) || 0;
-
-    const ownedExpInput = document.getElementById('owned-exp');
-    if (!ownedExpInput || isNaN(ownedWan)) return;
-
-    const base = parseFloat(ownedExpInput.value) || ownedWan * 10000;
-    const newExp = base + (bedHourly / 3600);
-    ownedExpInput.value = Math.floor(newExp);
-    const ownedExp = parseInt(ownedExpInput.value) || 0;
-
-    const { levelupTs, minutesNeeded } =
-      computeEtaToNextLevel(curLv, ownedExp, bedHourly);
-    renderLevelupTimeText(minutesNeeded, levelupTs);
-
-    const { minutesNeeded: m2, etaTs } =
-      computeEtaToTargetLevel(curLv, ownedExp, bedHourly, targetChar);
-    renderTargetEtaText(m2, etaTs);
-
-    updateExpRequirements(curLv, ownedExp, targetChar);
-  }, 1000);
-}
 
 /* -----------------------------
  * 從 Google 試算表讀取「伺服器選項」
@@ -286,229 +244,6 @@ function initSeasonSelector(containers, saved = null) {
   });
 }
 
-/* -----------------------------
- * 初始化伺服器下拉選單 #server-select
- * 並把選取結果存到 state.serverName
- * ---------------------------*/
-async function initServerSelector(containers) {
-  const serverSel = document.getElementById('server-select');
-  if (!serverSel) return;
-
-  const servers = await fetchServerOptionsFromSheet();
-  serverSel.innerHTML = '';
-  servers.forEach(s => {
-    const opt = document.createElement('option');
-    opt.value = s;
-    opt.textContent = s;
-    serverSel.appendChild(opt);
-  });
-
-  // 恢復之前選過的伺服器
-  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-  const savedServer = saved['server-select'];
-  if (savedServer && [...serverSel.options].some(o => o.value === savedServer)) {
-    serverSel.value = savedServer;
-    state.serverName = savedServer;
-  } else {
-    serverSel.selectedIndex = 0;
-    state.serverName = serverSel.value;
-  }
-
-  serverSel.addEventListener('change', () => {
-    state.serverName = serverSel.value;
-    const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-    data['server-select'] = serverSel.value;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-
-    // 換伺服器時重新載入對應的目標時間選項
-    initTargetTimeControls(containers);
-    triggerRecalculate(containers);
-  });
-}
-
-/* -----------------------------
- * 目標時間控制
- * ---------------------------*/
-async function initTargetTimeControls(containers) {
-  const presetSel = document.getElementById('target-time-preset');
-  const displayBox = document.getElementById('target-time-display');
-  const customInput = document.getElementById('target-time-custom');
-  const hiddenField = document.getElementById('target-time');
-
-  if (!presetSel || !displayBox || !customInput || !hiddenField) return;
-
-  const allPresets = await fetchTimePresetsFromSheet();
-  const selectedServer = state.serverName;
-
-  // 填入 select：只放「目前伺服器」的選項
-  presetSel.innerHTML = '';
-  allPresets.forEach(p => {
-    if (p.server_name && p.server_name !== selectedServer) return;
-    const opt = document.createElement('option');
-    opt.value = p.key;
-    opt.textContent = p.label;
-    presetSel.appendChild(opt);
-  });
-
-  // 追加「自訂時間」
-  const optCustom = document.createElement('option');
-  optCustom.value = '__custom__';
-  optCustom.textContent = '自訂時間';
-  presetSel.appendChild(optCustom);
-
-  // 恢復選取
-  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-  const savedKey = saved['target-time-preset'];
-  if (savedKey && [...presetSel.options].some(o => o.value === savedKey)) {
-    presetSel.value = savedKey;
-  } else {
-    presetSel.selectedIndex = 0;
-  }
-  customInput.value = saved['target-time-custom'] || '';
-
-  const apply = () => {
-    const v = presetSel.value;
-    if (v === '__custom__') {
-      customInput.classList.remove('hidden');
-      displayBox.classList.add('hidden');
-
-      // 自訂時間若為空 → 先帶入現在時間
-      if (!customInput.value) {
-        const now = new Date();
-        const localISO = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
-          .toISOString()
-          .slice(0, 16);
-        customInput.value = localISO;
-      }
-      hiddenField.value = customInput.value || '';
-    } else {
-      customInput.classList.add('hidden');
-      displayBox.classList.remove('hidden');
-
-      const found = allPresets.find(p => p.key === v);
-      const ts = found?.iso || '';
-      hiddenField.value = ts;
-
-      if (ts) {
-        const d = new Date(ts);
-        displayBox.textContent = d.toLocaleString('zh-TW', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-          hour12: false
-        });
-      } else {
-        displayBox.textContent = '--';
-      }
-    }
-
-    const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-    data['target-time-preset'] = presetSel.value;
-    data['target-time-custom'] = customInput.value || '';
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-
-    updateDaysRemainingFromTarget();
-    updateAllMaterialSources();
-
-    triggerRecalculate(containers);
-  };
-
-  presetSel.addEventListener('change', apply);
-  customInput.addEventListener('input', apply);
-
-
-
-
-  apply();
-}
-
-// 由 #target-time 推算剩餘天數（目標時間 - 現在時間）
-function updateDaysRemainingFromTarget() {
-  const hidden = document.getElementById('target-time');   // 隱藏目標時間
-  const daysInput = document.getElementById('days-remaining');
-  if (!hidden || !daysInput || !hidden.value) return;
-
-  const target = new Date(hidden.value);
-  if (Number.isNaN(target.getTime())) return;
-
-  const now = new Date();
-  let diffMs = target.getTime() - now.getTime();
-  if (diffMs < 0) diffMs = 0;
-
-  const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));  // 有小數就往上取整
-  daysInput.value = days;
-}
-
-
-
-
-
-function updateMaterialSourceRow(source, material) {
-  const days = parseInt(
-    document.getElementById('days-remaining')?.value || '0',
-    10
-  );
-
-  const totalSpan = document.querySelector(
-    `.material-source-total[data-source="${source}"][data-material="${material}"]`
-  );
-  if (!totalSpan) return;
-
-  let total = 0;
-
-  if (source === 'shop') {
-    const dailyBuy = getMaterialInput(source, material, 'dailyBuy');
-    total = dailyBuy * days;
-  } else {
-    const daily = getMaterialInput(source, material, 'daily');
-    const avg = getMaterialInput(source, material, 'avg');
-    total = daily * avg * days;
-  }
-
-  totalSpan.textContent = total ? total.toLocaleString() : '0';
-}
-function updateAllMaterialSources() {
-  const dungeonMats = ['stone', 'essence', 'sand', 'rola'];
-  const exploreMats = ['stone', 'essence', 'sand', 'rola'];
-  const shopMats = ['stone', 'essence', 'sand'];
-
-  dungeonMats.forEach((m) => updateMaterialSourceRow('dungeon', m));
-  exploreMats.forEach((m) => updateMaterialSourceRow('explore', m));
-  shopMats.forEach((m) => updateMaterialSourceRow('shop', m));
-
-  updateShopRolaCost();
-}
-
-
-function updateShopRolaCost() {
-  const days =
-    parseInt(document.getElementById('days-remaining')?.value || '0', 10) || 0;
-
-  // 素材清單應與 view.js 中的 shopMats 一致，包含 freeze_dried
-  const shopMats = ['stone', 'essence', 'sand', 'freeze_dried']; 
-  let dailyCost = 0;
-
-  shopMats.forEach((mat) => {
-    // 從新的輸入欄位獲取使用者輸入的羅拉單價
-    const unit = getMaterialInput('shop', mat, 'rolaCost'); 
-    
-    // 從舊的輸入欄位獲取每日購買量
-    const dailyBuy = getMaterialInput('shop', mat, 'dailyBuy'); 
-    
-    dailyCost += dailyBuy * unit;
-  });
-
-  const dailyEl = document.getElementById('shop-rola-daily-cost');
-  const totalEl = document.getElementById('shop-rola-total-cost');
-
-  if (dailyEl) dailyEl.textContent = dailyCost ? dailyCost.toLocaleString() : '0';
-  if (totalEl) totalEl.textContent = (dailyCost * days).toLocaleString();
-}
-
-
 
 /* -----------------------------
  * 全域事件：任何輸入 / 選擇變更都重算
@@ -567,45 +302,13 @@ async function handleSeasonChange(containers) {
   loadAllInputs(['season-select']); // 賽季用我們自己的邏輯處理
 
   // 先初始化伺服器選單，再依伺服器載入目標時間選項
-  await initServerSelector(containers);
-  await initTargetTimeControls(containers);
+  await initServerSelector(containers, triggerRecalculate);
+  await initTargetTimeControls(containers, triggerRecalculate);
 
   updateRelicTotal();
   triggerRecalculate(containers);
 }
 
-/* -----------------------------
- * 通知相關（保留原本行為）
- * ---------------------------*/
-async function enableLevelUpNotifications() {
-  const curLv = parseInt(document.getElementById('character-current')?.value) || 0;
-  const ownedWanStr = document.getElementById('owned-exp-wan')?.value?.trim();
-  const ownedWan = ownedWanStr === '' ? NaN : parseFloat(ownedWanStr);
-  const bedHourly = parseFloat(document.getElementById('bed-exp-hourly')?.value) || 0;
-  const ownedExpInput = document.getElementById('owned-exp');
-
-  const notifyTimeSelect = document.getElementById('notify-time-select');
-  let notifyTime = 0;
-  if (notifyTimeSelect.value === 'min1') notifyTime = 1;
-  else if (notifyTimeSelect.value === 'min2') notifyTime = 2;
-  else if (notifyTimeSelect.value === 'min3') notifyTime = 3;
-  else if (notifyTimeSelect.value === 'min5') notifyTime = 5;
-
-  if (ownedExpInput && isNaN(ownedWan)) return;
-  const ownedExp = parseInt(ownedExpInput?.value) || 0;
-
-  import('./model.js').then(({ scheduleLevelUpNotification }) => {
-    scheduleLevelUpNotification(curLv, ownedExp, bedHourly, curLv + 1, notifyTime);
-    alert('已啟用升級（下一級）通知');
-  });
-}
-
-async function disableLevelUpNotifications() {
-  import('./model.js').then(({ clearLevelUpNotification }) => {
-    clearLevelUpNotification();
-    alert('已清除升級通知');
-  });
-}
 
 /* -----------------------------
  * 初始化
