@@ -13,7 +13,7 @@ import {
   computeEtaToNextLevel,
   computeEtaToTargetLevel,
   getCumulative,
-  loadMaterialAvgDefaults,
+
 } from './model.js';
 
 import {
@@ -640,7 +640,7 @@ async function init() {
   await handleSeasonChange(containers);
 
   // 先載入平均值、再畫素材來源 UI
-  await loadMaterialAvgDefaults();       // ← from model.js
+  // await loadMaterialAvgDefaults();       // ← from model.js
   renderMaterialSource(containers);
   updateDaysRemainingFromTarget();
   updateAllMaterialSources();

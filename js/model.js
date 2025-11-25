@@ -129,7 +129,7 @@ const dataUrl = (name) => new URL(name, DATA_BASE).href;
 
 /** Google 試算表基底連結（固定不動） */
 const GOOGLE_SHEET_BASE =
-  'https://docs.google.com/spreadsheets/d/e/2PACX-1vRMlpHJpHMNQTCxhYgj2fmvazou_cQpAiVa-w5tg7WR2EJTn4EExoLwojYM3BoS8FSTpxvaKIQdmPQC/pub';
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vTS_dK7OUmUkWmUTj_iotltVPzO-2Bjz0cefAshVWuu5qL6e2VXV-cr-wm1bkrVShI7mSZovU_zwz2B/pub';
 
 /** 各賽季資料設定，只保留 gid */
 export const DATA_FILES_CONFIG = {
@@ -138,14 +138,10 @@ export const DATA_FILES_CONFIG = {
   skillUpgradeCosts:     682954597,  // 技能
   relicUpgradeCosts:     1548103854,  // 遺物
   petUpgradeCosts:       1910677696,  // 幻獸
-  shop:                  2064242339,  // 商店 (假設的 gid，請替換為實際值)
+  resource:              751788076,  // 資源
+  seasonScore:          1012321192,  // 賽季分數
 };
 
-const MATERIAL_AVG_SHEETS = {
-  dungeon: { base: GOOGLE_SHEET_BASE, gid: '751788076' },
-  explore: { base: GOOGLE_SHEET_BASE, gid: '1733617634' },
-  shop:    { base: GOOGLE_SHEET_BASE, gid: '2064242339' },
-};
 
 
 /** 內部狀態 */
@@ -153,6 +149,7 @@ export const state = {
   seasonId: 's2',         // 預設賽季
   serverName: '淨心護甲', // 預設伺服器
   gameData: {},           // 原始表
+  seasonScore: {},      // 賽季分數表
   cumulativeCostData: {}, // 累積成本表
   missingFiles: [],       // 載入失敗清單
   notificationTimerIdLevelUp: null, // 升級通知計時器 ID
@@ -281,10 +278,13 @@ export async function loadDataForSeason(seasonId) {
           return s === targetSeason.toLowerCase();
         });
 
-        if (key === 'shop') {
-          // 將 shop 的資料寫入 state.gameData
-          state.gameData.shop = buildShopDataForSeason(filtered, seasonId);
+        if (key === 'resource') {
+          // 將 resource 的資料寫入 state.gameData
+          state.gameData.resource = buildShopDataForSeason(filtered, seasonId);
+        } else if (key === 'seasonScore') {
+          state.seasonScore = buildSeasonScoreData(filtered);
         } else {
+          // console.log(`${key} loaded: `, filtered);
           loaded[key] = filtered;
         }
 
@@ -298,51 +298,12 @@ export async function loadDataForSeason(seasonId) {
   state.gameData = loaded;
 }
 
-
-
-// 讀單一 CSV：格式為
-// A: 資源代號 stone / essence / sand / rola
-// B: average
-async function fetchMaterialAvgCSV({ base, gid }) {
-  const url = `${base}?output=csv&gid=${encodeURIComponent(gid)}`;
-  const res = await fetch(url, { cache: 'no-store' });
-  if (!res.ok) throw new Error(`[material avg] fetch failed ${res.status}`);
-
-  const text = await res.text();
-  const lines = text.trim().split('\n');
-  // 第一列是標題：resource,average 或類似
-  const rows = lines.slice(1);
-
-  const out = {};
-  for (const line of rows) {
-    if (!line.trim()) continue;
-    const [idRaw, avgRaw] = line.split(',').map(s => s.trim());
-    if (!idRaw) continue;
-
-    const id = idRaw.toLowerCase(); // stone / essence / sand / rola
-    const avg = parseFloat(avgRaw);
-    out[id] = Number.isNaN(avg) ? 0 : avg;
-  }
-  return out;
-}
-
-// 一次載入三個來源的平均值到 state
-export async function loadMaterialAvgDefaults() {
-  const entries = await Promise.all(
-    Object.entries(MATERIAL_AVG_SHEETS).map(async ([source, cfg]) => {
-      try {
-        const avgMap = await fetchMaterialAvgCSV(cfg);
-        return [source, avgMap];
-      } catch (err) {
-        console.warn('[material avg] use zeros for', source, err);
-        return [source, {}];
-      }
-    })
-  );
-
-  for (const [source, avgMap] of entries) {
-    state.materialAvgDefaults[source] = avgMap;
-  }
+function buildSeasonScoreData(rows) {
+  const result = {};
+  rows.forEach((r) => {
+    result[r.season] = r;
+  });
+  return result;
 }
 
 // 由商店 CSV 生成：
@@ -357,9 +318,7 @@ function buildShopDataForSeason(rows, seasonId) {
     delete MATERIAL_DAILY_DEFAULTS.shop[k];
   });
 
-  console.log(`[shop data] processing ${rows} `);
   rows.forEach((r) => {
-    console.log(`[shop data] processing row: `, r);
     const rowSeason = (r.season || "").toLowerCase();
     if (rowSeason && rowSeason !== seasonId.toLowerCase()) return;
 
@@ -410,61 +369,28 @@ export function getCumulative(costTable, level) {
 }
 
 /** 賽季分數計算 **/
-export function calculateSeasonScore_S1(targets) {
+export function calculateSeasonScore(targets) {
   let score = 0;
-  const season_level = 100;
-  if (targets.character > season_level) score += (targets.character - season_level) * 100;
-  if (targets.equipment_resonance > season_level) score += (targets.equipment_resonance - season_level) * 38 * 5;
-  if (targets.skill_resonance > season_level) score += (targets.skill_resonance - season_level) * 14 * 8;
-  if (targets.pet_resonance > season_level) score += (targets.pet_resonance - season_level) * 14 * 4;
-  if (targets.relic_resonance > season_level/10) score += (targets.relic_resonance - season_level/10) * 57 * 20;
-  return score;
-}
-export function calculateSeasonScore_S2(targets) {
-  let score = 0;
-  const season_level = 130;
+  const season_level = state.seasonScore[state.seasonId].season_level || 100;
   // 角色每一賽季等級 + 100 分
   if (targets.character > season_level) {
-    score += (targets.character - season_level) * 100;
-  }
-  // 裝備每一賽季等級 + 18 分，共 5 件
-  if (targets.equipment_resonance > season_level) score += (targets.equipment_resonance - season_level) * 18 * 5;
-  // 技能每一賽季等級 + 7 分，共 8 個
-  if (targets.skill_resonance > season_level) score += (targets.skill_resonance - season_level) * 7 * 8;
-  // 幻獸每一賽季等級 + 8 分，共 4 隻
-  if (targets.pet_resonance > season_level) score += (targets.pet_resonance - season_level) * 8 * 4;
-  // 遺物每一賽季等級 + 33 分，共 20 件
-  if (targets.relic_resonance > season_level/10) score += (targets.relic_resonance - season_level/10) * 33 * 20;
-  return score;
-}
-
-export function calculateSeasonScore_S3(targets) {
-  let score = 0;
-  const season_level = 160;
-  // 角色每一賽季等級 + 100 分
-  if (targets.character > season_level) {
-    score += (targets.character - season_level) * 100;
+    score += (targets.character - season_level) * state.seasonScore[state.seasonId]['character_level_score'];
   }
   // 裝備每一賽季等級 + 14 分，共 5 件
-  if (targets.equipment_resonance > season_level) score += (targets.equipment_resonance - season_level) * 14 * 5;
+  if (targets.equipment_resonance > season_level) score += (targets.equipment_resonance - season_level) * state.seasonScore[state.seasonId]['equipment_level_score'] * 5;
   // 技能每一賽季等級 + 5 分，共 8 個
-  if (targets.skill_resonance > season_level) score += (targets.skill_resonance - season_level) * 5 * 8;
+  if (targets.skill_resonance > season_level) score += (targets.skill_resonance - season_level) * state.seasonScore[state.seasonId]['skill_level_score'] * 8;
   // 幻獸每一賽季等級 + 6 分，共 4 隻
-  if (targets.pet_resonance > season_level) score += (targets.pet_resonance - season_level) * 6 * 4;
+  if (targets.pet_resonance > season_level) score += (targets.pet_resonance - season_level) * state.seasonScore[state.seasonId]['pet_level_score'] * 4;
   // 遺物每一賽季等級 + 26 分，共 20 件
-  if (targets.relic_resonance > season_level/10) score += (targets.relic_resonance - season_level/10) * 26 * 20;
+  if (targets.relic_resonance > season_level/10) score += (targets.relic_resonance - season_level/10) * state.seasonScore[state.seasonId]['relic_level_score'] * 20;
   return score;
 }
 
+
 /** 賽季等級轉換原初之星 **/
-export function convertPrimordialStar_S1(score) {
-  return Math.floor(score / 100 + 10);
-}
-export function convertPrimordialStar_S2(score) {
-  return Math.floor(score / 27 + 45);
-}
-export function convertPrimordialStar_S3(score) {
-  return Math.floor(score / 13 + 65);
+export function convertPrimordialStar(score) {
+  return Math.floor(score / state.seasonScore[state.seasonId]['star_convert'] + state.seasonScore[state.seasonId]['star_basis']);
 }
 
 /**
@@ -523,21 +449,14 @@ export function computeAll(containers) {
   const reachableEl = document.getElementById('target-char-reachable-level');
   if (reachableEl) reachableEl.textContent = `最低可達: ${reachable > 0 ? reachable : '--'}`;
   // 本季可得原初之星（自動）
-  const seasonId = state.seasonId;
-  let score = 0;
-  if (seasonId === 's1') score = calculateSeasonScore_S1(targets);
-  else if (seasonId === 's2') score = calculateSeasonScore_S2(targets);
-  else if (seasonId === 's3') score = calculateSeasonScore_S3(targets);
-  let ps = 0;
-  if (seasonId === 's1') ps = convertPrimordialStar_S1(score);
-  else if (seasonId === 's2') ps = convertPrimordialStar_S2(score);
-  else if (seasonId === 's3') ps = convertPrimordialStar_S3(score);
+  const score = calculateSeasonScore(targets);
+  const ps = convertPrimordialStar(score);
   const psInput = document.getElementById('target-primordial_star');
   if (psInput) psInput.value = ps;
   // 帶入本季原初之星
   const thisSeasonPs = ps;
   seasonOptions.forEach(season => {
-    if (season.id === seasonId) {
+    if (season.id === state.seasonId) {
       const el = document.getElementById(`primordial-star-${season.id}`);
       if (el) el.value = thisSeasonPs;
     }
