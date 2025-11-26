@@ -4,7 +4,7 @@
 import {
   state,
   STORAGE_KEY,
-  seasonOptions,              // ← 新增：從 model.js 動態帶入賽季清單
+  seasonOptions,
   loadDataForSeason,
   preprocessCostData,
   saveAllInputs,
@@ -13,7 +13,7 @@ import {
   computeEtaToNextLevel,
   computeEtaToTargetLevel,
   getCumulative,
-  loadMaterialAvgDefaults,    // TODO: 新增匯入，修正 init() 內呼叫未定義函式
+  loadMaterialAvgDefaults, 
 } from './model.js';
 
 import {
@@ -484,20 +484,36 @@ function updateStoreRolaCost() {
 
   // 素材清單需與 getMaterialSourceConfig().sourceMaterials.store 一致
   const storeMats = ['stone', 'essence', 'sand', 'freeze_dried'];
-  let dailyCost = 0;
+  let autoDailyCost = 0; // TODO: 自動計算出的每日花費
 
   storeMats.forEach((mat) => {
-    const unit = getMaterialInput('store', mat, 'rolaCost'); 
+    const unit = getMaterialInput('store', mat, 'rolaCost');
     const dailyBuy = getMaterialInput('store', mat, 'dailyBuy');
-    dailyCost += dailyBuy * unit;
+    autoDailyCost += dailyBuy * unit;
   });
 
   const dailyEl = document.getElementById('store-rola-daily-cost');
+  const dailyManualEl = document.getElementById('store-rola-daily-cost-manual');
   const totalEl = document.getElementById('store-rola-total-cost');
+
+  // TODO: 預設使用自動計算的每日花費
+  let dailyCost = autoDailyCost;
+
+  // TODO: 若有填「手動每日花費」，則以手動為主（空白視為未填）
+  if (dailyManualEl) {
+    const manualRaw = dailyManualEl.value.trim();
+    if (manualRaw !== '') {
+      const manualVal = parseFloat(manualRaw);
+      if (!Number.isNaN(manualVal)) {
+        dailyCost = manualVal;
+      }
+    }
+  }
 
   if (dailyEl) dailyEl.textContent = dailyCost ? dailyCost.toLocaleString() : '0';
   if (totalEl) totalEl.textContent = (dailyCost * days).toLocaleString();
 }
+
 
 
 /* -----------------------------

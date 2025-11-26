@@ -105,27 +105,13 @@ export const MATERIAL_DISPLAY_NAMES = {
   freeze_dried: '幻獸凍乾',
 };
 
-// TODO: 新增素材來源每日預設值，避免 getMaterialSourceConfig / view.js 讀取未定義
+// TODO: 每日次數的預設值，目前先全部給空物件，需要時再填
 const MATERIAL_DAILY_DEFAULTS = {
-  dungeon: {
-    stone: 0,
-    essence: 0,
-    sand: 0,
-    rola: 0,
-  },
-  explore: {
-    stone: 0,
-    essence: 0,
-    sand: 0,
-    rola: 0,
-  },
-  store: {
-    stone: 0,
-    essence: 0,
-    sand: 0,
-    freeze_dried: 0,
-  },
+  dungeon: {},
+  explore: {},
+  store: {},
 };
+
 
 /** 各賽季 CSV 路徑（model.js 在 /js/，data 在 /data/） */
 const DATA_BASE = new URL('../data/', import.meta.url);
@@ -151,18 +137,19 @@ export const state = {
   seasonId: 's2',         // 預設賽季
   serverName: '淨心護甲', // 預設伺服器
   gameData: {},           // 升級表
-  seasonScore: {},        // 賽季分數表
-  resource: {},           // 資源表
+  seasonScore: {},      // 賽季分數表
+  resource: {},          // 資源表（依 type 分組）
   cumulativeCostData: {}, // 累積成本表
   missingFiles: [],       // 載入失敗清單
   notificationTimerIdLevelUp: null, // 升級通知計時器 ID
   notificationTimerIdTargetLevel: null, // 目標等級通知計時器 ID
-  materialAvgDefaults: {              // TODO: 新增：給素材來源平均值的安全預設結構
+  materialAvgDefaults: {             // TODO: 新增，給素材來源估算使用的平均值
     dungeon: {},
     explore: {},
     store: {},
   },
 };
+
 
 // --- 放在 model.js ---
 // 小工具：正規化 key（去掉 BOM、trim）
@@ -289,32 +276,70 @@ function buildSeasonScoreData(rows) {
   return result;
 }
 
-// 由商店 CSV 生成：
-// - state.gameData.store[id] = { average, costRola }
-// - MATERIAL_DAILY_DEFAULTS.store[id] = average
+// 由 resource CSV 生成：依 type（dungeon / explore / store）分組
 function buildResourceDataForSeason(rows, seasonId) {
-  const resourceData = {};
+  const resourceData = {}; // TODO: { dungeon: { stone: row, ... }, explore: {...}, store: {...} }
+
   rows.forEach((r) => {
-    if (r.season !== seasonId) return; // 只取當前賽季
-    resourceData[r.resource] = r;
+    const season = String(r.season || '').toLowerCase();
+    if (season && season !== seasonId.toLowerCase()) return; // 只取當前賽季或共用
+
+    const resKey = String(r.resource || '').trim();
+    const typeKey = String(r.type || '').toLowerCase(); // dungeon / explore / store
+    if (!resKey || !typeKey) return;
+
+    if (!resourceData[typeKey]) resourceData[typeKey] = {};
+    resourceData[typeKey][resKey] = r;
   });
+  console.log('[data load] built resource data for season:', seasonId, resourceData);
   return resourceData;
 }
-
-// TODO: 新增：提供一個安全的平均值載入函式，目前先當作 no-op，避免 controller 呼叫出錯
+// TODO: 從 resource 表載入「平均每次」預設值，填進 state.materialAvgDefaults
 export async function loadMaterialAvgDefaults() {
-  // 未來若要從 state.resource 推出 avg，可在這裡實作
-  if (!state.materialAvgDefaults) {
-    state.materialAvgDefaults = { dungeon: {}, explore: {}, store: {} };
-  }
+  const avgDefaults = {
+    dungeon: {},
+    explore: {},
+    sto: {},  // 目前不使用，但保留結構
+  };
+
+  const resourceData = state.resource || {};
+  const toNum = (v) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : undefined;
+  };
+
+  Object.entries(resourceData).forEach(([typeKey, byMat]) => {
+    const type = typeKey.toLowerCase();
+    let targetSource = null;
+    console.log('[data load] processing material avg defaults for type:', type, byMat);
+    if (type === 'dungeon') targetSource = 'dungeon';
+    else if (type === 'explore') targetSource = 'explore';
+    else if (type === 'store') targetSource = 'store';
+
+    if (!targetSource) return;
+
+    Object.entries(byMat).forEach(([mat, row]) => {
+      const avg = toNum(row['avg_defaults']);
+      if (avg === undefined) return;
+      if (!avgDefaults[targetSource]) avgDefaults[targetSource] = {};
+      avgDefaults[targetSource][mat] = avg;
+    });
+  });
+
+  console.log('[data load] loaded material average defaults:', avgDefaults);
+  state.materialAvgDefaults = avgDefaults;
 }
+
 
 // 給 controller / view 用的統一介面
 export function getMaterialSourceConfig() {
+  const avgDefaults =
+    state.materialAvgDefaults || { dungeon: {}, explore: {}, store: {} }; // TODO: 加上安全預設
+
   return {
     displayNames: MATERIAL_DISPLAY_NAMES,
     dailyDefaults: MATERIAL_DAILY_DEFAULTS,
-    avgDefaults: state.materialAvgDefaults || { dungeon: {}, explore: {}, store: {} }, // TODO: 加入容錯
+    avgDefaults,
     sourceMaterials: {
       dungeon: ['stone', 'essence', 'sand', 'rola'],
       explore: ['stone', 'essence', 'sand', 'rola'],
@@ -322,6 +347,7 @@ export function getMaterialSourceConfig() {
     },
   };
 }
+
 
 /** 取得指定等級的累積成本（若不存在取最近低等級） */
 export function getCumulative(costTable, level) {

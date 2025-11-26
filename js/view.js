@@ -420,6 +420,7 @@ function renderMaterialSourceTable(
     ? `
       <div class="mt-3 p-2 bg-gray-50 rounded border text-right text-sm">
         <div>每日花費羅拉：<span id="store-rola-daily-cost">0</span></div>
+        <div>每日花費羅拉（手動）：<input id="store-rola-daily-cost-manual" type="number" class="input-field rounded px-1 py-0.5 w-24 text-right material-source-input" data-source="${source}" data-material="rolaCost" data-role="manual" value="0" /></div>
         <div>總花費羅拉（依剩餘天數）：<span id="store-rola-total-cost">0</span></div>
       </div>
     `
