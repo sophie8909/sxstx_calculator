@@ -13,7 +13,7 @@ import {
   computeEtaToNextLevel,
   computeEtaToTargetLevel,
   getCumulative,
-
+  loadMaterialAvgDefaults,    // TODO: 新增匯入，修正 init() 內呼叫未定義函式
 } from './model.js';
 
 import {
@@ -419,9 +419,6 @@ async function initTargetTimeControls(containers) {
   presetSel.addEventListener('change', apply);
   customInput.addEventListener('input', apply);
 
-
-
-
   apply();
 }
 
@@ -442,10 +439,6 @@ function updateDaysRemainingFromTarget() {
   daysInput.value = days;
 }
 
-
-
-
-
 function updateMaterialSourceRow(source, material) {
   const days = parseInt(
     document.getElementById('days-remaining')?.value || '0',
@@ -459,55 +452,52 @@ function updateMaterialSourceRow(source, material) {
 
   let total = 0;
 
-  if (source === 'shop') {
+  if (source === 'store') { // TODO: 修正來源名稱為 'store'，與 view.js 的 data-source 一致
     const dailyBuy = getMaterialInput(source, material, 'dailyBuy');
-    total = dailyBuy * days;
+    total = dailyBuy * days; // TODO: 商店約可獲得 = 每日購買 × 剩餘天數
   } else {
     const daily = getMaterialInput(source, material, 'daily');
     const avg = getMaterialInput(source, material, 'avg');
-    total = daily * avg * days;
+    total = daily * avg * days; // TODO: 秘境/探索約可獲得 = 每日次數 × 平均每次 × 剩餘天數
   }
 
   totalSpan.textContent = total ? total.toLocaleString() : '0';
 }
+
+
 function updateAllMaterialSources() {
   const dungeonMats = ['stone', 'essence', 'sand', 'rola'];
   const exploreMats = ['stone', 'essence', 'sand', 'rola'];
-  const shopMats = ['stone', 'essence', 'sand'];
+  const storeMats = ['stone', 'essence', 'sand', 'freeze_dried']; 
 
   dungeonMats.forEach((m) => updateMaterialSourceRow('dungeon', m));
   exploreMats.forEach((m) => updateMaterialSourceRow('explore', m));
-  shopMats.forEach((m) => updateMaterialSourceRow('shop', m));
+  storeMats.forEach((m) => updateMaterialSourceRow('store', m)); 
 
-  updateShopRolaCost();
+  updateStoreRolaCost(); 
 }
 
 
-function updateShopRolaCost() {
+function updateStoreRolaCost() {
   const days =
     parseInt(document.getElementById('days-remaining')?.value || '0', 10) || 0;
 
-  // 素材清單應與 view.js 中的 shopMats 一致，包含 freeze_dried
-  const shopMats = ['stone', 'essence', 'sand', 'freeze_dried']; 
+  // 素材清單需與 getMaterialSourceConfig().sourceMaterials.store 一致
+  const storeMats = ['stone', 'essence', 'sand', 'freeze_dried'];
   let dailyCost = 0;
 
-  shopMats.forEach((mat) => {
-    // 從新的輸入欄位獲取使用者輸入的羅拉單價
-    const unit = getMaterialInput('shop', mat, 'rolaCost'); 
-    
-    // 從舊的輸入欄位獲取每日購買量
-    const dailyBuy = getMaterialInput('shop', mat, 'dailyBuy'); 
-    
+  storeMats.forEach((mat) => {
+    const unit = getMaterialInput('store', mat, 'rolaCost'); 
+    const dailyBuy = getMaterialInput('store', mat, 'dailyBuy');
     dailyCost += dailyBuy * unit;
   });
 
-  const dailyEl = document.getElementById('shop-rola-daily-cost');
-  const totalEl = document.getElementById('shop-rola-total-cost');
+  const dailyEl = document.getElementById('store-rola-daily-cost');
+  const totalEl = document.getElementById('store-rola-total-cost');
 
   if (dailyEl) dailyEl.textContent = dailyCost ? dailyCost.toLocaleString() : '0';
   if (totalEl) totalEl.textContent = (dailyCost * days).toLocaleString();
 }
-
 
 
 /* -----------------------------
@@ -524,13 +514,13 @@ function bindGlobalHandlers(containers) {
           const src = t.dataset.source;
           const mat = t.dataset.material;
           if (src && mat) updateMaterialSourceRow(src, mat);
-          if (src === 'shop') updateShopRolaCost();
+          if (src === 'store') updateStoreRolaCost();
         }
 
         if (t.classList.contains('relic-dist-input')) updateRelicTotal();
         triggerRecalculate(containers);
       }
-    }, { passive: true });
+  }, { passive: true });
 
   document.addEventListener('change', (e) => {
     const t = e.target;
@@ -539,13 +529,14 @@ function bindGlobalHandlers(containers) {
         const src = t.dataset.source;
         const mat = t.dataset.material;
         if (src && mat) updateMaterialSourceRow(src, mat);
-        if (src === 'shop') updateShopRolaCost();
+        if (src === 'store') updateStoreRolaCost();
       }
 
       if (t.classList.contains('relic-dist-input')) updateRelicTotal();
       triggerRecalculate(containers);
     }
   }, { passive: true });
+
 }
 
 
@@ -594,14 +585,14 @@ async function enableLevelUpNotifications() {
   if (ownedExpInput && isNaN(ownedWan)) return;
   const ownedExp = parseInt(ownedExpInput?.value) || 0;
 
-  import('./model.js').then(({ scheduleLevelUpNotification }) => {
+  import('./model.js').then(({ scheduleLevelUpNotification }) => { // TODO: 路徑由 ./model/model.js 改為 ./model.js
     scheduleLevelUpNotification(curLv, ownedExp, bedHourly, curLv + 1, notifyTime);
     alert('已啟用升級（下一級）通知');
   });
 }
 
 async function disableLevelUpNotifications() {
-  import('./model.js').then(({ clearLevelUpNotification }) => {
+  import('./model.js').then(({ clearLevelUpNotification }) => { // TODO: 路徑由 ./model/model.js 改為 ./model.js
     clearLevelUpNotification();
     alert('已清除升級通知');
   });
@@ -640,7 +631,7 @@ async function init() {
   await handleSeasonChange(containers);
 
   // 先載入平均值、再畫素材來源 UI
-  // await loadMaterialAvgDefaults();       // ← from model.js
+  await loadMaterialAvgDefaults();       // TODO: 新增：呼叫 model.js 中的預設平均值載入（目前為安全 no-op）
   renderMaterialSource(containers);
   updateDaysRemainingFromTarget();
   updateAllMaterialSources();

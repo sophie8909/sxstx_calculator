@@ -367,10 +367,10 @@ export function renderMaterialSource(containers) {
     { showAvg: true }
   );
 
-  const shopHtml = renderMaterialSourceTable(
-    'shop',
+  const storeHtml = renderMaterialSourceTable(
+    'store',
     '商店估算',
-    sourceMaterials.shop,
+    sourceMaterials.store,
     displayNames,
     dailyDefaults,
     avgDefaults,
@@ -394,7 +394,7 @@ export function renderMaterialSource(containers) {
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
       ${dungeonHtml}
       ${exploreHtml}
-      ${shopHtml}
+      ${storeHtml}
     </div>
   `;
 }
@@ -415,12 +415,12 @@ function renderMaterialSourceTable(
   const headerCols = showAvg
     ? '<th>素材</th><th>每日次數</th><th>平均每次</th><th>約可獲得</th>'
     : '<th>素材</th><th>每日購買</th><th>羅拉花費</th><th>約可獲得</th>';
-  const shopSummary =
-  source === 'shop'
+  const storeSummary =
+  source === 'store'
     ? `
       <div class="mt-3 p-2 bg-gray-50 rounded border text-right text-sm">
-        <div>每日花費羅拉：<span id="shop-rola-daily-cost">0</span></div>
-        <div>總花費羅拉（依剩餘天數）：<span id="shop-rola-total-cost">0</span></div>
+        <div>每日花費羅拉：<span id="store-rola-daily-cost">0</span></div>
+        <div>總花費羅拉（依剩餘天數）：<span id="store-rola-total-cost">0</span></div>
       </div>
     `
     : '';
@@ -454,7 +454,7 @@ function renderMaterialSourceTable(
           </tr>
         `;
       } else {
-        // shop
+        // store
         return `
           <tr class="border-b">
             <td class="py-1 text-center">${name}</td>
@@ -495,7 +495,7 @@ function renderMaterialSourceTable(
           ${rows}
         </tbody>
       </table>
-      ${shopSummary}
+      ${storeSummary}
     </section>
   `;
 }

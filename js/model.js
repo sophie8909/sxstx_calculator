@@ -105,22 +105,26 @@ export const MATERIAL_DISPLAY_NAMES = {
   freeze_dried: '幻獸凍乾',
 };
 
-// 2) 使用者 UI 的預設「每日次數 / 購買量」
-export const MATERIAL_DAILY_DEFAULTS = {
+// TODO: 新增素材來源每日預設值，避免 getMaterialSourceConfig / view.js 讀取未定義
+const MATERIAL_DAILY_DEFAULTS = {
   dungeon: {
-    stone: 4,
-    essence: 2,
-    sand: 4,
-    rola: 2,
+    stone: 0,
+    essence: 0,
+    sand: 0,
+    rola: 0,
   },
   explore: {
-    stone: 20,
-    essence: 4,
+    stone: 0,
+    essence: 0,
     sand: 0,
-    rola: 12,
+    rola: 0,
   },
-  // shop 預設留空，待 CSV 載入後依 average 填入
-  shop: {},
+  store: {
+    stone: 0,
+    essence: 0,
+    sand: 0,
+    freeze_dried: 0,
+  },
 };
 
 /** 各賽季 CSV 路徑（model.js 在 /js/，data 在 /data/） */
@@ -142,28 +146,24 @@ export const DATA_FILES_CONFIG = {
   seasonScore:          1012321192,  // 賽季分數
 };
 
-
-
 /** 內部狀態 */
 export const state = {
   seasonId: 's2',         // 預設賽季
   serverName: '淨心護甲', // 預設伺服器
-  gameData: {},           // 原始表
-  seasonScore: {},      // 賽季分數表
+  gameData: {},           // 升級表
+  seasonScore: {},        // 賽季分數表
+  resource: {},           // 資源表
   cumulativeCostData: {}, // 累積成本表
   missingFiles: [],       // 載入失敗清單
   notificationTimerIdLevelUp: null, // 升級通知計時器 ID
   notificationTimerIdTargetLevel: null, // 目標等級通知計時器 ID
-};
-
-// 存放從 CSV 讀回來的平均值
-if (!state.materialAvgDefaults) {
-  state.materialAvgDefaults = {
+  materialAvgDefaults: {              // TODO: 新增：給素材來源平均值的安全預設結構
     dungeon: {},
     explore: {},
-    shop: {},
-  };
-}
+    store: {},
+  },
+};
+
 // --- 放在 model.js ---
 // 小工具：正規化 key（去掉 BOM、trim）
 const normalizeKey = (k) => k ? k.replace(/^\uFEFF/, '').trim() : k;
@@ -192,22 +192,6 @@ export async function fetchAndParseCsv(url) {
   });
   return rows;
 }
-
-// 商店資料預處理：把 average / cost_rola 變成可快速查詢的物件
-export function preprocessShopData(rows) {
-  const result = {};
-  rows.forEach(r => {
-    const id = (r.id || "").trim().toLowerCase();
-    if (!id) return;
-    console.log(`r.id=${id}, average=${r.average}, cost_rola=${r.cost_rola}`);
-    result[id] = {
-      average: Number(r.average || 0),
-      cost_rola: Number(r.cost_rola || 0),
-    };
-  });
-  return result;
-}
-
 
 // 將成本資料轉為「累積表」—— 同時容錯任何大小寫 / BOM 的欄位名
 export function preprocessCostData() {
@@ -264,35 +248,34 @@ export async function loadDataForSeason(seasonId) {
   const loaded = {};
   state.missingFiles = [];
 
-    for (const [key, gid] of Object.entries(DATA_FILES_CONFIG)) {
-      const url = makeCsvUrl(gid);
-      console.log(`[data load] loading ${key} from ${url} for season ${targetSeason}`);
-      try {
-        const rows = await fetchAndParseCsv(url);
+  for (const [key, gid] of Object.entries(DATA_FILES_CONFIG)) {
+    const url = makeCsvUrl(gid);
+    console.log(`[data load] loading ${key} from ${url} for season ${targetSeason}`);
+    try {
+      const rows = await fetchAndParseCsv(url);
 
-        // 所有表都加了 season 欄位的情況
-        const filtered = rows.filter((row) => {
-          const s = String(row.season || '').toLowerCase();
-          // 若這一列沒有 season（例如共用），就全賽季通用
-          if (!s) return true;
-          return s === targetSeason.toLowerCase();
-        });
+      // 所有表都加了 season 欄位的情況
+      const filtered = rows.filter((row) => {
+        const s = String(row.season || '').toLowerCase();
+        // 若這一列沒有 season（例如共用），就全賽季通用
+        if (!s) return true;
+        return s === targetSeason.toLowerCase();
+      });
 
-        if (key === 'resource') {
-          // 將 resource 的資料寫入 state.gameData
-          state.gameData.resource = buildShopDataForSeason(filtered, seasonId);
-        } else if (key === 'seasonScore') {
-          state.seasonScore = buildSeasonScoreData(filtered);
-        } else {
-          // console.log(`${key} loaded: `, filtered);
-          loaded[key] = filtered;
-        }
-
-      } catch (err) {
-        console.warn(`❌ 無法載入 ${key} (${url})，改用模擬數據`, err);
-        loaded[key] = MOCK_GAME_DATA[key];
-        state.missingFiles.push(key);
+      if (key === 'resource') {
+        // 將 resource 的資料寫入 state.resource
+        state.resource = buildResourceDataForSeason(filtered, seasonId);
+      } else if (key === 'seasonScore') {
+        state.seasonScore = buildSeasonScoreData(filtered);
+      } else {
+        loaded[key] = filtered;
       }
+
+    } catch (err) {
+      console.warn(`❌ 無法載入 ${key} (${url})，改用模擬數據`, err);
+      loaded[key] = MOCK_GAME_DATA[key];
+      state.missingFiles.push(key);
+    }
   }
 
   state.gameData = loaded;
@@ -307,52 +290,35 @@ function buildSeasonScoreData(rows) {
 }
 
 // 由商店 CSV 生成：
-// - state.gameData.shop[id] = { average, costRola }
-// - MATERIAL_DAILY_DEFAULTS.shop[id] = average
-function buildShopDataForSeason(rows, seasonId) {
-  console.log(`[shop data] building for season ${seasonId}`);
-  const shop = {};
-
-  // 先清空舊的預設
-  Object.keys(MATERIAL_DAILY_DEFAULTS.shop).forEach((k) => {
-    delete MATERIAL_DAILY_DEFAULTS.shop[k];
-  });
-
+// - state.gameData.store[id] = { average, costRola }
+// - MATERIAL_DAILY_DEFAULTS.store[id] = average
+function buildResourceDataForSeason(rows, seasonId) {
+  const resourceData = {};
   rows.forEach((r) => {
-    const rowSeason = (r.season || "").toLowerCase();
-    if (rowSeason && rowSeason !== seasonId.toLowerCase()) return;
-
-    const id = (r.id || "").trim().toLowerCase(); // stone / essence / sand / freeze_dried
-    if (!id) return;
-
-    const avg = Number(r.average || 0);
-    const costRola = Number(r.cost_rola || 0);
-
-    shop[id] = {
-      average: avg,
-      costRola,
-    };
-
-    // 這就是 UI「每日購買量」的預設值
-    MATERIAL_DAILY_DEFAULTS.shop[id] = avg;
-    console.log(`[shop data] loaded ${id}: avg=${avg}, costRola=${costRola}`);
+    if (r.season !== seasonId) return; // 只取當前賽季
+    resourceData[r.resource] = r;
   });
-
-  return shop;
+  return resourceData;
 }
 
-
+// TODO: 新增：提供一個安全的平均值載入函式，目前先當作 no-op，避免 controller 呼叫出錯
+export async function loadMaterialAvgDefaults() {
+  // 未來若要從 state.resource 推出 avg，可在這裡實作
+  if (!state.materialAvgDefaults) {
+    state.materialAvgDefaults = { dungeon: {}, explore: {}, store: {} };
+  }
+}
 
 // 給 controller / view 用的統一介面
 export function getMaterialSourceConfig() {
   return {
     displayNames: MATERIAL_DISPLAY_NAMES,
     dailyDefaults: MATERIAL_DAILY_DEFAULTS,
-    avgDefaults: state.materialAvgDefaults,
+    avgDefaults: state.materialAvgDefaults || { dungeon: {}, explore: {}, store: {} }, // TODO: 加入容錯
     sourceMaterials: {
       dungeon: ['stone', 'essence', 'sand', 'rola'],
       explore: ['stone', 'essence', 'sand', 'rola'],
-      shop: ['stone', 'essence', 'sand', 'freeze_dried'], // 商店沒有 rola
+      store: ['stone', 'essence', 'sand', 'freeze_dried'], // 商店沒有 rola
     },
   };
 }
@@ -370,27 +336,40 @@ export function getCumulative(costTable, level) {
 
 /** 賽季分數計算 **/
 export function calculateSeasonScore(targets) {
+  const cfg = state.seasonScore?.[state.seasonId]; // TODO: 加入容錯，避免 seasonScore 缺資料就爆掉
+  if (!cfg) return 0;
+
+  const season_level = cfg.season_level || 100;
   let score = 0;
-  const season_level = state.seasonScore[state.seasonId].season_level || 100;
+
   // 角色每一賽季等級 + 100 分
   if (targets.character > season_level) {
-    score += (targets.character - season_level) * state.seasonScore[state.seasonId]['character_level_score'];
+    score += (targets.character - season_level) * cfg['character_level_score'];
   }
   // 裝備每一賽季等級 + 14 分，共 5 件
-  if (targets.equipment_resonance > season_level) score += (targets.equipment_resonance - season_level) * state.seasonScore[state.seasonId]['equipment_level_score'] * 5;
+  if (targets.equipment_resonance > season_level) {
+    score += (targets.equipment_resonance - season_level) * cfg['equipment_level_score'] * 5;
+  }
   // 技能每一賽季等級 + 5 分，共 8 個
-  if (targets.skill_resonance > season_level) score += (targets.skill_resonance - season_level) * state.seasonScore[state.seasonId]['skill_level_score'] * 8;
+  if (targets.skill_resonance > season_level) {
+    score += (targets.skill_resonance - season_level) * cfg['skill_level_score'] * 8;
+  }
   // 幻獸每一賽季等級 + 6 分，共 4 隻
-  if (targets.pet_resonance > season_level) score += (targets.pet_resonance - season_level) * state.seasonScore[state.seasonId]['pet_level_score'] * 4;
+  if (targets.pet_resonance > season_level) {
+    score += (targets.pet_resonance - season_level) * cfg['pet_level_score'] * 4;
+  }
   // 遺物每一賽季等級 + 26 分，共 20 件
-  if (targets.relic_resonance > season_level/10) score += (targets.relic_resonance - season_level/10) * state.seasonScore[state.seasonId]['relic_level_score'] * 20;
+  if (targets.relic_resonance > season_level / 10) {
+    score += (targets.relic_resonance - season_level / 10) * cfg['relic_level_score'] * 20;
+  }
   return score;
 }
 
-
 /** 賽季等級轉換原初之星 **/
 export function convertPrimordialStar(score) {
-  return Math.floor(score / state.seasonScore[state.seasonId]['star_convert'] + state.seasonScore[state.seasonId]['star_basis']);
+  const cfg = state.seasonScore?.[state.seasonId]; // TODO: 加入容錯，缺資料時回傳 0
+  if (!cfg) return 0;
+  return Math.floor(score / cfg['star_convert'] + cfg['star_basis']);
 }
 
 /**
@@ -564,7 +543,7 @@ export function computeAll(containers) {
   });
   if (hasError) return { error: '輸入有誤 (例如遺物總數不為20)，請檢查。' };
   if (!hasInput) return { required: {}, gains: {}, deficit: {}, materialErrors: missingDataErrors };
-  // 掛機收益（目標時間）
+    // 掛機收益（目標時間）
   if (targetTimeStr) {
     const hours = Math.max(0, (new Date(targetTimeStr).getTime() - Date.now()) / 36e5);
     Object.entries(productionSources).forEach(([srcId, src]) => {
@@ -572,8 +551,50 @@ export function computeAll(containers) {
       const mat = src.materialId;
       gains[mat] = (gains[mat] || 0) + Math.floor(hourly * hours);
     });
-    if (bedExpHourly > 0) gains['exp'] = (gains['exp'] || 0) + Math.floor(bedExpHourly * hours);
+    if (bedExpHourly > 0) {
+      gains['exp'] = (gains['exp'] || 0) + Math.floor(bedExpHourly * hours);
+    }
   }
+
+  // TODO: 讀取「素材來源估算」的約可獲得數值，灌入 gains
+  // data-source：dungeon / explore / store
+  // data-material：stone / essence / sand / rola / freeze_dried
+  const materialSpanList = document.querySelectorAll('.material-source-total');
+  materialSpanList.forEach((span) => {
+    const src = span.dataset.source;
+    const matKey = span.dataset.material;
+    if (!src || !matKey) return;
+
+    const raw = (span.textContent || '').replace(/,/g, '').trim();
+    const total = Number(raw) || 0;
+    if (total <= 0) return;
+
+    // material-key → computeAll 用的 materialId 映射
+    let matId = null;
+    // TODO: 將素材代號對應到 materials 內部使用的 id
+    switch (matKey) {
+      case 'stone':
+        matId = 'stoneOre';
+        break;
+      case 'essence':
+        matId = 'essence';
+        break;
+      case 'sand':
+        matId = 'sand';
+        break;
+      case 'rola':
+        matId = 'rola';
+        break;
+      case 'freeze_dried':
+        matId = 'freezeDried';
+        break;
+      default:
+        matId = null;
+    }
+    if (!matId) return;
+
+    gains[matId] = (gains[matId] || 0) + total;
+  });
   // 缺口：需求 - (持有 + 掛機)
   for (const matId in materials) {
     const need = required[matId] || 0;
