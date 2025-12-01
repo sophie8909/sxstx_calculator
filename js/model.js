@@ -299,7 +299,7 @@ export async function loadMaterialAvgDefaults() {
   const avgDefaults = {
     dungeon: {},
     explore: {},
-    sto: {},  // 目前不使用，但保留結構
+    store: {},  // 目前不使用，但保留結構
   };
 
   const resourceData = state.resource || {};
