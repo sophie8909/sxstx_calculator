@@ -190,7 +190,7 @@ export function renderMaterials(container) {
 export function renderRelicDistribution(container) {
   container.innerHTML = '';
   container.className = 'grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-11 gap-3';
-  for (let i = 10; i <= 20; i++) {
+  for (let i = 10; i <= 30; i++) {
     const g = createInputGroup(`relic-level-${i}`, `等級 ${i}`, '數量');
     const label = g.querySelector('label');
     const input = g.querySelector('input');
