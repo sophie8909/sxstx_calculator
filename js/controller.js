@@ -453,7 +453,7 @@ function updateMaterialSourceRow(source, material) {
   let total = 0;
 
   if (source === 'store') { // TODO: 修正來源名稱為 'store'，與 view.js 的 data-source 一致
-    const dailyBuy = getMaterialInput(source, material, 'dailyBuy');
+    const dailyBuy = getMaterialInput(source, material, 'avg');
     total = dailyBuy * days; // TODO: 商店約可獲得 = 每日購買 × 剩餘天數
   } else {
     const daily = getMaterialInput(source, material, 'daily');
@@ -487,8 +487,8 @@ function updateStoreRolaCost() {
   let autoDailyCost = 0; // TODO: 自動計算出的每日花費
 
   storeMats.forEach((mat) => {
-    const unit = getMaterialInput('store', mat, 'rolaCost');
-    const dailyBuy = getMaterialInput('store', mat, 'dailyBuy');
+    const unit = getMaterialInput('store', mat, 'rola-cost');
+    const dailyBuy = getMaterialInput('store', mat, 'avg');
     autoDailyCost += dailyBuy * unit;
   });
 

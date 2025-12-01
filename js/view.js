@@ -462,14 +462,14 @@ function renderMaterialSourceTable(
             <td class="py-1 text-center">
               <input type="number"
                 class="input-field rounded px-1 py-0.5 w-24 text-right material-source-input"
-                data-source="${source}" data-material="${mat}" data-role="dailyBuy"
-                value="${daily}" />
+                data-source="${source}" data-material="${mat}" data-role="avg"
+                value="${avg}" />
             </td>
             
             <td class="py-1 text-center">
               <input type="number"
                 class="input-field rounded px-1 py-0.5 w-24 text-right material-source-input"
-                data-source="${source}" data-material="${mat}" data-role="rolaCost"
+                data-source="${source}" data-material="${mat}" data-role="rola-cost"
                 value="0" />
             </td>
             
