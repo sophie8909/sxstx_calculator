@@ -478,7 +478,7 @@ export function computeAll(containers) {
   // 遺物成本（需 20 件）
   const targetRelicRes = targets.relic_resonance || 0;
   let relicCount = 0;
-  for (let i = 10; i <= 20; i++) {
+  for (let i = 10; i <= 30; i++) {
     const count = parseInt(document.getElementById(`relic-level-${i}`)?.value) || 0;
     if (count > 0) hasInput = true;
     relicCount += count;
