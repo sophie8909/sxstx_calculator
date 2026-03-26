@@ -316,7 +316,12 @@ export function renderCharBed(container) {
     return wrap;
   };
   container.appendChild(row({ id: 'character-current', icon: '📘', label: '角色等級（目前）', placeholder: '目前等級' }));
-  container.appendChild(row({ id: 'owned-exp-wan', icon: '🧮', label: '目前持有經驗（輸入）', placeholder: '以萬為單位輸入' }));
+  if (seasonOptions.some((s) => s.season >= 4)) {
+    container.appendChild(row({ id: 'owned-exp-wan', icon: '🧮', label: '目前持有經驗（輸入）', placeholder: '以億為單位輸入' }));
+  }
+  else {  
+    container.appendChild(row({ id: 'owned-exp-wan', icon: '🧮', label: '目前持有經驗（輸入）', placeholder: '以萬為單位輸入' }));
+  }
   container.appendChild(row({ id: 'owned-exp', icon: '📖', label: '對應實際經驗值', placeholder: '自動換算（唯讀）', readOnly: true }));
   container.appendChild(row({ id: 'bed-exp-hourly', icon: '🛏️', label: '每小時經驗產量', placeholder: '0' }));
   const infoBox = el('div', ['mt-2', 'space-y-1', 'text-xs', 'text-gray-500']);

@@ -66,7 +66,14 @@ function triggerRecalculate(containers) {
 
   const ownedExpInput = document.getElementById('owned-exp');
   if (ownedExpInput) {
-    ownedExpInput.value = isNaN(ownedWan) ? '' : Math.floor(ownedWan * 10000);
+    if (seasonOptions.some((s) => s.season >= 4)) {
+      // S4 以億為單位換算
+      ownedExpInput.value = isNaN(ownedWan) ? '' : Math.floor(ownedWan * 100000000);
+    }
+    else {
+      // S1-S3 仍以萬為單位換算
+      ownedExpInput.value = isNaN(ownedWan) ? '' : Math.floor(ownedWan * 10000);
+    }
   }
   const ownedExp = parseInt(ownedExpInput?.value) || 0;
 
@@ -131,6 +138,14 @@ function setupAutoUpdate(containers) {
     const ownedExpInput = document.getElementById('owned-exp');
     if (!ownedExpInput || isNaN(ownedWan)) return;
 
+    if (seasonOptions.some((s) => s.season >= 4)) {
+      // S4 以億為單位換算
+      ownedExpInput.value = Math.floor(ownedWan * 100000000);
+    }
+    else {
+      // S1-S3 仍以萬為單位換算
+      ownedExpInput.value = Math.floor(ownedWan * 10000);
+    }
     const base = parseFloat(ownedExpInput.value) || ownedWan * 10000;
     const newExp = base + (bedHourly / 3600);
     ownedExpInput.value = Math.floor(newExp);
