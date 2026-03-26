@@ -33,6 +33,7 @@ export const seasonOptions = [
   { id: 's1', name: 'S1 澤之國', readonly: false, season: 1 },
   { id: 's2', name: 'S2 龍之國', readonly: false, season: 2 },
   { id: 's3', name: 'S3 羽之國', readonly: false, season: 3 },
+  { id: 's4', name: 'S4 哈帕迪', readonly: false, season: 4 },
   { id: 'total', name: '總計', readonly: true },
 ];
 
