@@ -28,7 +28,7 @@ import {
   renderTargetEtaText,
   renderMaterialSource,
 } from './view.js';
-import { applyStaticTranslations, initLanguage, t } from './i18n.js';
+import { applyStaticTranslations, initLanguage, t } from './i18n-inline.js';
 
 /* ============================================================
  * Google 閰衣?銵剁?Published CSV嚗身摰????賊? / 隡箸??其?皞?

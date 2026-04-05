@@ -1,5 +1,5 @@
 ﻿import { el, fmt } from './utils.js';
-import { getCurrentLanguage, t } from './i18n.js';
+import { getCurrentLanguage, t } from './i18n-inline.js';
 import {
   categories,
   seasonOptions,
