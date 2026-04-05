@@ -19,6 +19,18 @@ export const I18N_DICTIONARIES = {
     "zh-Hant": "目前無法推算升級時間，請先確認角色等級、持有經驗與床位時產。",
     "zh-Hans": "目前无法推算升级时间，请先确认角色等级、持有经验与床位时产。"
   },
+  "calendar_target_event_details": {
+    "zh-Hant": "此事件依你目前的計算結果建立。預計達到目標等級 Lv.{level} 的時間：{upgradeTime}。提前提醒：{notifyMinutes} 分鐘。",
+    "zh-Hans": "此事件依你目前的计算结果建立。预计达到目标等级 Lv.{level} 的时间：{upgradeTime}。提前提醒：{notifyMinutes} 分钟。"
+  },
+  "calendar_target_event_title": {
+    "zh-Hant": "目標等級提醒 Lv.{level}",
+    "zh-Hans": "目标等级提醒 Lv.{level}"
+  },
+  "calendar_target_unavailable": {
+    "zh-Hant": "目前無法推算目標等級時間，請先確認持有經驗、床位時產與目標等級。",
+    "zh-Hans": "目前无法推算目标等级时间，请先确认持有经验、床位时产与目标等级。"
+  },
   "app_title": {
     "zh-Hant": "杖劍傳說 素材計算機",
     "zh-Hans": "杖剑传说 素材计算机"
@@ -144,8 +156,12 @@ export const I18N_DICTIONARIES = {
     "zh-Hans": "素材副本"
   },
   "enable_notify": {
-    "zh-Hant": "匯入 Google 日曆",
-    "zh-Hans": "导入 Google 日历"
+    "zh-Hant": "匯入下一級日曆",
+    "zh-Hans": "导入下一级日历"
+  },
+  "enable_target_notify": {
+    "zh-Hant": "匯入目標等級日曆",
+    "zh-Hans": "导入目标等级日历"
   },
   "exp_hourly": {
     "zh-Hant": "床位每小時經驗",

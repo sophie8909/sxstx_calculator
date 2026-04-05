@@ -426,6 +426,35 @@ export function getSpeedupState() {
   };
 }
 
+function getNextDailyResetTimestamp(fromTs = Date.now()) {
+  const resetAt = new Date(fromTs);
+  resetAt.setHours(8, 0, 0, 0);
+  if (fromTs >= resetAt.getTime()) {
+    resetAt.setDate(resetAt.getDate() + 1);
+  }
+  return resetAt.getTime();
+}
+
+function countAvailableFreeSpeedupsUntil(targetTs, freeUsedToday, nowTs = Date.now()) {
+  if (!Number.isFinite(targetTs) || targetTs <= nowTs) return 0;
+
+  let uses = freeUsedToday ? 0 : 1;
+  let resetTs = getNextDailyResetTimestamp(nowTs);
+  while (resetTs <= targetTs) {
+    uses += 1;
+    const nextReset = new Date(resetTs);
+    nextReset.setDate(nextReset.getDate() + 1);
+    resetTs = nextReset.getTime();
+  }
+  return uses;
+}
+
+function getDynamicSpeedupHoursForEta(targetTs) {
+  const { freeUsedToday, stoneCount } = getSpeedupState();
+  const freeUses = countAvailableFreeSpeedupsUntil(targetTs, freeUsedToday);
+  return (freeUses + stoneCount) * SPEEDUP_HOURS_PER_USE;
+}
+
 export function getSpeedupHoursForDays(dayCount) {
   const normalizedDays = Math.max(0, Math.ceil(Number(dayCount) || 0));
   if (normalizedDays <= 0) return 0;
@@ -709,14 +738,37 @@ export function computeEtaToNextLevel(currentLevel, ownedExp, bedExpHourly, bonu
 
 /** 計算到達「目標角色等級」ETA（以及總所需經驗） */
 export function computeEtaToTargetLevel(currentLevel, ownedExp, bedExpHourly, targetLevel, bonusHours = 0) {
-  const { levelupTs, minutesNeeded, expNeeded } = expCalculation(
+  let appliedBonusHours = Math.max(0, Number(bonusHours) || 0);
+  let result = expCalculation(
     currentLevel,
     ownedExp,
     bedExpHourly,
     targetLevel,
-    bonusHours
+    appliedBonusHours
   );
-  return { etaTs: levelupTs, minutesNeeded, needExp: expNeeded };
+
+  for (let i = 0; i < 8; i += 1) {
+    if (!Number.isFinite(result.levelupTs) || result.minutesNeeded <= 0) break;
+
+    const nextBonusHours = getDynamicSpeedupHoursForEta(result.levelupTs);
+    if (nextBonusHours === appliedBonusHours) break;
+
+    appliedBonusHours = nextBonusHours;
+    result = expCalculation(
+      currentLevel,
+      ownedExp,
+      bedExpHourly,
+      targetLevel,
+      appliedBonusHours
+    );
+  }
+
+  return {
+    etaTs: result.levelupTs,
+    minutesNeeded: result.minutesNeeded,
+    needExp: result.expNeeded,
+    bonusHours: appliedBonusHours,
+  };
 }
 
 /** LocalStorage 儲存/載入 */

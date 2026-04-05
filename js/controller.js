@@ -278,7 +278,6 @@ function localizeEtaDisplays(levelupMinutes, levelupTs, targetMinutes, etaTs) {
 function refreshBedProgressSummary() {
   const { currentLevel, ownedExp, bedHourly, targetLevel } = readBedProgressState();
   const nextLevelBonusHours = getNextLevelSpeedupHours(currentLevel, ownedExp, bedHourly);
-  const targetBonusHours = getSpeedupHoursForHours(getTargetTimeHoursRemaining());
   const { levelupTs, minutesNeeded } = computeEtaToNextLevel(
     currentLevel,
     ownedExp,
@@ -287,8 +286,11 @@ function refreshBedProgressSummary() {
   );
   renderLevelupTimeText(minutesNeeded, levelupTs);
 
-  const { minutesNeeded: targetMinutesNeeded, etaTs } =
-    computeEtaToTargetLevel(currentLevel, ownedExp, bedHourly, targetLevel, targetBonusHours);
+  const {
+    minutesNeeded: targetMinutesNeeded,
+    etaTs,
+    bonusHours: targetBonusHours,
+  } = computeEtaToTargetLevel(currentLevel, ownedExp, bedHourly, targetLevel);
   renderTargetEtaText(targetMinutesNeeded, etaTs);
   localizeEtaDisplays(minutesNeeded, levelupTs, targetMinutesNeeded, etaTs);
 
@@ -1006,15 +1008,39 @@ async function handleSeasonChange(containers) {
 /* -----------------------------
  * ??賊?嚗????祈??綽?
  * ---------------------------*/
-async function enableLevelUpNotifications() {
-  const locale = getCurrentLanguage() === 'zh-Hans' ? 'zh-CN' : 'zh-TW';
-  const { currentLevel, ownedWan, ownedExp, bedHourly } = readBedProgressState();
+function openGoogleCalendarEvent({ title, details, eventTs }) {
+  const eventStart = new Date(eventTs);
+  const eventEnd = new Date(eventTs + 30 * 60 * 1000);
+  const formatGoogleCalendarDate = (date) =>
+    date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
+
+  const calendarUrl = new URL('https://calendar.google.com/calendar/render');
+  calendarUrl.searchParams.set('action', 'TEMPLATE');
+  calendarUrl.searchParams.set('text', title);
+  calendarUrl.searchParams.set('details', details);
+  calendarUrl.searchParams.set('location', t('app_title'));
+  calendarUrl.searchParams.set(
+    'dates',
+    `${formatGoogleCalendarDate(eventStart)}/${formatGoogleCalendarDate(eventEnd)}`
+  );
+
+  window.open(calendarUrl.toString(), '_blank', 'noopener');
+}
+
+function getNotifyLeadMinutes() {
   const notifyTimeSelect = document.getElementById('notify-time-select');
   let notifyTime = 0;
   if (notifyTimeSelect?.value === 'min1') notifyTime = 1;
   else if (notifyTimeSelect?.value === 'min2') notifyTime = 2;
   else if (notifyTimeSelect?.value === 'min3') notifyTime = 3;
   else if (notifyTimeSelect?.value === 'min5') notifyTime = 5;
+  return notifyTime;
+}
+
+async function enableLevelUpNotifications() {
+  const locale = getCurrentLanguage() === 'zh-Hans' ? 'zh-CN' : 'zh-TW';
+  const { currentLevel, ownedWan, ownedExp, bedHourly } = readBedProgressState();
+  const notifyTime = getNotifyLeadMinutes();
 
   if (Number.isNaN(ownedWan)) {
     alert(t('calendar_import_unavailable'));
@@ -1030,8 +1056,6 @@ async function enableLevelUpNotifications() {
   }
 
   const eventTs = levelupTs - notifyTime * 60 * 1000;
-  const eventStart = new Date(eventTs);
-  const eventEnd = new Date(eventTs + 30 * 60 * 1000);
   const upgradeTimeText = new Date(levelupTs).toLocaleString(locale, {
     year: 'numeric',
     month: '2-digit',
@@ -1040,26 +1064,51 @@ async function enableLevelUpNotifications() {
     minute: '2-digit',
   });
 
-  const formatGoogleCalendarDate = (date) =>
-    date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
-
-  const calendarUrl = new URL('https://calendar.google.com/calendar/render');
-  calendarUrl.searchParams.set('action', 'TEMPLATE');
-  calendarUrl.searchParams.set('text', t('calendar_event_title', { level: currentLevel + 1 }));
-  calendarUrl.searchParams.set(
-    'details',
+  openGoogleCalendarEvent({
+    title: t('calendar_event_title', { level: currentLevel + 1 }),
+    details:
     t('calendar_event_details', {
       notifyMinutes: notifyTime,
       upgradeTime: upgradeTimeText,
-    })
-  );
-  calendarUrl.searchParams.set('location', t('app_title'));
-  calendarUrl.searchParams.set(
-    'dates',
-    `${formatGoogleCalendarDate(eventStart)}/${formatGoogleCalendarDate(eventEnd)}`
-  );
+    }),
+    eventTs,
+  });
+}
 
-  window.open(calendarUrl.toString(), '_blank', 'noopener');
+async function enableTargetLevelCalendar() {
+  const locale = getCurrentLanguage() === 'zh-Hans' ? 'zh-CN' : 'zh-TW';
+  const { currentLevel, ownedWan, ownedExp, bedHourly, targetLevel } = readBedProgressState();
+  const notifyTime = getNotifyLeadMinutes();
+
+  if (Number.isNaN(ownedWan) || !Number.isFinite(targetLevel) || targetLevel <= currentLevel) {
+    alert(t('calendar_target_unavailable'));
+    return;
+  }
+
+  const { etaTs } = computeEtaToTargetLevel(currentLevel, ownedExp, bedHourly, targetLevel);
+  if (!Number.isFinite(etaTs)) {
+    alert(t('calendar_target_unavailable'));
+    return;
+  }
+
+  const eventTs = etaTs - notifyTime * 60 * 1000;
+  const targetTimeText = new Date(etaTs).toLocaleString(locale, {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  openGoogleCalendarEvent({
+    title: t('calendar_target_event_title', { level: targetLevel }),
+    details: t('calendar_target_event_details', {
+      notifyMinutes: notifyTime,
+      upgradeTime: targetTimeText,
+      level: targetLevel,
+    }),
+    eventTs,
+  });
 }
 
 /* -----------------------------
@@ -1083,6 +1132,8 @@ async function init() {
   // ?????
   const levelUpNotifyBtn = document.getElementById('enable-levelup-notify-btn');
   levelUpNotifyBtn?.addEventListener('click', () => enableLevelUpNotifications());
+  const targetNotifyBtn = document.getElementById('enable-target-notify-btn');
+  targetNotifyBtn?.addEventListener('click', () => enableTargetLevelCalendar());
 
   const clearLocalDataBtn = document.getElementById('clear-local-data-btn');
   clearLocalDataBtn?.addEventListener('click', () => {
