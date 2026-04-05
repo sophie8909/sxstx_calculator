@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
@@ -6,7 +6,7 @@
   <title>杖劍傳說 素材計算機</title>
   <link rel="icon" type="image/png" href="./images/favicon_v1.png" />
 
-  <!-- Tailwind 僅供本地/測試用；正式可改為編譯後 CSS -->
+  <!-- Tailwind CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
 
   <!-- Google Fonts -->
@@ -14,126 +14,121 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet" />
 
-  <!-- 自訂樣式 -->
   <link rel="stylesheet" href="./css/style.css" type="text/css" />
-
 </head>
 
-
-<body class="p-4 lg:p-6 compact">
+<body class="p-3 sm:p-4 lg:p-6 compact">
   <div class="w-full max-w-7xl mx-auto">
-    <!-- ===== 頁首 ===== -->
     <header class="text-center mb-6">
-      <h1 class="text-3xl md:text-4xl font-bold text-teal-800">
-        杖劍傳說 素材計算機
-      </h1>
+      <h1 class="text-3xl md:text-4xl font-bold text-teal-800" data-i18n="app_title">杖劍傳說 素材計算機</h1>
     </header>
 
-    
-    <!-- 賽季選項 -->
-    <div class="text-center mb-6">
-      <label for="season-select" class="mr-2 font-semibold">賽季選項:</label>
-      <select id="season-select" class="input-field rounded p-2">
-        <!-- JS 會動態插入賽季選項 -->
-      </select>
-      <label for="server-select" class="mr-2 font-semibold">伺服器：</label>
-      <!-- 將由 JS 動態填入選項 -->
-      <select id="server-select" class="input-field rounded p-2 w-[180px]">
-        <!-- 動態選項 -->
+    <div class="text-center mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-center gap-3">
+      <label for="language-select" class="mr-2 font-semibold" data-i18n="language_label">語言：</label>
+      <select id="language-select" class="input-field rounded p-2 w-full sm:w-auto sm:min-w-[10rem]">
+        <option value="zh-Hant" data-i18n="language_traditional">繁體中文</option>
+        <option value="zh-Hans" data-i18n="language_simplified">簡體中文</option>
       </select>
     </div>
 
+    <div class="text-center mb-6 flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-center gap-3">
+      <label for="season-select" class="mr-2 font-semibold" data-i18n="season_label">賽季選項:</label>
+      <select id="season-select" class="input-field rounded p-2 w-full sm:w-auto sm:min-w-[10rem]"></select>
+      <label for="server-select" class="mr-2 font-semibold" data-i18n="server_label">伺服器：</label>
+      <select id="server-select" class="input-field rounded p-2 w-full sm:w-auto sm:min-w-[11.25rem]"></select>
+    </div>
+
     <!-- ===== 目標時間 / 現在時間 ===== -->
-    <div class="card rounded-lg p-4 shadow-lg mb-6 w-full">
-      <!-- 外層兩欄，滿版 -->
+    <div id="target-time-card" class="card rounded-lg p-4 shadow-lg mb-6 w-full page-section">
+      <!-- 憭惜?拇?嚗遛??-->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- 左：目標時間 -->
+        <!-- 撌佗??格??? -->
         <div>
-          <h3 class="text-lg font-semibold mb-2">目標時間</h3>
+          <h3 class="text-lg font-semibold mb-2" data-i18n="target_time_title">目標時間</h3>
 
-          <!-- 橫向滿版：select 固定寬，右側 flex-1 -->
-          <div class="flex flex-col lg:flex-row lg:items-center gap-3 w-full">
-            <!-- 下拉：固定寬 -->
-            <select id="target-time-preset" class="input-field rounded p-2 w-[180px]"></select>
+          <!-- 璈怠?皛輻?嚗elect ?箏?撖穿??喳 flex-1 -->
+          <div class="flex flex-col xl:flex-row xl:items-center gap-3 w-full">
+            <!-- 銝?嚗摰祝 -->
+            <select id="target-time-preset" class="input-field rounded p-2 w-full xl:w-[180px]"></select>
 
-            <!-- 唯讀時間條：吃滿剩餘寬度 -->
+            <!-- ?航???璇??遛?拚?撖砍漲 -->
             <div id="target-time-display"
-                class="flex-1 text-center bg-gray-900/50 p-2 rounded h-[42px] flex items-center justify-center text-[#e2e8f0]">
+                class="flex-1 text-center bg-gray-900/50 p-2 rounded min-h-[42px] flex items-center justify-center text-[#e2e8f0] break-words">
               --
             </div>
 
-            <!-- 自訂輸入：與上面時間條同高同寬（預設隱藏） -->
+            <!-- ?芾?頛詨嚗?銝??璇?擃?撖穿??身?梯?嚗?-->
             <input type="datetime-local" id="target-time-custom"
-                  class="input-field rounded p-2 h-[42px] flex-1 hidden" />
+                  class="input-field rounded p-2 min-h-[42px] flex-1 w-full hidden" />
 
-            <!-- 實際運算值 -->
+            <!-- 撖阡?????-->
             <input type="hidden" id="target-time" />
           </div>
         </div>
 
-        <!-- 右：現在時間（滿版） -->
+        <!-- ?喉??曉??嚗遛?? -->
         <div>
-          <h3 class="text-lg font-semibold mb-2">現在時間</h3>
+          <h3 class="text-lg font-semibold mb-2" data-i18n="current_time_title">現在時間</h3>
           <div id="current-time-display"
-              class="text-center bg-gray-900/50 p-2 rounded h-[42px] flex items-center justify-center text-[#e2e8f0] w-full">
+              class="text-center bg-gray-900/50 p-2 rounded min-h-[42px] flex items-center justify-center text-[#e2e8f0] w-full break-words">
           </div>
         </div>
       </div>
 
     </div>
 
-    <!-- 原初之星 -->
-    <div class="card rounded-lg p-4 shadow-lg mb-4 w-full">
-      <h3 class="text-xl font-bold text-center mb-4">原初之星 (累計)</h3>
-      <div id="primordial-star-cumulative" class=""></div> <!-- class 先留空，JS 會加 -->
+    <!-- ??銋? -->
+    <div id="primordial-star-card" class="card rounded-lg p-4 shadow-lg mb-4 w-full page-section">
+      <h3 class="text-xl font-bold text-center mb-4" data-i18n="primordial_star_title">原初之星 (累計)</h3>
+      <div id="primordial-star-cumulative" class=""></div> <!-- class ??蝛綽?JS ?? -->
     </div>
 
     
     
-    <!-- 目標等級（共鳴） -->
-    <div class="card rounded-lg p-4 shadow-lg mb-4 w-full">
-      <h3 class="text-xl font-bold text-center mb-4">目標等級 (共鳴)</h3>
-      <div id="target-levels" class=""></div> <!-- class 先留空，JS 會加 -->
+    <!-- ?格?蝑?嚗曈湛? -->
+    <div id="target-levels-card" class="card rounded-lg p-4 shadow-lg mb-4 w-full page-section">
+      <h3 class="text-xl font-bold text-center mb-4" data-i18n="target_levels_title">目標等級 (共鳴)</h3>
+      <div id="target-levels" class=""></div> <!-- class ??蝛綽?JS ?? -->
     </div>
     
-    <!-- 遺物分佈 -->
-    <div class="card rounded-lg p-4 shadow-lg mb-6 w-full">
+    <!-- ?箇?? -->
+    <div id="relic-card" class="card rounded-lg p-4 shadow-lg mb-6 w-full page-section">
       <h3 class="text-xl font-bold text-center mb-4">
-        遺物等級分佈 <span id="relic-total-display" class="text-sm font-normal text-gray-400">(0/20)</span>
+        <span data-i18n="relic_distribution_title">遺物等級分布</span> <span id="relic-total-display" class="text-sm font-normal text-gray-400">(0/20)</span>
       </h3>
       <div id="relic-distribution-inputs" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-12 gap-4"></div>
     </div>
     
-    <!-- ===== 三欄主內容 ===== -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4"><!-- gap-6 → gap-4 -->
-      <!-- 左：角色 + 技能 -->
-      <div class="lg:max-h-[75vh] lg:flex lg:flex-col lg:gap-4"><!-- gap-6 → gap-4 -->
-        <!-- 角色與床（加長） -->
-      <div class="card rounded-xl p-0 shadow-lg lg:flex-[1.1] flex flex-col min-h-0">
+    <!-- ===== 銝?銝餃摰?===== -->
+    <div id="primary-content-grid" class="grid grid-cols-1 xl:grid-cols-3 gap-4 page-section"><!-- gap-6 ??gap-4 -->
+      <!-- 撌佗?閫 + ???-->
+      <div class="main-grid-column xl:max-h-[75vh] xl:flex xl:flex-col xl:gap-4"><!-- gap-6 ??gap-4 -->
+        <!-- 閫??嚗??瘀? -->
+      <div class="card rounded-xl p-0 shadow-lg xl:flex-[1.1] flex flex-col min-h-0">
         <h2 class="text-2xl font-bold border-b sticky top-0 z-10 px-4 py-2 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
-          角色經驗
+          <span data-i18n="section_role_exp">角色經驗</span>
         </h2>
-        <div class="overflow-y-auto custom-scrollbar p-4 min-h-0">
+        <div class="overflow-y-auto custom-scrollbar p-4 min-h-0 responsive-scroll tooltip-safe-scroll">
           <div id="char-bed-inputs" class="space-y-3"></div>
         </div>
-        <div class="flex flex-wrap items-center justify-center gap-4 mb-3">
-          <label for="notify-time-select" class="font-semibold">升級通知提前時間:</label>
+        <div class="flex flex-wrap items-center justify-center gap-4 px-4 pb-3 shrink-0">
+          <label for="notify-time-select" class="font-semibold" data-i18n="notify_time_label">???????:</label>
           <select id="notify-time-select" class="input-field rounded p-2">
-            <option value="min0">升級時</option>
-            <option value="min1">1 分鐘</option>
-            <option value="min2">2 分鐘</option>
-            <option value="min3" selected>3 分鐘</option>
-            <option value="min5">5 分鐘</option>
+            <option value="min0" data-i18n="notify_now">準時</option>
+            <option value="min1" data-i18n="notify_1min">1 分鐘</option>
+            <option value="min2" data-i18n="notify_2min">2 分鐘</option>
+            <option value="min3" data-i18n="notify_3min" selected>3 分鐘</option>
+            <option value="min5" data-i18n="notify_5min">5 分鐘</option>
           </select>
         </div>
-        <div class="flex flex-wrap items-center justify-center gap-4 mb-3">
+        <div class="flex flex-wrap items-center justify-center gap-4 px-4 pb-4 shrink-0">
           <button id="enable-levelup-notify-btn"
             class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg text-xs">
-            啟用升級通知
+            <span data-i18n="enable_notify">啟用升級通知</span>
           </button>
           <button id="disable-notify-btn"
             class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg text-xs">
-            清除升級通知
+            <span data-i18n="disable_notify">停用通知</span>
           </button>
         </div>
       </div>
@@ -141,41 +136,41 @@
       
         <div class="card rounded-xl p-0 shadow-lg lg:flex-1 flex flex-col min-h-0">
           <h2 class="text-2xl font-bold border-b sticky top-0 z-10 px-4 py-2 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
-            技能等級
+            <span data-i18n="section_skill">技能等級</span>
           </h2>
-          <div class="overflow-y-auto custom-scrollbar p-4 min-h-0">
+          <div class="overflow-y-auto custom-scrollbar p-4 min-h-0 responsive-scroll tooltip-safe-scroll">
             <div id="skill-inputs" class="space-y-4"></div>
           </div>
         </div>
       </div>
     
-    <!-- 中：角色 + 幻獸 + 小推車 -->
-    <div class="lg:max-h-[75vh] lg:flex lg:flex-col lg:gap-4">
-      <div class="card rounded-xl p-0 shadow-lg lg:flex-1 flex flex-col min-h-0">
+    <!-- 銝哨?閫 + 撟餌 + 撠頠?-->
+    <div class="main-grid-column xl:max-h-[75vh] xl:flex xl:flex-col xl:gap-4">
+      <div class="card rounded-xl p-0 shadow-lg xl:flex-1 flex flex-col min-h-0">
           <h2 class="text-2xl font-bold border-b sticky top-0 z-10 px-4 py-2 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
-            裝備等級
+            <span data-i18n="section_equip">裝備等級</span>
           </h2>
-          <div class="overflow-y-auto custom-scrollbar p-4 min-h-0"><!-- p-6 → p-4 -->
-            <div id="equip-inputs" class="space-y-4"></div><!-- 保持 -->
+          <div class="overflow-y-auto custom-scrollbar p-4 min-h-0 responsive-scroll tooltip-safe-scroll"><!-- p-6 ??p-4 -->
+            <div id="equip-inputs" class="space-y-4"></div><!-- 靽? -->
           </div>
         </div>
     
-      <!-- 幻獸等級（縮短） -->
-      <div class="card rounded-xl p-0 shadow-lg lg:flex-[0.5] flex flex-col min-h-0">
+      <!-- 撟餌蝑?嚗葬?哨? -->
+      <div class="card rounded-xl p-0 shadow-lg xl:flex-[0.5] flex flex-col min-h-0">
         <h2 class="text-2xl font-bold border-b sticky top-0 z-10 px-4 py-2 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
-          幻獸等級
+          <span data-i18n="section_pet">寵物等級</span>
         </h2>
-        <div class="overflow-y-auto custom-scrollbar p-4 min-h-0">
+        <div class="overflow-y-auto custom-scrollbar p-4 min-h-0 responsive-scroll tooltip-safe-scroll">
           <div id="pet-inputs" class="space-y-3"></div>
         </div>
       </div>
     
-      <!-- 小推車（微調） -->
-      <div class="card rounded-xl p-0 shadow-lg lg:flex-[1.2] flex flex-col min-h-0">
+      <!-- 撠頠?敺株矽嚗?-->
+      <div class="card rounded-xl p-0 shadow-lg xl:flex-[1.2] flex flex-col min-h-0">
         <h2 class="text-2xl font-bold border-b sticky top-0 z-10 px-4 py-2 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
-          小推車
+          <span data-i18n="section_cart">推車時產</span>
         </h2>
-        <div class="overflow-y-auto custom-scrollbar p-4 min-h-0">
+        <div class="overflow-y-auto custom-scrollbar p-4 min-h-0 responsive-scroll tooltip-safe-scroll">
           <div id="production-inputs" class="space-y-4 mb-4"></div>
         </div>
       </div>
@@ -184,63 +179,59 @@
 
     
     
-    <!-- 右：素材資訊 + 計算總覽（等高對齊） -->
-    <div class="lg:max-h-[75vh] lg:flex lg:flex-col lg:gap-4">
-      <!-- 素材資訊（縮短） -->
-      <div class="card rounded-xl p-0 shadow-lg lg:flex-[0.75] flex flex-col min-h-0">
+    <!-- ?喉?蝝?鞈? + 閮?蝮質汗嚗?擃?朣? -->
+    <div class="main-grid-column xl:max-h-[75vh] xl:flex xl:flex-col xl:gap-4">
+      <!-- 蝝?鞈?嚗葬?哨? -->
+      <div class="card rounded-xl p-0 shadow-lg xl:flex-[0.75] flex flex-col min-h-0">
         <h2 class="text-2xl font-bold border-b pb-3 sticky top-0 z-10 px-6 py-3 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
-          目前持有素材
+          <span data-i18n="section_owned_materials">目前持有素材</span>
         </h2>
-        <div class="overflow-y-auto custom-scrollbar p-4 min-h-0">
+        <div class="overflow-y-auto custom-scrollbar p-4 min-h-0 responsive-scroll tooltip-safe-scroll">
           <div id="owned-materials" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3"></div>
         </div>
       </div>
     
-      <!-- 計算總覽（拉長） -->
-      <div class="card rounded-xl p-0 shadow-lg lg:flex-[1.25] flex flex-col min-h-0">
+      <!-- 閮?蝮質汗嚗??瘀? -->
+      <div class="card rounded-xl p-0 shadow-lg xl:flex-[1.25] flex flex-col min-h-0">
         <h2 class="text-2xl font-bold border-b pb-3 sticky top-0 z-10 px-6 py-3 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
-          計算總覽
+          <span data-i18n="section_summary">結果總覽</span>
         </h2>
-        <div class="overflow-y-auto custom-scrollbar p-4 min-h-0">
+        <div class="overflow-y-auto custom-scrollbar p-4 min-h-0 responsive-scroll tooltip-safe-scroll">
           <div id="results" class="space-y-3 pt-2"></div>
         </div>
       </div>
     </div>
   </div>
-  <!-- 素材來源估算（由 view.js 動態渲染內容） -->
-  <div class="card rounded-lg p-4 shadow-lg mb-6 w-full">
+  <!-- 蝝?靘?隡啁?嚗 view.js ??皜脫??批捆嚗?-->
+  <div id="material-source-card" class="card rounded-lg p-4 shadow-lg mb-6 w-full page-section">
     <div id="material-source-container"></div>
   </div>
   
-  <!-- ===== 底部：功能按鈕 ===== -->
+  <!-- ===== 摨嚗??賣???===== -->
   <footer class="col-span-full w-full mt-10">
     <div class="max-w-7xl mx-auto px-4
                 flex flex-col items-center justify-center text-center text-gray-500 text-sm">
       <div class="flex flex-wrap items-center justify-center gap-4 mb-3">
         <button id="clear-local-data-btn"
           class="bg-red-800 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg text-xs">
-          清除本地紀錄
+          皜?砍蝝??
         </button>
       </div>
       <div class="max-w-7xl mx-auto px-4
                 flex flex-col items-center justify-center text-center text-gray-500 text-sm">
-        <p class="max-w-2xl leading-relaxed">
-          本計算機為非官方工具，僅供玩家參考使用。
-        </p>
-        <p class="max-w-2xl leading-relaxed">
-          網頁製作：菲亞。S2賽季資料來源（伺服器：靜心護甲）：ななや、六歲、羽菟o、夜奈喵。
-        </p>
+        <p class="max-w-2xl leading-relaxed" data-i18n="footer_notice_1">本工具僅供玩家自行估算素材與進度使用。</p>
+        <p class="max-w-2xl leading-relaxed" data-i18n="footer_notice_2">資料內容會隨賽季、伺服器與遊戲版本調整，請以遊戲內實際數值為準。</p>
         <p>
-          指路：
+          <span data-i18n="footer_discord_prefix">問題回報：</span>
           <a href="https://discord.com/channels/1215600132003725353/1431686816674611372"
             class="text-teal-700 hover:text-teal-600 hover:underline underline-offset-2 break-all"
             target="_blank" rel="noopener"
           >
-             官方 Discord 討論串
+            前往 Discord 討論串
           </a>
         </p>
         <p>
-          GitHub Repo：
+          GitHub Repo:
           <a
             href="https://github.com/sophie8909/sxstx_calculator"
             class="text-teal-700 hover:text-teal-600 hover:underline underline-offset-2 break-all"
@@ -249,10 +240,9 @@
             https://github.com/sophie8909/sxstx_calculator
           </a>
         </p>
-
         <p class="flex flex-wrap items-center justify-center gap-1 sm:gap-2">
-          <span class="text-pink-500">🥤</span>
-          <span>如果這個小工具有幫上忙，可以在</span>
+          <span class="text-pink-500">♥</span>
+          <span data-i18n="footer_support_prefix">如果這個工具有幫到你，</span>
           <a
             href="https://buymeacoffee.com/sophie8909"
             target="_blank" rel="noopener"
@@ -260,14 +250,18 @@
           >
             buymeacoffee.com/sophie8909
           </a>
-          <span>請我喝杯奶茶</span>
-          <span class="text-pink-500">🥤</span>
+          <span data-i18n="footer_support_suffix">歡迎支持作者。</span>
+          <span class="text-pink-500">♥</span>
         </p>
       </div>
     </div>
   </footer>
-  <!-- 入口點（控制器） -->
+  <!-- ?亙暺??批?剁? -->
   <script type="module" src="./js/controller.js"></script>
 </body>
 
 </html>
+
+
+
+

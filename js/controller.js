@@ -1,5 +1,5 @@
-// controller.js
-// ★ 控制器層：初始化、事件繫結、調用 Model 與 View ★
+﻿// controller.js
+// ???批?典惜嚗?憪???隞嗥鼠蝯矽??Model ??View ??
 
 import {
   state,
@@ -13,6 +13,8 @@ import {
   computeEtaToNextLevel,
   computeEtaToTargetLevel,
   getCumulative,
+  getSpeedupHoursForDays,
+  getSpeedupHoursForHours,
   loadMaterialAvgDefaults, 
 } from './model.js';
 
@@ -26,38 +28,258 @@ import {
   renderTargetEtaText,
   renderMaterialSource,
 } from './view.js';
+import { applyStaticTranslations, initLanguage, t } from './i18n.js';
 
 /* ============================================================
- * Google 試算表（Published CSV）設定：時間選項 / 伺服器來源
- * 試算表欄位：server_name, description, time
+ * Google 閰衣?銵剁?Published CSV嚗身摰????賊? / 隡箸??其?皞?
+ * 閰衣?銵冽?雿?server_name, description, time
  * ============================================================ */
 const TIME_PRESETS_SHEET = {
   base: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRMlpHJpHMNQTCxhYgj2fmvazou_cQpAiVa-w5tg7WR2EJTn4EExoLwojYM3BoS8FSTpxvaKIQdmPQC/pub',
   gid: '717680438',
 };
 
-// 讀不到試算表時的備援資料（時間已改成 08:00）
+// 霈銝閰衣?銵冽????渲?????撌脫??08:00嚗?
 const TIME_PRESETS_FALLBACK = [
   {
     key: 's1_end',
-    server_name: '淨心護甲',
-    label: 'S1 結束（淨心護甲）',
+    season_id: 's1',
+    server_name: '台港澳',
+    label: 'S1 結束',
     iso: '2025-10-13T08:00:00+08:00'
   },
   {
     key: 's2_open',
-    server_name: '淨心護甲',
-    label: 'S2 開啟（淨心護甲）',
+    season_id: 's2',
+    server_name: '台港澳',
+    label: 'S2 開始',
     iso: '2025-11-10T08:00:00+08:00'
   },
 ];
 
+function appendStaticTooltip(target, text) {
+  if (!target || !text) return;
+
+  const existing = target.querySelector('.tooltip');
+  if (existing) {
+    const icon = existing.querySelector('.tooltip-icon');
+    const body = existing.querySelector('.tooltip-text');
+    if (icon) icon.setAttribute('aria-label', text);
+    if (body) body.textContent = text;
+    return;
+  }
+
+  target.dataset.tooltipBound = '1';
+  target.classList.add('label-with-help');
+  target.insertAdjacentHTML(
+    'beforeend',
+    `<span class="tooltip"><span class="tooltip-icon" tabindex="0" role="button" aria-label="${text}">i</span><span class="tooltip-text">${text}</span></span>`
+  );
+}
+
+function enhanceStaticFieldTooltips() {
+  appendStaticTooltip(document.querySelector('label[for="season-select"]'), t('season_tooltip'));
+  appendStaticTooltip(document.querySelector('label[for="server-select"]'), t('server_tooltip'));
+  appendStaticTooltip(document.querySelector('label[for="notify-time-select"]'), t('notify_tooltip'));
+  appendStaticTooltip(document.getElementById('target-time-display')?.previousElementSibling, t('target_time_tooltip'));
+  appendStaticTooltip(document.getElementById('primordial-star-cumulative')?.previousElementSibling, t('primordial_star_tooltip'));
+  appendStaticTooltip(document.getElementById('relic-total-display')?.parentElement, t('relic_tooltip'));
+}
+
+function getSelectedSeason() {
+  return seasonOptions.find((season) => season.id === state.seasonId) || seasonOptions[0] || null;
+}
+
+function normalizeServerName(name) {
+  return String(name || '')
+    .replace(/\u3000/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function getServerGroupMembers(name) {
+  return normalizeServerName(name)
+    .split(/[、,，/／]+/)
+    .map((part) => normalizeServerName(part))
+    .filter(Boolean);
+}
+
+function isSubsetMembers(sourceMembers, targetMembers) {
+  if (!sourceMembers.length || !targetMembers.length) return false;
+  const targetSet = new Set(targetMembers);
+  return sourceMembers.every((member) => targetSet.has(member));
+}
+
+function areServerGroupsEquivalentOrMerged(a, b) {
+  const aMembers = getServerGroupMembers(a);
+  const bMembers = getServerGroupMembers(b);
+  if (!aMembers.length || !bMembers.length) return false;
+  return isSubsetMembers(aMembers, bMembers) || isSubsetMembers(bMembers, aMembers);
+}
+
+function mergeServerOptions(serverNames) {
+  const normalized = serverNames
+    .map((name) => normalizeServerName(name))
+    .filter(Boolean);
+
+  const uniqueNames = Array.from(new Set(normalized));
+  return uniqueNames.filter((name, index, list) => {
+    const members = getServerGroupMembers(name);
+    return !list.some((otherName, otherIndex) => {
+      if (index === otherIndex) return false;
+      const otherMembers = getServerGroupMembers(otherName);
+      return otherMembers.length > members.length && isSubsetMembers(members, otherMembers);
+    });
+  });
+}
+
+function usesLargeExpUnit() {
+  return (getSelectedSeason()?.season || 0) >= 4;
+}
+
+function getOwnedExpWanValue() {
+  const raw = document.getElementById('owned-exp-wan')?.value?.trim() || '';
+  if (raw === '') return NaN;
+
+  const value = parseFloat(raw);
+  return Number.isNaN(value) ? NaN : value;
+}
+
+function convertWanToOwnedExp(ownedWan) {
+  if (Number.isNaN(ownedWan)) return NaN;
+  return Math.floor(ownedWan * (usesLargeExpUnit() ? 100000000 : 10000));
+}
+
+function syncOwnedExpInputFromWan(ownedWan) {
+  const ownedExpInput = document.getElementById('owned-exp');
+  if (!ownedExpInput) return 0;
+
+  if (Number.isNaN(ownedWan)) {
+    ownedExpInput.value = '';
+    return 0;
+  }
+
+  const ownedExp = convertWanToOwnedExp(ownedWan);
+  ownedExpInput.value = String(ownedExp);
+  return ownedExp;
+}
+
+function readBedProgressState() {
+  const currentLevel = parseInt(document.getElementById('character-current')?.value, 10) || 0;
+  const ownedWan = getOwnedExpWanValue();
+  const bedHourly = parseFloat(document.getElementById('bed-exp-hourly')?.value) || 0;
+  const targetLevel = parseInt(document.getElementById('target-character')?.value, 10) || 0;
+  const ownedExp = syncOwnedExpInputFromWan(ownedWan);
+
+  return {
+    currentLevel,
+    ownedWan,
+    ownedExp,
+    bedHourly,
+    targetLevel,
+  };
+}
+
+function getTargetTimeHoursRemaining() {
+  const targetTime = document.getElementById('target-time')?.value;
+  if (!targetTime) return 0;
+
+  const hours = (new Date(targetTime).getTime() - Date.now()) / 36e5;
+  return Math.max(0, hours);
+}
+
+function getNextLevelSpeedupHours(currentLevel, ownedExp, bedHourly) {
+  const { minutesNeeded } = computeEtaToNextLevel(currentLevel, ownedExp, bedHourly);
+  if (!Number.isFinite(minutesNeeded) || minutesNeeded <= 0) return 0;
+  return getSpeedupHoursForDays(minutesNeeded / (24 * 60));
+}
+
+function updateSpeedupHints(nextLevelHours, targetHours) {
+  const nextLevelEl = document.getElementById('bed-levelup-speedup');
+  const targetEl = document.getElementById('bed-target-speedup');
+
+  if (nextLevelEl) nextLevelEl.textContent = t('speedup_next_level', { hours: nextLevelHours });
+  if (targetEl) targetEl.textContent = t('speedup_target_time', { hours: targetHours });
+}
+
+function localizeEtaDisplays(levelupMinutes, levelupTs, targetMinutes, etaTs) {
+  const levelupEl = document.getElementById('bed-levelup-time');
+  const targetEl = document.getElementById('bed-target-eta');
+
+  if (levelupEl) {
+    if (!Number.isFinite(levelupTs)) levelupEl.textContent = t('levelup_eta_empty');
+    else if (levelupMinutes <= 0) levelupEl.textContent = t('levelup_eta_ready');
+    else {
+      const timeText = new Date(levelupTs).toLocaleString('zh-TW', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      levelupEl.textContent = t('levelup_eta_value', { minutes: levelupMinutes.toLocaleString(), time: timeText });
+    }
+  }
+
+  if (targetEl) {
+    if (!Number.isFinite(etaTs)) targetEl.textContent = t('target_eta_empty');
+    else if (targetMinutes <= 0) targetEl.textContent = t('target_eta_ready');
+    else {
+      const timeText = new Date(etaTs).toLocaleString('zh-TW', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      targetEl.textContent = t('target_eta_value', { minutes: targetMinutes.toLocaleString(), time: timeText });
+    }
+  }
+}
+
+function refreshBedProgressSummary() {
+  const { currentLevel, ownedExp, bedHourly, targetLevel } = readBedProgressState();
+  const nextLevelBonusHours = getNextLevelSpeedupHours(currentLevel, ownedExp, bedHourly);
+  const targetBonusHours = getSpeedupHoursForHours(getTargetTimeHoursRemaining());
+  const { levelupTs, minutesNeeded } = computeEtaToNextLevel(
+    currentLevel,
+    ownedExp,
+    bedHourly,
+    nextLevelBonusHours
+  );
+  renderLevelupTimeText(minutesNeeded, levelupTs);
+
+  const { minutesNeeded: targetMinutesNeeded, etaTs } =
+    computeEtaToTargetLevel(currentLevel, ownedExp, bedHourly, targetLevel, targetBonusHours);
+  renderTargetEtaText(targetMinutesNeeded, etaTs);
+  localizeEtaDisplays(minutesNeeded, levelupTs, targetMinutesNeeded, etaTs);
+
+  updateExpRequirements(currentLevel, ownedExp, targetLevel);
+  updateSpeedupHints(nextLevelBonusHours, targetBonusHours);
+
+  return {
+    currentLevel,
+    ownedExp,
+    bedHourly,
+    targetLevel,
+    nextLevelBonusHours,
+    targetBonusHours,
+    levelupTs,
+    minutesNeeded,
+    etaTs,
+    targetMinutesNeeded,
+  };
+}
+
 /* -----------------------------
- * 統一重算
+ * 蝯曹???
  * ---------------------------*/
 function triggerRecalculate(containers) {
   const payload = computeAll(containers);
   renderResults(containers, payload, state.missingFiles);
+  refreshBedProgressSummary();
+  saveAllInputs();
+  return;
 
   const curLv = parseInt(document.getElementById('character-current')?.value) || 0;
   const ownedWanStr = document.getElementById('owned-exp-wan')?.value?.trim();
@@ -67,11 +289,11 @@ function triggerRecalculate(containers) {
   const ownedExpInput = document.getElementById('owned-exp');
   if (ownedExpInput) {
     if (seasonOptions.some((s) => s.season >= 4)) {
-      // S4 以億為單位換算
+      // S4 隞亙??箏雿?蝞?
       ownedExpInput.value = isNaN(ownedWan) ? '' : Math.floor(ownedWan * 100000000);
     }
     else {
-      // S1-S3 仍以萬為單位換算
+      // S1-S3 隞誑?祉?桐???
       ownedExpInput.value = isNaN(ownedWan) ? '' : Math.floor(ownedWan * 10000);
     }
   }
@@ -89,8 +311,8 @@ function triggerRecalculate(containers) {
   saveAllInputs();
 }
 
-// 讀取素材來源的 input（每日次數 / 平均值 / 商店每日購買）
-// 檔案: controller.js (此函式無需變動，但它是獲取 rolaCost 的關鍵)
+// 霈????皞? input嚗??交活??/ 撟喳???/ ??瘥鞈潸眺嚗?
+// 瑼?: controller.js (甇文撘?霈?嚗?摰?脣? rolaCost ????
 
 function getMaterialInput(source, material, role) {
   const el = document.querySelector(
@@ -105,7 +327,7 @@ function getMaterialInput(source, material, role) {
 
 
 /* -----------------------------
- * 顯示升級所需經驗
+ * 憿舐內????蝬?
  * ---------------------------*/
 function updateExpRequirements(curLv, ownedExp, targetChar) {
   const table = state.cumulativeCostData['character'];
@@ -120,15 +342,18 @@ function updateExpRequirements(curLv, ownedExp, targetChar) {
 
   const elNext = document.getElementById('bed-levelup-exp');
   const elTarget = document.getElementById('bed-target-exp');
-  if (elNext) elNext.textContent = `升至下一級所需經驗: ${needNextExp.toLocaleString()}`;
-  if (elTarget) elTarget.textContent = `升至目標等級所需經驗: ${needTargetExp.toLocaleString()}`;
+  if (elNext) elNext.textContent = t('next_level_exp', { value: needNextExp.toLocaleString() });
+  if (elTarget) elTarget.textContent = t('target_level_exp', { value: needTargetExp.toLocaleString() });
 }
 
 /* -----------------------------
- * 每秒同步更新經驗
+ * 瘥??郊?湔蝬?
  * ---------------------------*/
 function setupAutoUpdate(containers) {
   setInterval(() => {
+    refreshBedProgressSummary();
+    return;
+
     const curLv = parseInt(document.getElementById('character-current')?.value) || 0;
     const ownedWanStr = document.getElementById('owned-exp-wan')?.value?.trim();
     const ownedWan = ownedWanStr === '' ? NaN : parseFloat(ownedWanStr);
@@ -139,11 +364,11 @@ function setupAutoUpdate(containers) {
     if (!ownedExpInput || isNaN(ownedWan)) return;
 
     if (seasonOptions.some((s) => s.season >= 4)) {
-      // S4 以億為單位換算
+      // S4 隞亙??箏雿?蝞?
       ownedExpInput.value = Math.floor(ownedWan * 100000000);
     }
     else {
-      // S1-S3 仍以萬為單位換算
+      // S1-S3 隞誑?祉?桐???
       ownedExpInput.value = Math.floor(ownedWan * 10000);
     }
     const base = parseFloat(ownedExpInput.value) || ownedWan * 10000;
@@ -164,9 +389,9 @@ function setupAutoUpdate(containers) {
 }
 
 /* -----------------------------
- * 從 Google 試算表讀取「伺服器選項」
- * 表頭：server_name, description, time
- * 顯示文字：server_name
+ * 敺?Google 閰衣?銵刻??撩??賊???
+ * 銵券嚗erver_name, description, time
+ * 憿舐內??嚗erver_name
  * ---------------------------*/
 async function fetchServerOptionsFromSheet() {
   const url = `${TIME_PRESETS_SHEET.base}?output=csv&gid=${encodeURIComponent(TIME_PRESETS_SHEET.gid)}`;
@@ -178,24 +403,25 @@ async function fetchServerOptionsFromSheet() {
     const headers = lines[0].split(',').map(s => s.trim().toLowerCase());
     const serverIdx = headers.indexOf('server_name');
 
-    const out = new Set();
+    const out = [];
     for (let i = 1; i < lines.length; i++) {
       const cols = lines[i].split(',').map(s => s.trim());
       const server = cols[serverIdx] || '';
-      if (server) out.add(server);
+      const normalizedServer = normalizeServerName(server);
+      if (normalizedServer) out.push(normalizedServer);
     }
-    return Array.from(out);
+    return mergeServerOptions(out);
   } catch (err) {
     console.warn('[server options] fetch failed, using fallback', err);
-    return ['淨心護甲'];
+    return ['台港澳'];
   }
 }
 
 /* -----------------------------
- * 從 Google 試算表讀取「時間選項」
- * 表頭：server_name, description, time
- * 顯示文字：{description} ({server_name})
- * 時間一律轉成：該日期 08:00（+08:00）
+ * 敺?Google 閰衣?銵刻??????
+ * 銵券嚗erver_name, description, time
+ * 憿舐內??嚗description} ({server_name})
+ * ??銝敺???閰脫??08:00嚗?08:00嚗?
  * ---------------------------*/
 async function fetchTimePresetsFromSheet() {
   const url = `${TIME_PRESETS_SHEET.base}?output=csv&gid=${encodeURIComponent(TIME_PRESETS_SHEET.gid)}`;
@@ -209,34 +435,36 @@ async function fetchTimePresetsFromSheet() {
     const serverIdx = headers.indexOf('server_name');
     const descIdx   = headers.indexOf('description');
     const timeIdx   = headers.indexOf('time');
+    const seasonIdx = headers.indexOf('season_id');
 
     const out = [];
     for (let i = 1; i < lines.length; i++) {
       const cols  = lines[i].split(',').map(s => s.trim());
-      const server = cols[serverIdx] || '';
+      const server = normalizeServerName(cols[serverIdx] || '');
       const desc   = cols[descIdx]   || '';
       const time   = cols[timeIdx]   || '';
+      const rawSeasonId = seasonIdx >= 0 ? (cols[seasonIdx] || '') : '';
       if (!server && !desc && !time) continue;
 
-      // 只取日期，然後補成 08:00:00+08:00
+      // ?芸??交?嚗敺???08:00:00+08:00
       let datePart = '';
 
       if (time.includes('T')) {
-        // 已經有 ISO 形式 → 只取日期
+        // 撌脩???ISO 敶Ｗ? ???芸??交?
         datePart = time.split('T')[0];
       } else {
-        // 例如「2025/10/13」或「2025-10-13」
+        // 靘???025/10/13????025-10-13??
         const m = time.match(/(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})/);
         if (m) {
           const [, y, mo, d] = m;
           datePart = `${y}-${mo.padStart(2, '0')}-${d.padStart(2, '0')}`;
         } else {
-          // 再不行就交給 Date 試著 parse，一樣只取日期
+          // ??銵停鈭斤策 Date 閰西? parse嚗?璅????
           const d2 = new Date(time);
           if (!Number.isNaN(d2.getTime())) {
             datePart = d2.toISOString().slice(0, 10);
           } else {
-            // 完全看不懂就略過那一列
+            // 摰???停?仿??????
             continue;
           }
         }
@@ -244,8 +472,11 @@ async function fetchTimePresetsFromSheet() {
 
       const isoTime = `${datePart}T08:00:00+08:00`;
 
+      const inferredSeasonId = rawSeasonId || (desc.match(/\b(s\d+)\b/i)?.[1]?.toLowerCase() ?? '');
+
       out.push({
         key: `${server}_${i}`,
+        season_id: inferredSeasonId,
         server_name: server,
         label: `${desc}`,
         iso: isoTime,
@@ -259,24 +490,24 @@ async function fetchTimePresetsFromSheet() {
 }
 
 /* -----------------------------
- * 初始化賽季下拉選單 #season-select
- * 動態依據 model.js 的 seasonOptions 產生選項
+ * ???魚摮?????#season-select
+ * ??靘? model.js ??seasonOptions ?Ｙ??賊?
  * ---------------------------*/
 function initSeasonSelector(containers, saved = null) {
   const seasonSelector = document.getElementById('season-select');
   if (!seasonSelector) return;
 
-  // 先清空，再依 seasonOptions 建立選項
+  // ??蝛綽??? seasonOptions 撱箇??賊?
   seasonSelector.innerHTML = '';
   seasonOptions.forEach((s) => {
-    if (s.readonly) return; // 跳過唯讀賽季
+    if (s.readonly) return; // 頝喲??航?鞈賢迤
     const opt = document.createElement('option');
     opt.value = s.id;
-    opt.textContent = s.name;
+    opt.textContent = t(`season_name_${s.id}`);
     seasonSelector.appendChild(opt);
   });
 
-  // 套用儲存的賽季（若有）
+  // 憟?脣??魚摮???交?嚗?
   const data = saved ?? JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
   const savedSeason = data['season-select'];
   const defaultId = seasonOptions[0]?.id || 's2';
@@ -289,7 +520,7 @@ function initSeasonSelector(containers, saved = null) {
     state.seasonId = defaultId;
   }
 
-  // 監聽賽季變更：寫回 state + localStorage + 重新載入賽季資料
+  // ??鞈賢迤霈嚗神??state + localStorage + ?頛鞈賢迤鞈?
   seasonSelector.addEventListener('change', async () => {
     state.seasonId = seasonSelector.value;
 
@@ -301,9 +532,85 @@ function initSeasonSelector(containers, saved = null) {
   });
 }
 
+function refreshSeasonSelectorLabels() {
+  const seasonSelector = document.getElementById('season-select');
+  if (!seasonSelector) return;
+
+  Array.from(seasonSelector.options).forEach((option) => {
+    option.textContent = t(`season_name_${option.value}`);
+  });
+}
+
+function positionTooltip(icon, text) {
+  if (!icon || !text) return;
+
+  text.classList.add('tooltip-floating');
+  const margin = 12;
+  const iconRect = icon.getBoundingClientRect();
+  const tooltipRect = text.getBoundingClientRect();
+
+  let left = iconRect.left + iconRect.width / 2 - tooltipRect.width / 2;
+  left = Math.max(margin, Math.min(left, window.innerWidth - tooltipRect.width - margin));
+
+  let top = iconRect.top - tooltipRect.height - 10;
+  if (top < margin) top = iconRect.bottom + 10;
+
+  text.style.setProperty('--tooltip-left', `${left}px`);
+  text.style.setProperty('--tooltip-top', `${top}px`);
+}
+
+function bindTooltipLayers() {
+  document.querySelectorAll('.tooltip').forEach((tooltip) => {
+    if (tooltip.dataset.floatingBound === '1') return;
+    tooltip.dataset.floatingBound = '1';
+
+    const icon = tooltip.querySelector('.tooltip-icon');
+    const text = tooltip.querySelector('.tooltip-text');
+    if (!icon || !text) return;
+
+    const show = () => {
+      tooltip.classList.add('tooltip-active');
+      positionTooltip(icon, text);
+    };
+
+    const hide = () => {
+      tooltip.classList.remove('tooltip-active');
+      text.classList.remove('tooltip-floating');
+      text.style.removeProperty('--tooltip-left');
+      text.style.removeProperty('--tooltip-top');
+    };
+
+    tooltip.addEventListener('mouseenter', show);
+    tooltip.addEventListener('mouseleave', hide);
+    tooltip.addEventListener('focusin', show);
+    tooltip.addEventListener('focusout', hide);
+  });
+}
+
+function applyMobileSectionOrder() {
+  const main = document.getElementById('primary-content-grid');
+  const targetTimeCard = document.getElementById('target-time-card');
+  const relicCard = document.getElementById('relic-card');
+  if (!main || !targetTimeCard || !relicCard) return;
+
+  const parent = main.parentElement;
+  if (!parent) return;
+
+  if (window.innerWidth <= 767) {
+    if (main.previousElementSibling !== null) {
+      parent.insertBefore(main, targetTimeCard);
+    }
+    return;
+  }
+
+  if (main.previousElementSibling !== relicCard) {
+    parent.insertBefore(main, relicCard.nextSibling);
+  }
+}
+
 /* -----------------------------
- * 初始化伺服器下拉選單 #server-select
- * 並把選取結果存到 state.serverName
+ * ???撩?銝??詨 #server-select
+ * 銝行??詨?蝯?摮 state.serverName
  * ---------------------------*/
 async function initServerSelector(containers) {
   const serverSel = document.getElementById('server-select');
@@ -318,7 +625,7 @@ async function initServerSelector(containers) {
     serverSel.appendChild(opt);
   });
 
-  // 恢復之前選過的伺服器
+  // ?Ｗ儔銋??賊??撩?
   const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
   const savedServer = saved['server-select'];
   if (savedServer && [...serverSel.options].some(o => o.value === savedServer)) {
@@ -335,14 +642,14 @@ async function initServerSelector(containers) {
     data['server-select'] = serverSel.value;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 
-    // 換伺服器時重新載入對應的目標時間選項
+    // ?撩????啗??亙????格????賊?
     initTargetTimeControls(containers);
     triggerRecalculate(containers);
   });
 }
 
 /* -----------------------------
- * 目標時間控制
+ * ?格????批
  * ---------------------------*/
 async function initTargetTimeControls(containers) {
   const presetSel = document.getElementById('target-time-preset');
@@ -353,25 +660,32 @@ async function initTargetTimeControls(containers) {
   if (!presetSel || !displayBox || !customInput || !hiddenField) return;
 
   const allPresets = await fetchTimePresetsFromSheet();
-  const selectedServer = state.serverName;
+  const selectedServer = normalizeServerName(state.serverName);
+  const selectedSeasonId = state.seasonId;
+  const nowTs = Date.now();
 
-  // 填入 select：只放「目前伺服器」的選項
+  // 憛怠 select嚗?整?撩????賊?
   presetSel.innerHTML = '';
   allPresets.forEach(p => {
-    if (p.server_name && p.server_name !== selectedServer) return;
+    if (p.server_name && !areServerGroupsEquivalentOrMerged(p.server_name, selectedServer)) return;
+    if (p.season_id && p.season_id !== selectedSeasonId) return;
+    if (p.iso) {
+      const presetTs = new Date(p.iso).getTime();
+      if (Number.isFinite(presetTs) && presetTs < nowTs) return;
+    }
     const opt = document.createElement('option');
     opt.value = p.key;
     opt.textContent = p.label;
     presetSel.appendChild(opt);
   });
 
-  // 追加「自訂時間」
+  // 餈賢??閮???
   const optCustom = document.createElement('option');
   optCustom.value = '__custom__';
-  optCustom.textContent = '自訂時間';
+  optCustom.textContent = t('custom_target_time');
   presetSel.appendChild(optCustom);
 
-  // 恢復選取
+  // ?Ｗ儔?詨?
   const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
   const savedKey = saved['target-time-preset'];
   if (savedKey && [...presetSel.options].some(o => o.value === savedKey)) {
@@ -387,7 +701,7 @@ async function initTargetTimeControls(containers) {
       customInput.classList.remove('hidden');
       displayBox.classList.add('hidden');
 
-      // 自訂時間若為空 → 先帶入現在時間
+      // ?芾????亦蝛????葆?亦?冽???
       if (!customInput.value) {
         const now = new Date();
         const localISO = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
@@ -437,9 +751,9 @@ async function initTargetTimeControls(containers) {
   apply();
 }
 
-// 由 #target-time 推算剩餘天數（目標時間 - 現在時間）
+// ??#target-time ?函??拚?憭拇嚗璅???- ?曉??嚗?
 function updateDaysRemainingFromTarget() {
-  const hidden = document.getElementById('target-time');   // 隱藏目標時間
+  const hidden = document.getElementById('target-time');   // ?梯??格???
   const daysInput = document.getElementById('days-remaining');
   if (!hidden || !daysInput || !hidden.value) return;
 
@@ -450,7 +764,7 @@ function updateDaysRemainingFromTarget() {
   let diffMs = target.getTime() - now.getTime();
   if (diffMs < 0) diffMs = 0;
 
-  const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));  // 有小數就往上取整
+  const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));  // ???詨停敺銝???
   daysInput.value = days;
 }
 
@@ -467,13 +781,13 @@ function updateMaterialSourceRow(source, material) {
 
   let total = 0;
 
-  if (source === 'store') { // TODO: 修正來源名稱為 'store'，與 view.js 的 data-source 一致
+  if (source === 'store') { // TODO: 靽格迤靘??迂??'store'嚗? view.js ??data-source 銝??
     const dailyBuy = getMaterialInput(source, material, 'avg');
-    total = dailyBuy * days; // TODO: 商店約可獲得 = 每日購買 × 剩餘天數
+    total = dailyBuy * days; // TODO: ??蝝?脣? = 瘥鞈潸眺 ? ?拚?憭拇
   } else {
     const daily = getMaterialInput(source, material, 'daily');
     const avg = getMaterialInput(source, material, 'avg');
-    total = daily * avg * days; // TODO: 秘境/探索約可獲得 = 每日次數 × 平均每次 × 剩餘天數
+    total = daily * avg * days; // TODO: 蝘?/?Ｙ揣蝝?脣? = 瘥甈⊥ ? 撟喳?瘥活 ? ?拚?憭拇
   }
 
   totalSpan.textContent = total ? total.toLocaleString() : '0';
@@ -497,9 +811,9 @@ function updateStoreRolaCost() {
   const days =
     parseInt(document.getElementById('days-remaining')?.value || '0', 10) || 0;
 
-  // 素材清單需與 getMaterialSourceConfig().sourceMaterials.store 一致
+  // 蝝?皜???getMaterialSourceConfig().sourceMaterials.store 銝??
   const storeMats = ['stone', 'essence', 'sand', 'freeze_dried'];
-  let autoDailyCost = 0; // TODO: 自動計算出的每日花費
+  let autoDailyCost = 0; // TODO: ?芸?閮??箇?瘥?梯祥
 
   storeMats.forEach((mat) => {
     const unit = getMaterialInput('store', mat, 'rola-cost');
@@ -511,10 +825,10 @@ function updateStoreRolaCost() {
   const dailyManualEl = document.getElementById('store-rola-daily-cost-manual');
   const totalEl = document.getElementById('store-rola-total-cost');
 
-  // TODO: 預設使用自動計算的每日花費
+  // TODO: ?身雿輻?芸?閮????亥鞎?
   let dailyCost = autoDailyCost;
 
-  // TODO: 若有填「手動每日花費」，則以手動為主（空白視為未填）
+  // TODO: ?交?憛怒????亥鞎颯??誑???箔蜓嚗征?質??箸憛恬?
   if (dailyManualEl) {
     const manualRaw = dailyManualEl.value.trim();
     if (manualRaw !== '') {
@@ -532,7 +846,7 @@ function updateStoreRolaCost() {
 
 
 /* -----------------------------
- * 全域事件：任何輸入 / 選擇變更都重算
+ * ?典?鈭辣嚗遙雿撓??/ ?豢?霈?賡?蝞?
  * ---------------------------*/
 function bindGlobalHandlers(containers) {
 
@@ -540,7 +854,7 @@ function bindGlobalHandlers(containers) {
     (e) => {
       const t = e.target;
       if (t.tagName === 'INPUT') {
-        // 素材來源估算欄位
+        // 蝝?靘?隡啁?甈?
         if (t.classList.contains('material-source-input')) {
           const src = t.dataset.source;
           const mat = t.dataset.material;
@@ -572,23 +886,24 @@ function bindGlobalHandlers(containers) {
 
 
 /* -----------------------------
- * 賽季切換
+ * 鞈賢迤??
  * ---------------------------*/
 async function handleSeasonChange(containers) {
   const seasonSelector = document.getElementById('season-select');
-  // 若 selector 存在就以畫面為準，否則沿用 state 目前的值
+  // ??selector 摮撠曹誑?恍?箸?嚗?窒??state ?桀???
   state.seasonId = seasonSelector?.value || state.seasonId || 's2';
 
   containers.results.innerHTML =
-    '<p class="text-gray-500 text-center py-8">正在載入新賽季數據...</p>';
+    `<p class="text-gray-500 text-center py-8">${t('loading_season_data')}</p>`;
 
   await loadDataForSeason(state.seasonId);
   preprocessCostData();
 
   renderAll(containers);
-  loadAllInputs(['season-select']); // 賽季用我們自己的邏輯處理
+  bindTooltipLayers();
+  loadAllInputs(['season-select']); // 鞈賢迤?冽??撌梁??摩??
 
-  // 先初始化伺服器選單，再依伺服器載入目標時間選項
+  // ??憪?隡箸??券?殷???隡箸??刻??亦璅????
   await initServerSelector(containers);
   await initTargetTimeControls(containers);
 
@@ -597,9 +912,29 @@ async function handleSeasonChange(containers) {
 }
 
 /* -----------------------------
- * 通知相關（保留原本行為）
+ * ??賊?嚗????祈??綽?
  * ---------------------------*/
 async function enableLevelUpNotifications() {
+  {
+    const { currentLevel, ownedWan, ownedExp, bedHourly } = readBedProgressState();
+    const bonusHours = getNextLevelSpeedupHours(currentLevel, ownedExp, bedHourly);
+
+    const notifyTimeSelect = document.getElementById('notify-time-select');
+    let notifyTime = 0;
+    if (notifyTimeSelect.value === 'min1') notifyTime = 1;
+    else if (notifyTimeSelect.value === 'min2') notifyTime = 2;
+    else if (notifyTimeSelect.value === 'min3') notifyTime = 3;
+    else if (notifyTimeSelect.value === 'min5') notifyTime = 5;
+
+    if (Number.isNaN(ownedWan)) return;
+
+    import('./model.js').then(({ scheduleLevelUpNotification }) => {
+      scheduleLevelUpNotification(currentLevel, ownedExp, bedHourly, currentLevel + 1, notifyTime, bonusHours);
+      alert(t('alert_notify_enabled'));
+    });
+    return;
+  }
+
   const curLv = parseInt(document.getElementById('character-current')?.value) || 0;
   const ownedWanStr = document.getElementById('owned-exp-wan')?.value?.trim();
   const ownedWan = ownedWanStr === '' ? NaN : parseFloat(ownedWanStr);
@@ -616,33 +951,37 @@ async function enableLevelUpNotifications() {
   if (ownedExpInput && isNaN(ownedWan)) return;
   const ownedExp = parseInt(ownedExpInput?.value) || 0;
 
-  import('./model.js').then(({ scheduleLevelUpNotification }) => { // TODO: 路徑由 ./model/model.js 改為 ./model.js
+  import('./model.js').then(({ scheduleLevelUpNotification }) => { // TODO: 頝臬???./model/model.js ?寧 ./model.js
     scheduleLevelUpNotification(curLv, ownedExp, bedHourly, curLv + 1, notifyTime);
-    alert('已啟用升級（下一級）通知');
+      alert(t('alert_notify_enabled'));
   });
 }
 
 async function disableLevelUpNotifications() {
-  import('./model.js').then(({ clearLevelUpNotification }) => { // TODO: 路徑由 ./model/model.js 改為 ./model.js
+  import('./model.js').then(({ clearLevelUpNotification }) => { // TODO: 頝臬???./model/model.js ?寧 ./model.js
     clearLevelUpNotification();
-    alert('已清除升級通知');
+    alert(t('alert_notify_disabled'));
   });
 }
 
 /* -----------------------------
- * 初始化
+ * ????
  * ---------------------------*/
 async function init() {
+  await initLanguage();
   const containers = getContainers();
+  applyMobileSectionOrder();
   renderAll(containers);
+  enhanceStaticFieldTooltips();
+  bindTooltipLayers();
   bindGlobalHandlers(containers);
 
   const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
 
-  // 動態建立賽季選單 + 套用儲存值
+  // ??撱箇?鞈賢迤?詨 + 憟?脣???
   initSeasonSelector(containers, saved);
 
-  // 升級通知按鈕
+  // ?????
   const levelUpNotifyBtn = document.getElementById('enable-levelup-notify-btn');
   levelUpNotifyBtn?.addEventListener('click', () => enableLevelUpNotifications());
 
@@ -651,26 +990,45 @@ async function init() {
 
   const clearLocalDataBtn = document.getElementById('clear-local-data-btn');
   clearLocalDataBtn?.addEventListener('click', () => {
-    if (confirm('確定要清除所有本地儲存的輸入資料嗎？')) {
+    if (confirm(t('confirm_clear_local_data'))) {
       localStorage.removeItem(STORAGE_KEY);
-      alert('本地儲存的輸入資料已清除，頁面將重新載入。');
+      alert(t('alert_local_data_cleared'));
       location.reload();
     }
   });
 
-  // 根據當前賽季載入對應資料
+  // ?寞??嗅?鞈賢迤頛撠?鞈?
   await handleSeasonChange(containers);
 
-  // 先載入平均值、再畫素材來源 UI
-  await loadMaterialAvgDefaults();       // TODO: 新增：呼叫 model.js 中的預設平均值載入（目前為安全 no-op）
+  // ???亙像?潦??怎???皞?UI
+  await loadMaterialAvgDefaults();       // TODO: ?啣?嚗??model.js 銝剔??身撟喳??潸??伐??桀??箏???no-op嚗?
   renderMaterialSource(containers);
+  bindTooltipLayers();
   updateDaysRemainingFromTarget();
   updateAllMaterialSources();
 
-  // 自動更新經驗與現在時間
+  // ?芸??湔蝬???冽???
   setupAutoUpdate(containers);
   setInterval(() => updateCurrentTime(containers.currentTimeDisplay), 1000);
   updateCurrentTime(containers.currentTimeDisplay);
+  window.addEventListener('languagechange', () => {
+    applyStaticTranslations();
+    refreshSeasonSelectorLabels();
+    applyMobileSectionOrder();
+    renderAll(containers);
+    enhanceStaticFieldTooltips();
+    bindTooltipLayers();
+    loadAllInputs(['season-select']);
+    renderMaterialSource(containers);
+    bindTooltipLayers();
+    updateDaysRemainingFromTarget();
+    updateAllMaterialSources();
+    updateRelicTotal();
+    triggerRecalculate(containers);
+    applyStaticTranslations();
+  });
+  window.addEventListener('resize', applyMobileSectionOrder, { passive: true });
 }
 
 document.addEventListener('DOMContentLoaded', init);
+

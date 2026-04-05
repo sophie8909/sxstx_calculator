@@ -67,6 +67,8 @@ export const productionSources = {
   freezeDried: { materialId: 'freezeDried' },
 };
 
+export const SPEEDUP_HOURS_PER_USE = 2;
+
 /** 模擬資料（CSV 缺檔備援） */
 export const MOCK_GAME_DATA = {
   equipmentUpgradeCosts: [
@@ -409,6 +411,38 @@ export function convertPrimordialStar(score) {
  * - bedExpHourly：床每小時產出的經驗速率。
  * - targetTimeStr：目標時間（datetime-local 字串），若無則視為 0 小時。
  */
+function readNumberInput(id) {
+  const node = document.getElementById(id);
+  if (!node) return 0;
+
+  if (node.type === 'checkbox') return node.checked ? 1 : 0;
+
+  const value = Number(node.value);
+  return Number.isFinite(value) ? value : 0;
+}
+
+export function getSpeedupState() {
+  return {
+    freeUsedToday: !!document.getElementById('free-speedup-used-today')?.checked,
+    stoneCount: Math.max(0, Math.floor(readNumberInput('speedup-stone-count'))),
+  };
+}
+
+export function getSpeedupHoursForDays(dayCount) {
+  const normalizedDays = Math.max(0, Math.ceil(Number(dayCount) || 0));
+  if (normalizedDays <= 0) return 0;
+
+  const { freeUsedToday, stoneCount } = getSpeedupState();
+  const freeUses = Math.max(0, normalizedDays - (freeUsedToday ? 1 : 0));
+  return (freeUses + stoneCount) * SPEEDUP_HOURS_PER_USE;
+}
+
+export function getSpeedupHoursForHours(hours) {
+  const normalizedHours = Math.max(0, Number(hours) || 0);
+  const dayCount = normalizedHours > 0 ? Math.ceil(normalizedHours / 24) : 0;
+  return getSpeedupHoursForDays(dayCount);
+}
+
 export function computeReachableCharacterLevel(curLv, ownedExp, bedExpHourly, targetTimeStr) {
   const table = state.cumulativeCostData['character'];
   if (!table || !Number.isFinite(curLv)) return curLv;
@@ -416,12 +450,13 @@ export function computeReachableCharacterLevel(curLv, ownedExp, bedExpHourly, ta
   const hours = targetTimeStr
     ? Math.max(0, (new Date(targetTimeStr).getTime() - Date.now()) / 36e5)
     : 0;
+  const bonusHours = getSpeedupHoursForHours(hours);
   // 2) 目前已達成的累積經驗：cum(L)
   const baseCum = (getCumulative(table, curLv - 1)?.cost_exp || 0);
   // 3) 可用經驗（持有 + 床產），負值一律當 0 避免汙染
   const available =
     Math.max(0, Number(ownedExp) || 0) +
-    Math.max(0, Number(bedExpHourly) || 0) * hours;
+    Math.max(0, Number(bedExpHourly) || 0) * (hours + bonusHours);
   // 4) 總可支配的『累積』經驗值
   const totalExp = baseCum + available;
   // 5) 找出 cost_exp <= totalExp 的最大等級
@@ -451,6 +486,10 @@ export function computeAll(containers) {
   const ownedExp = parseInt(document.getElementById('owned-exp')?.value) || 0;
   const bedExpHourly = parseFloat(document.getElementById('bed-exp-hourly')?.value) || 0;
   const targetTimeStr = document.getElementById('target-time')?.value;
+  const targetHours = targetTimeStr
+    ? Math.max(0, (new Date(targetTimeStr).getTime() - Date.now()) / 36e5)
+    : 0;
+  const targetBonusHours = getSpeedupHoursForHours(targetHours);
   const reachable = computeReachableCharacterLevel(curCharLv, ownedExp, bedExpHourly, targetTimeStr);
   const reachableEl = document.getElementById('target-char-reachable-level');
   if (reachableEl) reachableEl.textContent = `最低可達: ${reachable > 0 ? reachable : '--'}`;
@@ -572,7 +611,7 @@ export function computeAll(containers) {
   if (!hasInput) return { required: {}, gains: {}, deficit: {}, materialErrors: missingDataErrors };
     // 掛機收益（目標時間）
   if (targetTimeStr) {
-    const hours = Math.max(0, (new Date(targetTimeStr).getTime() - Date.now()) / 36e5);
+    const hours = targetHours + targetBonusHours;
     Object.entries(productionSources).forEach(([srcId, src]) => {
       const hourly = parseFloat(document.getElementById(`manual-hourly-${srcId}`)?.value) || 0;
       const mat = src.materialId;
@@ -648,7 +687,7 @@ export function clearLevelUpNotification(options = { levelUp: true, targetLevel:
   }
 }
 
-export function expCalculation(currentLevel, ownedExp, bedExpHourly, targetLevel) {
+export function expCalculation(currentLevel, ownedExp, bedExpHourly, targetLevel, bonusHours = 0) {
   const table = state.cumulativeCostData['character'];
   if (!table || !Number.isFinite(currentLevel) || currentLevel >= MAX_LEVEL) {
     return { levelupTs: NaN, minutesNeeded: 0, expNeeded: NaN };
@@ -658,34 +697,54 @@ export function expCalculation(currentLevel, ownedExp, bedExpHourly, targetLevel
   }
   const cumPrev = (getCumulative(table, currentLevel - 1).cost_exp || 0);
   const cumThis = (getCumulative(table, targetLevel - 1).cost_exp || 0);
-  const expNeeded = Math.max(0, cumThis - cumPrev - (Number(ownedExp) || 0));
+  const acceleratedExp = Math.max(0, Number(bedExpHourly) || 0) * Math.max(0, Number(bonusHours) || 0);
+  const expNeeded = Math.max(0, cumThis - cumPrev - (Number(ownedExp) || 0) - acceleratedExp);
   if (expNeeded <= 0) return { levelupTs: Date.now(), minutesNeeded: 0, expNeeded: 0 };
   const ratePerHour = Number(bedExpHourly);
   if (!Number.isFinite(ratePerHour) || ratePerHour <= 0) {
     return { levelupTs: NaN, minutesNeeded: 0, expNeeded };
   }
   const minutesNeeded = Math.ceil((expNeeded / ratePerHour) * 60);
+
+  let day_cnt = Math.floor(minutesNeeded / (24 * 60));
+  
+
   const levelupTs = Date.now() + minutesNeeded * 60 * 1000;
   return { levelupTs, minutesNeeded, expNeeded };
 }
 
 /** 計算到達下一級 ETA */
-export function computeEtaToNextLevel(currentLevel, ownedExp, bedExpHourly) {
-  const { levelupTs, minutesNeeded, expNeeded } = expCalculation(currentLevel, ownedExp, bedExpHourly, currentLevel + 1);
+export function computeEtaToNextLevel(currentLevel, ownedExp, bedExpHourly, bonusHours = 0) {
+  const { levelupTs, minutesNeeded, expNeeded } = expCalculation(
+    currentLevel,
+    ownedExp,
+    bedExpHourly,
+    currentLevel + 1,
+    bonusHours
+  );
   return { levelupTs, minutesNeeded, expNeeded };
 }
 
 /** 計算到達「目標角色等級」ETA（以及總所需經驗） */
-export function computeEtaToTargetLevel(currentLevel, ownedExp, bedExpHourly, targetLevel) {
-  const { levelupTs, minutesNeeded, expNeeded } = expCalculation(currentLevel, ownedExp, bedExpHourly, targetLevel);
+export function computeEtaToTargetLevel(currentLevel, ownedExp, bedExpHourly, targetLevel, bonusHours = 0) {
+  const { levelupTs, minutesNeeded, expNeeded } = expCalculation(
+    currentLevel,
+    ownedExp,
+    bedExpHourly,
+    targetLevel,
+    bonusHours
+  );
   return { etaTs: levelupTs, minutesNeeded, needExp: expNeeded };
 }
 
 /** LocalStorage 儲存/載入 */
 export function saveAllInputs() {
   const data = {};
-  document.querySelectorAll('input[type=number], input[type=datetime-local], select')
-    .forEach(input => { if (input.id) data[input.id] = input.value; });
+  document.querySelectorAll('input[type=number], input[type=datetime-local], input[type=checkbox], select')
+    .forEach(input => {
+      if (!input.id) return;
+      data[input.id] = input.type === 'checkbox' ? input.checked : input.value;
+    });
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
@@ -697,7 +756,9 @@ export function loadAllInputs(excludeKeys = []) {
   Object.keys(data).forEach(id => {
     if (excludeKeys.includes(id)) return;
     const n = document.getElementById(id);
-    if (n) n.value = data[id];
+    if (!n) return;
+    if (n.type === 'checkbox') n.checked = !!data[id];
+    else n.value = data[id];
   });
 }
 
@@ -712,16 +773,16 @@ export function loadAllInputs(excludeKeys = []) {
  * @param {number} notifyTime - 提前通知的分鐘數
  * @param {'levelUp'|'targetLevel'} type - 通知類型
  */
-function scheduleNotification(currentLevel, ownedExp, bedExpHourly, targetLevel, notifyTime, type) {
+function scheduleNotification(currentLevel, ownedExp, bedExpHourly, targetLevel, notifyTime, type, bonusHours = 0) {
   // 先取消該類型的既有排程
   clearLevelUpNotification(type === 'targetLevel' ? { targetLevel: true } : { levelUp: true });
   // 根據類型選擇估算函式
   let levelupTs;
   if (type === 'targetLevel') {
-    const { etaTs } = computeEtaToTargetLevel(currentLevel, ownedExp, bedExpHourly, targetLevel);
+    const { etaTs } = computeEtaToTargetLevel(currentLevel, ownedExp, bedExpHourly, targetLevel, bonusHours);
     levelupTs = etaTs;
   } else {
-    const { levelupTs: ts } = expCalculation(currentLevel, ownedExp, bedExpHourly, currentLevel + 1);
+    const { levelupTs: ts } = expCalculation(currentLevel, ownedExp, bedExpHourly, currentLevel + 1, bonusHours);
     levelupTs = ts;
   }
   if (!Number.isFinite(levelupTs)) return;
@@ -759,11 +820,11 @@ function scheduleNotification(currentLevel, ownedExp, bedExpHourly, targetLevel,
 }
 
 /** 排定下一級升級通知 */
-export function scheduleLevelUpNotification(currentLevel, ownedExp, bedExpHourly, targetLevel, notifyTime) {
-  scheduleNotification(currentLevel, ownedExp, bedExpHourly, targetLevel, notifyTime, 'levelUp');
+export function scheduleLevelUpNotification(currentLevel, ownedExp, bedExpHourly, targetLevel, notifyTime, bonusHours = 0) {
+  scheduleNotification(currentLevel, ownedExp, bedExpHourly, targetLevel, notifyTime, 'levelUp', bonusHours);
 }
 
 /** 排定目標等級通知 */
-export function scheduleTargetLevelNotification(currentLevel, ownedExp, bedExpHourly, targetLevel, notifyTime) {
-  scheduleNotification(currentLevel, ownedExp, bedExpHourly, targetLevel, notifyTime, 'targetLevel');
+export function scheduleTargetLevelNotification(currentLevel, ownedExp, bedExpHourly, targetLevel, notifyTime, bonusHours = 0) {
+  scheduleNotification(currentLevel, ownedExp, bedExpHourly, targetLevel, notifyTime, 'targetLevel', bonusHours);
 }
