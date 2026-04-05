@@ -7,13 +7,17 @@ export const I18N_DICTIONARIES = {
     "zh-Hant": "本機資料已清除，頁面即將重新整理。",
     "zh-Hans": "本机资料已清除，页面即将重新整理。"
   },
-  "alert_notify_disabled": {
-    "zh-Hant": "已停用升級通知。",
-    "zh-Hans": "已停用升级通知。"
+  "calendar_event_details": {
+    "zh-Hant": "此事件依你目前的計算結果建立。預計升級時間：{upgradeTime}。提前提醒：{notifyMinutes} 分鐘。",
+    "zh-Hans": "此事件依你目前的计算结果建立。预计升级时间：{upgradeTime}。提前提醒：{notifyMinutes} 分钟。"
   },
-  "alert_notify_enabled": {
-    "zh-Hant": "已啟用升級通知。",
-    "zh-Hans": "已启用升级通知。"
+  "calendar_event_title": {
+    "zh-Hant": "角色升級提醒 Lv.{level}",
+    "zh-Hans": "角色升级提醒 Lv.{level}"
+  },
+  "calendar_import_unavailable": {
+    "zh-Hant": "目前無法推算升級時間，請先確認角色等級、持有經驗與床位時產。",
+    "zh-Hans": "目前无法推算升级时间，请先确认角色等级、持有经验与床位时产。"
   },
   "app_title": {
     "zh-Hant": "杖劍傳說 素材計算機",
@@ -135,17 +139,13 @@ export const I18N_DICTIONARIES = {
     "zh-Hant": "剩餘天數：",
     "zh-Hans": "剩余天数："
   },
-  "disable_notify": {
-    "zh-Hant": "停用通知",
-    "zh-Hans": "停用通知"
-  },
   "dungeon_source_title": {
     "zh-Hant": "素材副本",
     "zh-Hans": "素材副本"
   },
   "enable_notify": {
-    "zh-Hant": "啟用升級通知",
-    "zh-Hans": "启用升级通知"
+    "zh-Hant": "匯入 Google 日曆",
+    "zh-Hans": "导入 Google 日历"
   },
   "exp_hourly": {
     "zh-Hant": "床位每小時經驗",

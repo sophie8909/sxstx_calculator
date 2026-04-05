@@ -144,8 +144,6 @@ export const state = {
   resource: {},          // 資源表（依 type 分組）
   cumulativeCostData: {}, // 累積成本表
   missingFiles: [],       // 載入失敗清單
-  notificationTimerIdLevelUp: null, // 升級通知計時器 ID
-  notificationTimerIdTargetLevel: null, // 目標等級通知計時器 ID
   materialAvgDefaults: {             // TODO: 新增，給素材來源估算使用的平均值
     dungeon: {},
     explore: {},
@@ -671,22 +669,6 @@ export function computeAll(containers) {
   return { required, gains, deficit, materialErrors: missingDataErrors };
 }
 
-/** 清除升級通知排程 */
-export function clearLevelUpNotification(options = { levelUp: true, targetLevel: true }) {
-  if (options.levelUp) {
-    if (state.notificationTimerIdLevelUp !== null) {
-      clearTimeout(state.notificationTimerIdLevelUp);
-      state.notificationTimerIdLevelUp = null;
-    }
-  }
-  if (options.targetLevel) {
-    if (state.notificationTimerIdTargetLevel !== null) {
-      clearTimeout(state.notificationTimerIdTargetLevel);
-      state.notificationTimerIdTargetLevel = null;
-    }
-  }
-}
-
 export function expCalculation(currentLevel, ownedExp, bedExpHourly, targetLevel, bonusHours = 0) {
   const table = state.cumulativeCostData['character'];
   if (!table || !Number.isFinite(currentLevel) || currentLevel >= MAX_LEVEL) {
@@ -762,69 +744,3 @@ export function loadAllInputs(excludeKeys = []) {
   });
 }
 
-/**
- * 通用通知排程
- *
- * 這個函式整合了升級通知與目標等級通知的共通邏輯，根據 type 決定使用哪種算法以及存放哪一個 timer id。
- * @param {number} currentLevel - 當前角色等級
- * @param {number} ownedExp - 目前持有經驗
- * @param {number} bedExpHourly - 每小時經驗產量
- * @param {number} targetLevel - 目標等級
- * @param {number} notifyTime - 提前通知的分鐘數
- * @param {'levelUp'|'targetLevel'} type - 通知類型
- */
-function scheduleNotification(currentLevel, ownedExp, bedExpHourly, targetLevel, notifyTime, type, bonusHours = 0) {
-  // 先取消該類型的既有排程
-  clearLevelUpNotification(type === 'targetLevel' ? { targetLevel: true } : { levelUp: true });
-  // 根據類型選擇估算函式
-  let levelupTs;
-  if (type === 'targetLevel') {
-    const { etaTs } = computeEtaToTargetLevel(currentLevel, ownedExp, bedExpHourly, targetLevel, bonusHours);
-    levelupTs = etaTs;
-  } else {
-    const { levelupTs: ts } = expCalculation(currentLevel, ownedExp, bedExpHourly, currentLevel + 1, bonusHours);
-    levelupTs = ts;
-  }
-  if (!Number.isFinite(levelupTs)) return;
-  if ('Notification' in window && Notification.permission === 'granted') {
-    const aligned = Math.ceil(levelupTs / 60000) * 60000;
-    const notifyAt = aligned - notifyTime * 60 * 1000;
-    const delay = notifyAt - Date.now();
-    if (delay > 0) {
-      const MAX_DELAY = 0x7fffffff; // 最長延遲約 24.8 天
-      const schedule = (ms) => {
-        if (ms > MAX_DELAY) {
-          const tid = setTimeout(() => schedule(ms - MAX_DELAY), MAX_DELAY);
-          if (type === 'targetLevel') state.notificationTimerIdTargetLevel = tid;
-          else state.notificationTimerIdLevelUp = tid;
-        } else {
-          const tid = setTimeout(() => {
-            const nextLevel = type === 'targetLevel' ? targetLevel : currentLevel + 1;
-            new Notification('杖劍傳說提醒', {
-              body: `您的角色約 ${notifyTime} 分鐘後可升級至 ${nextLevel} 級！`,
-              icon: 'https://placehold.co/192x192/31c9be/ffffff?text=LV',
-            });
-            if (type === 'targetLevel') {
-              state.notificationTimerIdTargetLevel = null;
-            } else {
-              state.notificationTimerIdLevelUp = null;
-            }
-          }, ms);
-          if (type === 'targetLevel') state.notificationTimerIdTargetLevel = tid;
-          else state.notificationTimerIdLevelUp = tid;
-        }
-      };
-      schedule(delay);
-    }
-  }
-}
-
-/** 排定下一級升級通知 */
-export function scheduleLevelUpNotification(currentLevel, ownedExp, bedExpHourly, targetLevel, notifyTime, bonusHours = 0) {
-  scheduleNotification(currentLevel, ownedExp, bedExpHourly, targetLevel, notifyTime, 'levelUp', bonusHours);
-}
-
-/** 排定目標等級通知 */
-export function scheduleTargetLevelNotification(currentLevel, ownedExp, bedExpHourly, targetLevel, notifyTime, bonusHours = 0) {
-  scheduleNotification(currentLevel, ownedExp, bedExpHourly, targetLevel, notifyTime, 'targetLevel', bonusHours);
-}

@@ -28,7 +28,7 @@ import {
   renderTargetEtaText,
   renderMaterialSource,
 } from './view.js';
-import { applyStaticTranslations, initLanguage, t } from './i18n-inline.js';
+import { applyStaticTranslations, getCurrentLanguage, initLanguage, t } from './i18n-inline.js';
 
 /* ============================================================
  * Google 閰衣?銵剁?Published CSV嚗身摰????賊? / 隡箸??其?皞?
@@ -56,6 +56,12 @@ const TIME_PRESETS_FALLBACK = [
     iso: '2025-11-10T08:00:00+08:00'
   },
 ];
+
+const liveOwnedExpState = {
+  signature: '',
+  baseOwnedExp: 0,
+  baseTimestamp: Date.now(),
+};
 
 function appendStaticTooltip(target, text) {
   if (!target || !text) return;
@@ -166,12 +172,42 @@ function syncOwnedExpInputFromWan(ownedWan) {
   return ownedExp;
 }
 
+function buildOwnedExpSignature(currentLevel, ownedWan, bedHourly) {
+  return [state.seasonId, currentLevel, Number.isNaN(ownedWan) ? 'nan' : ownedWan, bedHourly].join('|');
+}
+
+function getLiveOwnedExp(currentLevel, ownedWan, bedHourly) {
+  const ownedExpInput = document.getElementById('owned-exp');
+  if (!ownedExpInput) return 0;
+
+  if (Number.isNaN(ownedWan)) {
+    liveOwnedExpState.signature = '';
+    liveOwnedExpState.baseOwnedExp = 0;
+    liveOwnedExpState.baseTimestamp = Date.now();
+    ownedExpInput.value = '';
+    return 0;
+  }
+
+  const signature = buildOwnedExpSignature(currentLevel, ownedWan, bedHourly);
+  if (liveOwnedExpState.signature !== signature) {
+    liveOwnedExpState.signature = signature;
+    liveOwnedExpState.baseOwnedExp = convertWanToOwnedExp(ownedWan);
+    liveOwnedExpState.baseTimestamp = Date.now();
+  }
+
+  const elapsedMs = Math.max(0, Date.now() - liveOwnedExpState.baseTimestamp);
+  const gainedExp = Math.floor((Math.max(0, bedHourly) * elapsedMs) / 36e5);
+  const ownedExp = liveOwnedExpState.baseOwnedExp + gainedExp;
+  ownedExpInput.value = String(ownedExp);
+  return ownedExp;
+}
+
 function readBedProgressState() {
   const currentLevel = parseInt(document.getElementById('character-current')?.value, 10) || 0;
   const ownedWan = getOwnedExpWanValue();
   const bedHourly = parseFloat(document.getElementById('bed-exp-hourly')?.value) || 0;
   const targetLevel = parseInt(document.getElementById('target-character')?.value, 10) || 0;
-  const ownedExp = syncOwnedExpInputFromWan(ownedWan);
+  const ownedExp = getLiveOwnedExp(currentLevel, ownedWan, bedHourly);
 
   return {
     currentLevel,
@@ -971,53 +1007,59 @@ async function handleSeasonChange(containers) {
  * ??賊?嚗????祈??綽?
  * ---------------------------*/
 async function enableLevelUpNotifications() {
-  {
-    const { currentLevel, ownedWan, ownedExp, bedHourly } = readBedProgressState();
-    const bonusHours = getNextLevelSpeedupHours(currentLevel, ownedExp, bedHourly);
+  const locale = getCurrentLanguage() === 'zh-Hans' ? 'zh-CN' : 'zh-TW';
+  const { currentLevel, ownedWan, ownedExp, bedHourly } = readBedProgressState();
+  const notifyTimeSelect = document.getElementById('notify-time-select');
+  let notifyTime = 0;
+  if (notifyTimeSelect?.value === 'min1') notifyTime = 1;
+  else if (notifyTimeSelect?.value === 'min2') notifyTime = 2;
+  else if (notifyTimeSelect?.value === 'min3') notifyTime = 3;
+  else if (notifyTimeSelect?.value === 'min5') notifyTime = 5;
 
-    const notifyTimeSelect = document.getElementById('notify-time-select');
-    let notifyTime = 0;
-    if (notifyTimeSelect.value === 'min1') notifyTime = 1;
-    else if (notifyTimeSelect.value === 'min2') notifyTime = 2;
-    else if (notifyTimeSelect.value === 'min3') notifyTime = 3;
-    else if (notifyTimeSelect.value === 'min5') notifyTime = 5;
-
-    if (Number.isNaN(ownedWan)) return;
-
-    import('./model.js').then(({ scheduleLevelUpNotification }) => {
-      scheduleLevelUpNotification(currentLevel, ownedExp, bedHourly, currentLevel + 1, notifyTime, bonusHours);
-      alert(t('alert_notify_enabled'));
-    });
+  if (Number.isNaN(ownedWan)) {
+    alert(t('calendar_import_unavailable'));
     return;
   }
 
-  const curLv = parseInt(document.getElementById('character-current')?.value) || 0;
-  const ownedWanStr = document.getElementById('owned-exp-wan')?.value?.trim();
-  const ownedWan = ownedWanStr === '' ? NaN : parseFloat(ownedWanStr);
-  const bedHourly = parseFloat(document.getElementById('bed-exp-hourly')?.value) || 0;
-  const ownedExpInput = document.getElementById('owned-exp');
+  const bonusHours = getNextLevelSpeedupHours(currentLevel, ownedExp, bedHourly);
+  const { levelupTs } = computeEtaToNextLevel(currentLevel, ownedExp, bedHourly, bonusHours);
 
-  const notifyTimeSelect = document.getElementById('notify-time-select');
-  let notifyTime = 0;
-  if (notifyTimeSelect.value === 'min1') notifyTime = 1;
-  else if (notifyTimeSelect.value === 'min2') notifyTime = 2;
-  else if (notifyTimeSelect.value === 'min3') notifyTime = 3;
-  else if (notifyTimeSelect.value === 'min5') notifyTime = 5;
+  if (!Number.isFinite(levelupTs)) {
+    alert(t('calendar_import_unavailable'));
+    return;
+  }
 
-  if (ownedExpInput && isNaN(ownedWan)) return;
-  const ownedExp = parseInt(ownedExpInput?.value) || 0;
-
-  import('./model.js').then(({ scheduleLevelUpNotification }) => { // TODO: 頝臬???./model/model.js ?寧 ./model.js
-    scheduleLevelUpNotification(curLv, ownedExp, bedHourly, curLv + 1, notifyTime);
-      alert(t('alert_notify_enabled'));
+  const eventTs = levelupTs - notifyTime * 60 * 1000;
+  const eventStart = new Date(eventTs);
+  const eventEnd = new Date(eventTs + 30 * 60 * 1000);
+  const upgradeTimeText = new Date(levelupTs).toLocaleString(locale, {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
   });
-}
 
-async function disableLevelUpNotifications() {
-  import('./model.js').then(({ clearLevelUpNotification }) => { // TODO: 頝臬???./model/model.js ?寧 ./model.js
-    clearLevelUpNotification();
-    alert(t('alert_notify_disabled'));
-  });
+  const formatGoogleCalendarDate = (date) =>
+    date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
+
+  const calendarUrl = new URL('https://calendar.google.com/calendar/render');
+  calendarUrl.searchParams.set('action', 'TEMPLATE');
+  calendarUrl.searchParams.set('text', t('calendar_event_title', { level: currentLevel + 1 }));
+  calendarUrl.searchParams.set(
+    'details',
+    t('calendar_event_details', {
+      notifyMinutes: notifyTime,
+      upgradeTime: upgradeTimeText,
+    })
+  );
+  calendarUrl.searchParams.set('location', t('app_title'));
+  calendarUrl.searchParams.set(
+    'dates',
+    `${formatGoogleCalendarDate(eventStart)}/${formatGoogleCalendarDate(eventEnd)}`
+  );
+
+  window.open(calendarUrl.toString(), '_blank', 'noopener');
 }
 
 /* -----------------------------
@@ -1041,9 +1083,6 @@ async function init() {
   // ?????
   const levelUpNotifyBtn = document.getElementById('enable-levelup-notify-btn');
   levelUpNotifyBtn?.addEventListener('click', () => enableLevelUpNotifications());
-
-  const disableNotifyBtn = document.getElementById('disable-notify-btn');
-  disableNotifyBtn?.addEventListener('click', () => disableLevelUpNotifications());
 
   const clearLocalDataBtn = document.getElementById('clear-local-data-btn');
   clearLocalDataBtn?.addEventListener('click', () => {
