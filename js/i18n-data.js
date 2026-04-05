@@ -579,6 +579,110 @@ export const I18N_DICTIONARIES = {
     "zh-Hant": "總羅拉成本：",
     "zh-Hans": "总罗拉成本："
   },
+  "relay_page_title": {
+    "zh-Hant": "杖劍傳說 目標時間填寫",
+    "zh-Hans": "杖剑传说 目标时间填写"
+  },
+  "relay_form_title": {
+    "zh-Hant": "目標時間填寫",
+    "zh-Hans": "目标时间填写"
+  },
+  "relay_form_close": {
+    "zh-Hant": "返回計算頁",
+    "zh-Hans": "返回计算页"
+  },
+  "relay_form_intro": {
+    "zh-Hant": "這裡送出的資料會直接回到 Google 表單。伺服器清單會先帶入目前已知界域，也可以手動輸入新的合服名稱。",
+    "zh-Hans": "这里送出的资料会直接回到 Google 表单。服务器清单会先带入目前已知界域，也可以手动输入新的合服名称。"
+  },
+  "relay_server_label": {
+    "zh-Hant": "伺服器 / 界域",
+    "zh-Hans": "服务器 / 界域"
+  },
+  "relay_server_placeholder": {
+    "zh-Hant": "請選擇界域",
+    "zh-Hans": "请选择界域"
+  },
+  "relay_server_manual_toggle": {
+    "zh-Hant": "手動輸入",
+    "zh-Hans": "手动输入"
+  },
+  "relay_server_use_list": {
+    "zh-Hant": "使用清單",
+    "zh-Hans": "使用清单"
+  },
+  "relay_server_manual_placeholder": {
+    "zh-Hant": "請輸入完整界域名稱",
+    "zh-Hans": "请输入完整界域名称"
+  },
+  "relay_server_hint": {
+    "zh-Hant": "下拉選單會顯示完整界域清單；如果剛合服還沒更新，可以按右側按鈕改成手動輸入。",
+    "zh-Hans": "下拉选单会显示完整界域清单；如果刚合服还没更新，可以按右侧按钮改成手动输入。"
+  },
+  "relay_season_label": {
+    "zh-Hant": "賽季",
+    "zh-Hans": "赛季"
+  },
+  "relay_date_label": {
+    "zh-Hant": "目標日期",
+    "zh-Hans": "目标日期"
+  },
+  "relay_date_hint": {
+    "zh-Hant": "系統會依這個日期的上午 8:00 處理。",
+    "zh-Hans": "系统会依这个日期的上午 8:00 处理。"
+  },
+  "relay_category_label": {
+    "zh-Hant": "類別",
+    "zh-Hans": "类别"
+  },
+  "relay_category_none": {
+    "zh-Hant": "不帶類別",
+    "zh-Hans": "不带类别"
+  },
+  "relay_category_dungeon": {
+    "zh-Hant": "【副本開啟】",
+    "zh-Hans": "【副本开启】"
+  },
+  "relay_category_relic": {
+    "zh-Hant": "【遺物】",
+    "zh-Hans": "【遗物】"
+  },
+  "relay_category_season": {
+    "zh-Hant": "【賽季】",
+    "zh-Hans": "【赛季】"
+  },
+  "relay_description_label": {
+    "zh-Hant": "說明",
+    "zh-Hans": "说明"
+  },
+  "relay_description_placeholder": {
+    "zh-Hant": "例：S2 開始、將軍陵",
+    "zh-Hans": "例：S2 开始、将军陵"
+  },
+  "relay_submit": {
+    "zh-Hant": "送出到 Google 表單",
+    "zh-Hans": "送出到 Google 表单"
+  },
+  "relay_open_google_form": {
+    "zh-Hant": "開啟原始 Google 表單",
+    "zh-Hans": "打开原始 Google 表单"
+  },
+  "relay_submit_pending": {
+    "zh-Hant": "送出中，稍後會顯示成功訊息。",
+    "zh-Hans": "送出中，稍后会显示成功讯息。"
+  },
+  "relay_submit_success": {
+    "zh-Hant": "已送出到 Google 表單，感謝補充目標時間。",
+    "zh-Hans": "已送出到 Google 表单，感谢补充目标时间。"
+  },
+  "relay_validation_required": {
+    "zh-Hant": "請先填完伺服器、賽季、目標日期與說明。",
+    "zh-Hans": "请先填完服务器、赛季、目标日期与说明。"
+  },
+  "relay_validation_date": {
+    "zh-Hant": "目標日期格式不正確。",
+    "zh-Hans": "目标日期格式不正确。"
+  },
   "zero_placeholder": {
     "zh-Hant": "0",
     "zh-Hans": "0"

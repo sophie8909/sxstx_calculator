@@ -99,6 +99,8 @@ function normalizeServerName(name) {
 
 function getServerGroupMembers(name) {
   return normalizeServerName(name)
+    .replace(/[－—–]/g, '-')
+    .replace(/\s+-\s+/g, '、')
     .split(/[、,，/／]+/)
     .map((part) => normalizeServerName(part))
     .filter(Boolean);
@@ -529,6 +531,7 @@ function initSeasonSelector(containers, saved = null) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(latest));
 
     await handleSeasonChange(containers);
+    updateTargetTimeFormDefaults();
   });
 }
 
@@ -608,6 +611,58 @@ function applyMobileSectionOrder() {
   }
 }
 
+function bindTargetTimeFormToggle() {
+  const openButton = document.getElementById('open-target-time-form-btn');
+  const closeButton = document.getElementById('close-target-time-form-btn');
+  const calculatorPageContent = document.getElementById('calculator-page-content');
+  const targetTimeFormPanel = document.getElementById('target-time-form-panel');
+
+  if (!openButton || !closeButton || !calculatorPageContent || !targetTimeFormPanel) return;
+
+  const scrollToToggle = () => {
+    const top = openButton.getBoundingClientRect().top + window.scrollY - 24;
+    window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+  };
+
+  openButton.addEventListener('click', () => {
+    calculatorPageContent.classList.add('hidden');
+    targetTimeFormPanel.classList.remove('hidden');
+    scrollToToggle();
+  });
+
+  closeButton.addEventListener('click', () => {
+    targetTimeFormPanel.classList.add('hidden');
+    calculatorPageContent.classList.remove('hidden');
+    scrollToToggle();
+  });
+}
+
+function updateTargetTimeFormDefaults() {
+  const serverSelect = document.getElementById('relay-server-name');
+  const serverManualInput = document.getElementById('relay-server-name-manual');
+  const serverManualWrap = document.getElementById('relay-server-manual-wrap');
+  const serverManualToggle = document.getElementById('relay-server-manual-toggle');
+  const seasonSelect = document.getElementById('relay-season');
+  const seasonSelector = document.getElementById('season-select');
+  const serverSelector = document.getElementById('server-select');
+  if (serverSelect && serverSelector?.value) {
+    const targetServer = serverSelector.value;
+    const hasOption = Array.from(serverSelect.options).some((option) => option.value === targetServer);
+    if (hasOption) {
+      serverSelect.value = targetServer;
+      if (serverManualInput) serverManualInput.value = '';
+      if (serverManualWrap) serverManualWrap.classList.add('hidden');
+      if (serverManualToggle) serverManualToggle.textContent = '手動輸入';
+    } else {
+      serverSelect.value = '';
+      if (serverManualInput) serverManualInput.value = targetServer;
+      if (serverManualWrap) serverManualWrap.classList.remove('hidden');
+      if (serverManualToggle) serverManualToggle.textContent = '使用清單';
+    }
+  }
+  if (seasonSelect && seasonSelector?.value) seasonSelect.value = String(seasonSelector.value).toUpperCase();
+}
+
 /* -----------------------------
  * ???撩?銝??詨 #server-select
  * 銝行??詨?蝯?摮 state.serverName
@@ -645,6 +700,7 @@ async function initServerSelector(containers) {
     // ?撩????啗??亙????格????賊?
     initTargetTimeControls(containers);
     triggerRecalculate(containers);
+    updateTargetTimeFormDefaults();
   });
 }
 
@@ -975,6 +1031,7 @@ async function init() {
   enhanceStaticFieldTooltips();
   bindTooltipLayers();
   bindGlobalHandlers(containers);
+  bindTargetTimeFormToggle();
 
   const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
 
@@ -999,6 +1056,7 @@ async function init() {
 
   // ?寞??嗅?鞈賢迤頛撠?鞈?
   await handleSeasonChange(containers);
+  updateTargetTimeFormDefaults();
 
   // ???亙像?潦??怎???皞?UI
   await loadMaterialAvgDefaults();       // TODO: ?啣?嚗??model.js 銝剔??身撟喳??潸??伐??桀??箏???no-op嚗?
@@ -1019,6 +1077,7 @@ async function init() {
     enhanceStaticFieldTooltips();
     bindTooltipLayers();
     loadAllInputs(['season-select']);
+    updateTargetTimeFormDefaults();
     renderMaterialSource(containers);
     bindTooltipLayers();
     updateDaysRemainingFromTarget();

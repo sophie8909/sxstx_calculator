@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>杖劍傳說 目標時間填寫</title>
+  <link rel="icon" type="image/png" href="./images/favicon_v1.png" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./css/style.css" type="text/css" />
+</head>
+<body class="p-3 sm:p-4 lg:p-6 compact">
+  <div class="w-full max-w-3xl mx-auto">
+    <div class="text-center mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-center gap-3">
+      <label for="language-select" class="mr-2 font-semibold" data-i18n="language_label">語言：</label>
+      <select id="language-select" class="input-field rounded p-2 w-full sm:w-auto sm:min-w-[10rem]">
+        <option value="zh-Hant" data-i18n="language_traditional">繁體中文</option>
+        <option value="zh-Hans" data-i18n="language_simplified">簡體中文</option>
+      </select>
+    </div>
+    <header class="text-center mb-6">
+      <h1 class="text-3xl md:text-4xl font-bold text-teal-800" data-i18n="relay_page_title">杖劍傳說 目標時間填寫</h1>
+      <p class="mt-3 text-sm sm:text-base text-slate-600 leading-relaxed" data-i18n="relay_form_intro">
+        這頁會把資料送回 Google 表單，伺服器清單會先帶入目前已知界域，也可以直接手動輸入新的合服名稱。
+      </p>
+    </header>
+
+    <main class="card rounded-xl p-5 sm:p-6 shadow-lg">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        <div class="sm:col-span-2">
+          <label for="relay-server-name" class="block font-semibold mb-2" data-i18n="relay_server_label">伺服器 / 界域</label>
+          <div class="flex flex-col sm:flex-row gap-3">
+            <select id="relay-server-name" class="input-field rounded p-3 w-full" required></select>
+            <button
+              id="relay-server-manual-toggle"
+              type="button"
+              class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg text-sm shrink-0"
+              data-i18n="relay_server_manual_toggle"
+            >
+              手動輸入
+            </button>
+          </div>
+          <div id="relay-server-manual-wrap" class="hidden mt-3">
+            <input
+              id="relay-server-name-manual"
+              class="input-field rounded p-3 w-full"
+              data-i18n-placeholder="relay_server_manual_placeholder"
+              placeholder="請輸入完整界域名稱"
+            />
+          </div>
+          <p class="text-xs text-slate-500 mt-2" data-i18n="relay_server_hint">
+            下拉選單會顯示完整界域清單；如果剛合服還沒更新，可以按右側按鈕改成手動輸入。
+          </p>
+        </div>
+
+        <div>
+          <label for="relay-season" class="block font-semibold mb-2" data-i18n="relay_season_label">賽季</label>
+          <select id="relay-season" class="input-field rounded p-3 w-full" required>
+            <option value="S1">S1</option>
+            <option value="S2">S2</option>
+            <option value="S3">S3</option>
+            <option value="S4">S4</option>
+            <option value="S5">S5</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="relay-date" class="block font-semibold mb-2" data-i18n="relay_date_label">目標日期</label>
+          <input id="relay-date" type="date" class="input-field rounded p-3 w-full" required />
+          <p class="text-xs text-slate-500 mt-2" data-i18n="relay_date_hint">系統會依這個日期的上午 8:00 處理。</p>
+        </div>
+
+        <div class="sm:col-span-2">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label for="relay-description-category" class="block font-semibold mb-2" data-i18n="relay_category_label">類別</label>
+              <select id="relay-description-category" class="input-field rounded p-3 w-full">
+                <option value="" data-i18n="relay_category_none">不帶類別</option>
+                <option value="【副本開啟】" data-i18n="relay_category_dungeon">【副本開啟】</option>
+                <option value="【遺物】" data-i18n="relay_category_relic">【遺物】</option>
+                <option value="【賽季】" data-i18n="relay_category_season">【賽季】</option>
+              </select>
+            </div>
+            <div class="sm:col-span-2">
+              <label for="relay-description" class="block font-semibold mb-2" data-i18n="relay_description_label">說明</label>
+              <input
+                id="relay-description"
+                class="input-field rounded p-3 w-full"
+                data-i18n-placeholder="relay_description_placeholder"
+                placeholder="例：S2 開始、將軍陵"
+                required
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-3 justify-center sm:justify-center items-center">
+        <button id="relay-submit-btn" class="btn-primary rounded-lg px-4 py-3 font-semibold w-full sm:w-auto" data-i18n="relay_submit">
+          送出到 Google 表單
+        </button>
+        <a
+          href="https://docs.google.com/forms/d/e/1FAIpQLSdDK_zxUq21HXgrK3TMsQ7Vj6lqiKlJrekk8PkfrH920AMiQg/viewform"
+          target="_blank"
+          rel="noopener"
+          class="inline-flex items-center justify-center rounded-lg border border-[#b6d7da] bg-white px-4 py-3 text-teal-700 hover:bg-teal-50 w-full sm:w-auto"
+          data-i18n="relay_open_google_form"
+        >
+          開啟原始 Google 表單
+        </a>
+      </div>
+
+      <div id="relay-feedback" class="hidden mt-4 rounded-lg border px-4 py-3 text-sm"></div>
+    </main>
+  </div>
+
+  <iframe name="google-form-relay-target" class="hidden" title="Google Form Relay Target"></iframe>
+
+  <form
+    id="google-form-relay"
+    action="https://docs.google.com/forms/d/e/1FAIpQLSdDK_zxUq21HXgrK3TMsQ7Vj6lqiKlJrekk8PkfrH920AMiQg/formResponse"
+    method="POST"
+    target="google-form-relay-target"
+    class="hidden"
+  >
+    <input type="hidden" name="entry.1531554423" id="field-server-name" />
+    <input type="hidden" name="entry.1531554423.other_option_response" id="field-server-name-other" />
+    <input type="hidden" name="entry.1118699589" id="field-season" />
+    <input type="hidden" name="entry.570931091" id="field-description" />
+    <input type="hidden" name="entry.2132984809_month" id="field-time-month" />
+    <input type="hidden" name="entry.2132984809_day" id="field-time-day" />
+    <input type="hidden" name="entry.2132984809_year" id="field-time-year" />
+    <input type="hidden" name="fvv" value="1" />
+    <input type="hidden" name="pageHistory" value="0" />
+  </form>
+
+  <script type="module" src="./js/form-relay.js"></script>
+</body>
+</html>
