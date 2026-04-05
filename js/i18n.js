@@ -16,7 +16,8 @@ function detectDefaultLanguage() {
 async function loadDictionaries() {
   if (Object.keys(dictionaries).length > 0) return dictionaries;
 
-  const response = await fetch('./data/i18n.json', { cache: 'no-store' });
+  const dictionaryUrl = new URL('../data/i18n.json', import.meta.url);
+  const response = await fetch(dictionaryUrl, { cache: 'no-store' });
   if (!response.ok) throw new Error(`Failed to load i18n.json: ${response.status}`);
   dictionaries = await response.json();
   return dictionaries;
