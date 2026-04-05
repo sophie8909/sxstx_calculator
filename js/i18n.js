@@ -1,3 +1,5 @@
+import { I18N_DICTIONARIES } from './i18n-data.js';
+
 export const LANGUAGE_STORAGE_KEY = 'sxstx_ui_language';
 
 let dictionaries = {};
@@ -16,10 +18,7 @@ function detectDefaultLanguage() {
 async function loadDictionaries() {
   if (Object.keys(dictionaries).length > 0) return dictionaries;
 
-  const dictionaryUrl = new URL('../data/i18n.json', import.meta.url);
-  const response = await fetch(dictionaryUrl, { cache: 'no-store' });
-  if (!response.ok) throw new Error(`Failed to load i18n.json: ${response.status}`);
-  dictionaries = await response.json();
+  dictionaries = I18N_DICTIONARIES;
   return dictionaries;
 }
 
