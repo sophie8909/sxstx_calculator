@@ -105,8 +105,14 @@ function isBaselineTimeLabel(label) {
     text.includes('賽季開始') ||
     text.includes('开服') ||
     text.includes('開服') ||
+    /^s\s*\d+\s*$/i.test(text) ||
     /^s\s*\d+\s*([開开][始啟启啓])/i.test(text)
   );
+}
+
+function getBaselineKind(label) {
+  const text = String(label || '');
+  return text.includes('开服') || text.includes('開服') ? 'server_open' : 'season_start';
 }
 
 function isDungeonTimeLabel(label) {
@@ -119,9 +125,18 @@ function getDungeonRowsForSeason(rows, seasonId) {
   return rows.filter((row) => !row.season_id || row.season_id === targetSeason);
 }
 
-function getDungeonOffsetDays(row, index) {
-  const day = Number(row?.day);
-  return Number.isFinite(day) && day > 0 ? day - 1 : index * DUNGEON_OPEN_INTERVAL_DAYS;
+function getPositiveNumber(value) {
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 ? number : 0;
+}
+
+function getDungeonOffsetDays(row, index, baselineKind) {
+  const day = baselineKind === 'server_open'
+    ? getPositiveNumber(row?.server_day)
+    : getPositiveNumber(row?.season_day) || getPositiveNumber(row?.day);
+
+  // Day 1 means the baseline date itself.
+  return day > 0 ? day - 1 : index * DUNGEON_OPEN_INTERVAL_DAYS;
 }
 
 function withGeneratedDungeonOpenTimes(presets, dungeonRows = []) {
@@ -135,6 +150,7 @@ function withGeneratedDungeonOpenTimes(presets, dungeonRows = []) {
 
     const datePart = String(preset.iso || '').slice(0, 10);
     if (!datePart) return;
+    const baselineKind = isSeasonStart ? getBaselineKind(label) : 'season_start';
     const serverName = isSeasonStart ? preset.server_name : '';
     const rowsForSeason = getDungeonRowsForSeason(dungeonRows, preset.season_id);
     const sourceRows = rowsForSeason.length > 0
@@ -142,9 +158,13 @@ function withGeneratedDungeonOpenTimes(presets, dungeonRows = []) {
       : Array.from({ length: CURRENT_SEASON_DUNGEON_COUNT }, (_, index) => ({
           dungeon_name: `第 ${index + 1} 個副本`,
           day: index * DUNGEON_OPEN_INTERVAL_DAYS + 1,
+          season_day: index * DUNGEON_OPEN_INTERVAL_DAYS + 1,
+          server_day: index * DUNGEON_OPEN_INTERVAL_DAYS + 1,
         }));
     const anchorRow = sourceRows.find((row) => row.dungeon_name.includes(DUNGEON_ANCHOR_LABEL));
-    const anchorOffset = isDungeonAnchor && anchorRow ? getDungeonOffsetDays(anchorRow, sourceRows.indexOf(anchorRow)) : 0;
+    const anchorOffset = isDungeonAnchor && anchorRow
+      ? getDungeonOffsetDays(anchorRow, sourceRows.indexOf(anchorRow), 'season_start')
+      : 0;
 
     sourceRows.forEach((row, index) => {
       generated.push({
@@ -152,8 +172,8 @@ function withGeneratedDungeonOpenTimes(presets, dungeonRows = []) {
         season_id: preset.season_id,
         server_name: serverName,
         label: `${DUNGEON_CATEGORY}${row.dungeon_name || `第 ${index + 1} 個副本`}`,
-        iso: addDaysToIsoDate(datePart, getDungeonOffsetDays(row, index) - anchorOffset),
-        generated_from: isDungeonAnchor ? 'global_dungeon_anchor' : 'season_start',
+        iso: addDaysToIsoDate(datePart, getDungeonOffsetDays(row, index, baselineKind) - anchorOffset),
+        generated_from: isDungeonAnchor ? 'global_dungeon_anchor' : baselineKind,
         dungeon_name: row.dungeon_name || '',
       });
     });
@@ -343,6 +363,8 @@ async function fetchDungeonPowerRows() {
 
         return {
           season_id: normalizeSeasonId(getCsvValue(row, headers, ['賽季', 'season'])),
+          server_day: Number(getCsvValue(row, headers, ['天數', 'server_day'])),
+          season_day: Number(getCsvValue(row, headers, ['開國天數', '開国天數', 'season_day'])),
           day: Number(getCsvValue(row, headers, ['時間', 'time', 'day'])),
           dungeon_name: getCsvValue(row, headers, ['副本', 'dungeon']),
           powers,
@@ -1026,7 +1048,7 @@ async function initTargetTimeControls(containers) {
     return true;
   });
   const hasServerDungeonBaseline = matchingPresets.some((p) =>
-    p.generated_from === 'season_start' &&
+    (p.generated_from === 'season_start' || p.generated_from === 'server_open') &&
     p.server_name &&
     areServerGroupsEquivalentOrMerged(p.server_name, selectedServer)
   ) || matchingPresets.some((p) =>
