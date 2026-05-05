@@ -85,6 +85,11 @@
         </div>
       </div>
 
+      <div id="dungeon-power-panel" class="hidden mt-4 border-t border-[#cde5e8] pt-4">
+        <h3 class="text-lg font-semibold mb-3">副本戰力需求</h3>
+        <div id="dungeon-power-fields" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3"></div>
+      </div>
+
     </div>
 
     <!-- ??銋? -->
@@ -102,10 +107,20 @@
     </div>
     
     <!-- ?箇?? -->
-    <div id="relic-card" class="card rounded-lg p-4 shadow-lg mb-6 w-full page-section">
+    <div id="relic-card" class="card rounded-lg p-4 shadow-lg mb-6 w-full page-section relative">
       <h3 class="text-xl font-bold text-center mb-4">
         <span data-i18n="relic_distribution_title">遺物等級分布</span> <span id="relic-total-display" class="text-sm font-normal text-gray-400">(0/20)</span>
       </h3>
+      <div class="absolute right-4 top-4">
+        <div class="inline-flex overflow-hidden rounded-full border border-[#9ed6d8] bg-[#eefafa] p-0.5 shadow-sm" role="group" aria-label="遺物輸入模式">
+          <button type="button" class="relic-mode-btn rounded-full px-3 py-1 text-sm font-semibold" data-mode="compact">新</button>
+          <button type="button" class="relic-mode-btn rounded-full px-3 py-1 text-sm font-semibold" data-mode="legacy">舊</button>
+        </div>
+        <select id="relic-ui-mode" class="hidden" aria-label="遺物輸入模式">
+          <option value="compact">快速輸入</option>
+          <option value="legacy">舊版分布</option>
+        </select>
+      </div>
       <div id="relic-distribution-inputs" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-12 gap-4"></div>
     </div>
     
@@ -291,6 +306,7 @@
                   <option value="【副本開啟】" data-i18n="relay_category_dungeon">【副本開啟】</option>
                   <option value="【遺物】" data-i18n="relay_category_relic">【遺物】</option>
                   <option value="【賽季】" data-i18n="relay_category_season">【賽季】</option>
+                  <option value="【賽季開始】" data-i18n="relay_category_season_start">【賽季開始】</option>
                 </select>
               </div>
               <div class="sm:col-span-2">
@@ -302,6 +318,7 @@
                   placeholder="例：S2 開始、將軍陵"
                   required
                 />
+                <select id="relay-dungeon-name" class="input-field rounded p-3 w-full hidden"></select>
               </div>
             </div>
           </div>

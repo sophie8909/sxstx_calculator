@@ -7,6 +7,7 @@ import {
   materials,
   productionSources,
   getMaterialSourceConfig,
+  getAvailableRelicLevels,
 } from './model.js';
 
 function getLocale() {
@@ -135,19 +136,12 @@ export function renderPrimordialStarCumulative(container) {
   container.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4';
   container.innerHTML = '';
 
-  const seasonSelect = document.getElementById('season-select');
-  const currentSeason = seasonOptions.find((season) => season.id === seasonSelect?.value)?.season || 0;
-
-  seasonOptions.forEach((season) => {
-    if (season.season > currentSeason) return;
-
-    const isReadOnly = season.readonly === true;
-    const group = createInputGroup(
-      `primordial-star-${season.id}`,
-      `${getSeasonLabel(season)} ${t('target_primordial_star')}`,
-      isReadOnly ? t('readonly_badge') : t('quantity_placeholder'),
-      false
-    );
+  [
+    ['primordial-star-accumulated', '目前累計原初', t('quantity_placeholder'), false],
+    ['primordial-star-current-season', '當前賽季目標原初', t('quantity_placeholder'), false],
+    ['primordial-star-total', '加入當前賽季後總原初', t('readonly_badge'), true],
+  ].forEach(([id, labelText, placeholder, isReadOnly]) => {
+    const group = createInputGroup(id, labelText, placeholder, false);
     const label = group.querySelector('label');
     label.classList.add('whitespace-nowrap');
     label.querySelector('.tooltip')?.remove();
@@ -224,21 +218,49 @@ export function renderMaterials(container) {
 
 export function renderRelicDistribution(container) {
   container.innerHTML = '';
-  container.className = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-11 gap-3';
+  const mode = document.getElementById('relic-ui-mode')?.value || 'compact';
 
-  for (let level = 10; level <= 30; level += 1) {
-    const group = createInputGroup(`relic-level-${level}`, `${t('target_relic_resonance')} ${level}`, t('quantity_placeholder'));
+  if (mode === 'legacy') {
+    container.className = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-11 gap-3';
+    const relicLevels = getAvailableRelicLevels();
+    const levels = relicLevels.length > 0
+      ? relicLevels
+      : Array.from({ length: 21 }, (_, index) => index + 10);
+
+    levels.forEach((level) => {
+      const group = createInputGroup(`relic-level-${level}`, `${t('target_relic_resonance')} ${level}`, t('quantity_placeholder'));
+      const label = group.querySelector('label');
+      const input = group.querySelector('input');
+
+      label.querySelector('.tooltip')?.remove();
+      label.classList.remove('label-with-help');
+      label.classList.add('text-center', 'mb-1');
+      group.classList.add('min-w-0');
+      input.classList.add('w-full', 'text-center', 'relic-dist-input');
+
+      container.appendChild(group);
+    });
+    return;
+  }
+
+  container.className = 'grid grid-cols-1 sm:grid-cols-2 gap-4';
+
+  [
+    ['relic-completed-level', '已完成遺物等級', '等級'],
+    ['relic-next-progress', '下一等級進度數量', '0-20'],
+  ].forEach(([id, labelText, placeholder]) => {
+    const group = createInputGroup(id, labelText, placeholder);
     const label = group.querySelector('label');
     const input = group.querySelector('input');
 
     label.querySelector('.tooltip')?.remove();
     label.classList.remove('label-with-help');
-    label.classList.add('text-center', 'mb-1');
     group.classList.add('min-w-0');
     input.classList.add('w-full', 'text-center', 'relic-dist-input');
+    if (id === 'relic-next-progress') input.max = '20';
 
     container.appendChild(group);
-  }
+  });
 }
 
 export function renderEquipInputs(container) {
@@ -582,10 +604,31 @@ export function updateCurrentTime(container) {
 }
 
 export function updateRelicTotal() {
-  let total = 0;
-  document.querySelectorAll('.relic-dist-input').forEach((input) => {
-    total += parseInt(input.value, 10) || 0;
-  });
+  if (document.getElementById('relic-ui-mode')?.value === 'legacy') {
+    let legacyTotal = 0;
+    document.querySelectorAll('[id^="relic-level-"]').forEach((input) => {
+      legacyTotal += parseInt(input.value, 10) || 0;
+    });
+
+    const display = document.getElementById('relic-total-display');
+    if (!display) return;
+
+    display.textContent = `(${legacyTotal}/20)`;
+    if (legacyTotal !== 20 && legacyTotal > 0) {
+      display.classList.add('text-warning');
+      display.classList.remove('text-gray-400');
+    } else {
+      display.classList.remove('text-warning');
+      display.classList.add('text-gray-400');
+    }
+    return;
+  }
+
+  const progressInput = document.getElementById('relic-next-progress');
+  const progress = Math.max(0, Math.min(20, parseInt(progressInput?.value, 10) || 0));
+  if (progressInput && progressInput.value !== '') progressInput.value = String(progress);
+  const completed = parseInt(document.getElementById('relic-completed-level')?.value, 10) || 0;
+  const total = completed > 0 || progress > 0 ? 20 : 0;
 
   const display = document.getElementById('relic-total-display');
   if (!display) return;

@@ -667,6 +667,10 @@ export const I18N_DICTIONARIES = {
     "zh-Hant": "【賽季】",
     "zh-Hans": "【赛季】"
   },
+  "relay_category_season_start": {
+    "zh-Hant": "【賽季開始】",
+    "zh-Hans": "【赛季开始】"
+  },
   "relay_description_label": {
     "zh-Hant": "說明",
     "zh-Hans": "说明"

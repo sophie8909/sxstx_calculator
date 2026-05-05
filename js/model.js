@@ -68,6 +68,54 @@ export const productionSources = {
 };
 
 export const SPEEDUP_HOURS_PER_USE = 2;
+export const RELIC_COUNT = 20;
+
+export function getAvailableRelicLevels() {
+  const relicRows = state.gameData?.relicUpgradeCosts;
+  if (!Array.isArray(relicRows) || relicRows.length === 0) return [];
+
+  return [...new Set(
+    relicRows
+      .map((row) => Number(row?.level))
+      .filter((level) => Number.isFinite(level) && level > 0)
+  )].sort((a, b) => a - b);
+}
+
+export function getDerivedRelicDistribution() {
+  if (document.getElementById('relic-ui-mode')?.value === 'legacy') {
+    const distribution = [];
+    document.querySelectorAll('[id^="relic-level-"]').forEach((input) => {
+      const level = Number(String(input.id).replace('relic-level-', ''));
+      const count = parseInt(input.value, 10) || 0;
+      if (Number.isFinite(level) && count > 0) {
+        distribution.push({ level, count });
+      }
+    });
+    return distribution;
+  }
+
+  const completedInput = document.getElementById('relic-completed-level');
+  const progressInput = document.getElementById('relic-next-progress');
+  const completedLevel = Math.max(0, parseInt(completedInput?.value, 10) || 0);
+  const rawProgress = parseInt(progressInput?.value, 10) || 0;
+  const nextProgress = Math.max(0, Math.min(RELIC_COUNT, rawProgress));
+
+  if (progressInput && progressInput.value !== '') {
+    progressInput.value = String(nextProgress);
+  }
+
+  const distribution = [];
+  if (completedLevel <= 0 && nextProgress <= 0) return distribution;
+
+  const baseCount = RELIC_COUNT - nextProgress;
+  if (baseCount > 0) {
+    distribution.push({ level: completedLevel, count: baseCount });
+  }
+  if (nextProgress > 0) {
+    distribution.push({ level: completedLevel + 1, count: nextProgress });
+  }
+  return distribution;
+}
 
 /** 模擬資料（CSV 缺檔備援） */
 export const MOCK_GAME_DATA = {
@@ -525,28 +573,17 @@ export function computeAll(containers) {
   const ps = convertPrimordialStar(score);
   const psInput = document.getElementById('target-primordial_star');
   if (psInput) psInput.value = ps;
-  // 帶入本季原初之星
-  const thisSeasonPs = ps;
-  seasonOptions.forEach(season => {
-    if (season.id === state.seasonId) {
-      const el = document.getElementById(`primordial-star-${season.id}`);
-      if (el) el.value = thisSeasonPs;
-    }
-  });
-  // 累計原初之星（手動輸入各賽季）
-  let totalPs = 0; 
-  seasonOptions.forEach(season => {
-    if (season.id == 'total') return;
-    const v = parseInt(document.getElementById(`primordial-star-${season.id}`)?.value) || 0;
-    totalPs += v;
-  });
+  // Primordial total is now accumulated plus the manually entered current-season target.
+  const accumulatedPs = parseInt(document.getElementById('primordial-star-accumulated')?.value, 10) || 0;
+  const currentSeasonPs = parseInt(document.getElementById('primordial-star-current-season')?.value, 10) || 0;
+  const totalPs = accumulatedPs + currentSeasonPs;
   const totalPsEl = document.getElementById('primordial-star-total');
   if (totalPsEl) totalPsEl.value = totalPs;
-  // 遺物成本（需 20 件）
+  // Relic costs are derived from 20 relics split across completed and next levels.
   const targetRelicRes = targets.relic_resonance || 0;
   let relicCount = 0;
-  for (let i = 10; i <= 30; i++) {
-    const count = parseInt(document.getElementById(`relic-level-${i}`)?.value) || 0;
+  getDerivedRelicDistribution().forEach(({ level, count }) => {
+    const i = Number(level) || 0;
     if (count > 0) hasInput = true;
     relicCount += count;
     for (let j = 0; j < count; j++) {
@@ -579,8 +616,8 @@ export function computeAll(containers) {
         }
       }
     }
-  }
-  if (relicCount > 0 && relicCount !== 20) hasError = true;
+  });
+  if (relicCount > 0 && relicCount !== RELIC_COUNT) hasError = true;
   // 角色 / 裝備 / 技能 / 幻獸成本
   categories.forEach(cat => {
     const current = parseInt(document.getElementById(`${cat.id}-current`)?.value) || 0;

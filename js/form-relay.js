@@ -1,11 +1,22 @@
 import { initLanguage, applyStaticTranslations, t } from './i18n-inline.js';
 
+const SEASON_START_CATEGORY = '【賽季開始】';
+const SEASON_START_DESCRIPTION =
+  '此日期將作為計算機自動推算當前賽季副本時間點的基準';
+
 const TIME_PRESETS_SHEET = {
-  base: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRMlpHJpHMNQTCxhYgj2fmvazou_cQpAiVa-w5tg7WR2EJTn4EExoLwojYM3BoS8FSTpxvaKIQdmPQC/pub',
-  gid: '717680438',
+  id: '1boxKipNVI-tCaJEaX-AoOTijEgKcxKfilhbtxkLbX-E',
+  gid: '859085671',
 };
 
+const DUNGEON_POWER_SHEET = {
+  id: '1boxKipNVI-tCaJEaX-AoOTijEgKcxKfilhbtxkLbX-E',
+  gid: '2044399102',
+};
+const DUNGEON_CATEGORY = '【副本開啟】';
+
 const FALLBACK_SERVERS = ['台港澳'];
+let dungeonNameRowsCache = null;
 
 function getInitialContext() {
   const params = new URLSearchParams(window.location.search);
@@ -20,6 +31,57 @@ function normalizeServerName(name) {
     .replace(/\u3000/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+function normalizeSeasonId(value) {
+  const match = String(value || '').match(/\bs\s*(\d+)\b/i);
+  return match ? `S${match[1]}` : '';
+}
+
+function parseCsvRows(text) {
+  const rows = [];
+  let row = [];
+  let cell = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i += 1) {
+    const char = text[i];
+    const next = text[i + 1];
+
+    if (char === '"' && inQuotes && next === '"') {
+      cell += '"';
+      i += 1;
+    } else if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      row.push(cell);
+      cell = '';
+    } else if ((char === '\n' || char === '\r') && !inQuotes) {
+      if (char === '\r' && next === '\n') i += 1;
+      row.push(cell);
+      if (row.some((value) => String(value).trim() !== '')) rows.push(row);
+      row = [];
+      cell = '';
+    } else {
+      cell += char;
+    }
+  }
+
+  row.push(cell);
+  if (row.some((value) => String(value).trim() !== '')) rows.push(row);
+  return rows;
+}
+
+function normalizeHeader(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function getCsvValue(row, headers, names) {
+  for (const name of names) {
+    const index = headers.indexOf(normalizeHeader(name));
+    if (index >= 0) return String(row[index] || '').trim();
+  }
+  return '';
 }
 
 function getServerGroupMembers(name) {
@@ -54,7 +116,7 @@ function mergeServerOptions(serverNames) {
 }
 
 async function fetchServerOptionsFromSheet() {
-  const url = `${TIME_PRESETS_SHEET.base}?output=csv&gid=${encodeURIComponent(TIME_PRESETS_SHEET.gid)}`;
+  const url = `https://docs.google.com/spreadsheets/d/${TIME_PRESETS_SHEET.id}/export?format=csv&gid=${TIME_PRESETS_SHEET.gid}`;
   try {
     const response = await fetch(url, { cache: 'no-store' });
     if (!response.ok) throw new Error(`fetch failed: ${response.status}`);
@@ -75,6 +137,52 @@ async function fetchServerOptionsFromSheet() {
     console.warn('[form relay] failed to fetch servers, using fallback', error);
     return FALLBACK_SERVERS.slice();
   }
+}
+
+async function fetchDungeonNameRows() {
+  if (dungeonNameRowsCache) return dungeonNameRowsCache;
+
+  const url = `https://docs.google.com/spreadsheets/d/${DUNGEON_POWER_SHEET.id}/export?format=csv&gid=${DUNGEON_POWER_SHEET.gid}`;
+  try {
+    const response = await fetch(url, { cache: 'no-store' });
+    if (!response.ok) throw new Error(`fetch failed: ${response.status}`);
+    const rows = parseCsvRows(await response.text());
+    const headers = (rows.shift() || []).map(normalizeHeader);
+
+    dungeonNameRowsCache = rows
+      .map((row) => ({
+        season: normalizeSeasonId(getCsvValue(row, headers, ['賽季', 'season'])),
+        name: getCsvValue(row, headers, ['副本', 'dungeon']),
+      }))
+      .filter((row) => row.name);
+  } catch (error) {
+    console.warn('[form relay] failed to fetch dungeon names', error);
+    dungeonNameRowsCache = [];
+  }
+
+  return dungeonNameRowsCache;
+}
+
+async function fillDungeonOptions() {
+  const seasonSelect = document.getElementById('relay-season');
+  const dungeonSelect = document.getElementById('relay-dungeon-name');
+  if (!seasonSelect || !dungeonSelect) return;
+
+  const selectedSeason = normalizeSeasonId(seasonSelect.value);
+  const rows = await fetchDungeonNameRows();
+  const names = Array.from(new Set(
+    rows
+      .filter((row) => !row.season || row.season === selectedSeason)
+      .map((row) => row.name)
+  ));
+
+  dungeonSelect.innerHTML = '';
+  names.forEach((name) => {
+    const option = document.createElement('option');
+    option.value = name;
+    option.textContent = name;
+    dungeonSelect.appendChild(option);
+  });
 }
 
 function showFeedback(message, type = 'info') {
@@ -100,6 +208,7 @@ function getRelayFormState() {
   const seasonSelect = document.getElementById('relay-season');
   const categorySelect = document.getElementById('relay-description-category');
   const descriptionInput = document.getElementById('relay-description');
+  const dungeonSelect = document.getElementById('relay-dungeon-name');
 
   return {
     selectedServer: serverSelect?.value || '',
@@ -108,6 +217,7 @@ function getRelayFormState() {
     season: seasonSelect?.value || '',
     category: categorySelect?.value || '',
     description: descriptionInput?.value || '',
+    dungeonName: dungeonSelect?.value || '',
   };
 }
 
@@ -178,6 +288,7 @@ function restoreRelayFormState(savedState) {
   const seasonSelect = document.getElementById('relay-season');
   const categorySelect = document.getElementById('relay-description-category');
   const descriptionInput = document.getElementById('relay-description');
+  const dungeonSelect = document.getElementById('relay-dungeon-name');
 
   if (savedState.isManual) {
     if (serverSelect) serverSelect.value = '';
@@ -196,6 +307,59 @@ function restoreRelayFormState(savedState) {
   if (seasonSelect && savedState.season) seasonSelect.value = savedState.season;
   if (categorySelect) categorySelect.value = savedState.category || '';
   if (descriptionInput) descriptionInput.value = savedState.description || '';
+  fillDungeonOptions().then(() => {
+    if (dungeonSelect && savedState.dungeonName) dungeonSelect.value = savedState.dungeonName;
+  });
+  applyCategoryDescriptionLock();
+}
+
+function applyCategoryDescriptionLock() {
+  const categorySelect = document.getElementById('relay-description-category');
+  const descriptionInput = document.getElementById('relay-description');
+  const dungeonSelect = document.getElementById('relay-dungeon-name');
+  if (!categorySelect || !descriptionInput) return;
+
+  if (categorySelect.value === SEASON_START_CATEGORY) {
+    if (dungeonSelect) dungeonSelect.classList.add('hidden');
+    descriptionInput.classList.remove('hidden');
+    descriptionInput.value = SEASON_START_DESCRIPTION;
+    descriptionInput.disabled = true;
+    descriptionInput.setAttribute('aria-readonly', 'true');
+    return;
+  }
+
+  if (categorySelect.value === DUNGEON_CATEGORY) {
+    descriptionInput.classList.add('hidden');
+    descriptionInput.disabled = true;
+    descriptionInput.required = false;
+    if (dungeonSelect) {
+      dungeonSelect.classList.remove('hidden');
+      dungeonSelect.required = true;
+    }
+    fillDungeonOptions();
+    return;
+  }
+
+  if (dungeonSelect) {
+    dungeonSelect.classList.add('hidden');
+    dungeonSelect.required = false;
+  }
+  descriptionInput.classList.remove('hidden');
+  if (descriptionInput.disabled && descriptionInput.value === SEASON_START_DESCRIPTION) {
+    descriptionInput.value = '';
+  }
+  descriptionInput.disabled = false;
+  descriptionInput.required = true;
+  descriptionInput.removeAttribute('aria-readonly');
+}
+
+function buildSubmittedDescription(category, body) {
+  if (category === SEASON_START_CATEGORY) return SEASON_START_CATEGORY;
+  if (category === DUNGEON_CATEGORY) {
+    const dungeonName = document.getElementById('relay-dungeon-name')?.value || '';
+    return dungeonName ? `${DUNGEON_CATEGORY}${dungeonName}` : '';
+  }
+  return category ? `${category}${body}` : body;
 }
 
 function syncManualServerVisibility() {
@@ -249,7 +413,7 @@ function submitRelayForm() {
   const date = document.getElementById('relay-date')?.value || '';
   const descriptionCategory = document.getElementById('relay-description-category')?.value || '';
   const descriptionBody = document.getElementById('relay-description')?.value.trim() || '';
-  const description = descriptionCategory ? `${descriptionCategory}${descriptionBody}` : descriptionBody;
+  const description = buildSubmittedDescription(descriptionCategory, descriptionBody);
 
   if (!serverName || !season || !date || !description) {
     showFeedback(t('relay_validation_required'), 'error');
@@ -295,9 +459,15 @@ async function init() {
   const servers = await fetchServerOptionsFromSheet();
   fillServerOptions(servers);
   applyInitialContext();
+  await fillDungeonOptions();
+  applyCategoryDescriptionLock();
 
   submitButton?.addEventListener('click', submitRelayForm);
   document.getElementById('relay-server-manual-toggle')?.addEventListener('click', syncManualServerVisibility);
+  document.getElementById('relay-description-category')?.addEventListener('change', applyCategoryDescriptionLock);
+  document.getElementById('relay-season')?.addEventListener('change', () => {
+    fillDungeonOptions().then(applyCategoryDescriptionLock);
+  });
   document.getElementById('relay-description')?.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') {
       event.preventDefault();
@@ -310,6 +480,7 @@ async function init() {
 
     showFeedback(t('relay_submit_success'), 'success');
     document.getElementById('relay-description').value = '';
+    applyCategoryDescriptionLock();
     window.__relaySubmitted = false;
   });
 
@@ -320,6 +491,7 @@ async function init() {
     restoreRelayFormState(savedState);
     if (!savedState.selectedServer && !savedState.manualServer) applyInitialContext();
     updateManualToggleLabel();
+    applyCategoryDescriptionLock();
   });
 
   window.__relayServers = servers;

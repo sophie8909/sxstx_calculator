@@ -27,6 +27,7 @@ import {
   renderLevelupTimeText,
   renderTargetEtaText,
   renderMaterialSource,
+  renderRelicDistribution,
 } from './view.js';
 import { applyStaticTranslations, getCurrentLanguage, initLanguage, t } from './i18n-inline.js';
 
@@ -35,8 +36,8 @@ import { applyStaticTranslations, getCurrentLanguage, initLanguage, t } from './
  * 閰衣?銵冽?雿?server_name, description, time
  * ============================================================ */
 const TIME_PRESETS_SHEET = {
-  base: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRMlpHJpHMNQTCxhYgj2fmvazou_cQpAiVa-w5tg7WR2EJTn4EExoLwojYM3BoS8FSTpxvaKIQdmPQC/pub',
-  gid: '717680438',
+  id: '1boxKipNVI-tCaJEaX-AoOTijEgKcxKfilhbtxkLbX-E',
+  gid: '859085671',
 };
 
 // 霈銝閰衣?銵冽????渲?????撌脫??08:00嚗?
@@ -57,11 +58,109 @@ const TIME_PRESETS_FALLBACK = [
   },
 ];
 
+const SEASON_START_CATEGORY = '【賽季開始】';
+const DUNGEON_CATEGORY = '【副本開啟】';
+const DUNGEON_ANCHOR_LABEL = '淨心護甲';
+const DUNGEON_OPEN_INTERVAL_DAYS = 14;
+const CURRENT_SEASON_DUNGEON_COUNT = 12;
+const DUNGEON_POWER_SHEET = {
+  id: '1boxKipNVI-tCaJEaX-AoOTijEgKcxKfilhbtxkLbX-E',
+  gid: '2044399102',
+};
+const DUNGEON_DIFFICULTIES = ['普通', '困難', '惡夢', '煉獄', '深淵'];
+let dungeonPowerRowsCache = null;
+
 const liveOwnedExpState = {
   signature: '',
   baseOwnedExp: 0,
   baseTimestamp: Date.now(),
 };
+
+function addDaysToIsoDate(datePart, days) {
+  const [year, month, day] = String(datePart || '').split('-').map(Number);
+  if (!year || !month || !day) return '';
+
+  const date = new Date(Date.UTC(year, month - 1, day + days));
+  const y = date.getUTCFullYear();
+  const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(date.getUTCDate()).padStart(2, '0');
+  return `${y}-${m}-${d}T08:00:00+08:00`;
+}
+
+function stripDungeonCategory(label) {
+  return String(label || '')
+    .replace(DUNGEON_CATEGORY, '')
+    .replace(/[（(]副本[開开][啟启啓][）)]/g, '')
+    .trim();
+}
+
+function getPresetDungeonName(preset) {
+  return String(preset?.dungeon_name || stripDungeonCategory(preset?.label)).trim();
+}
+
+function isBaselineTimeLabel(label) {
+  const text = String(label || '');
+  return (
+    text.startsWith(SEASON_START_CATEGORY) ||
+    text.includes('賽季開始') ||
+    text.includes('开服') ||
+    text.includes('開服') ||
+    /^s\s*\d+\s*([開开][始啟启啓])/i.test(text)
+  );
+}
+
+function isDungeonTimeLabel(label) {
+  const text = String(label || '');
+  return text.startsWith(DUNGEON_CATEGORY) || /[（(]?副本[開开][啟启啓][）)]?/.test(text);
+}
+
+function getDungeonRowsForSeason(rows, seasonId) {
+  const targetSeason = normalizeSeasonId(seasonId);
+  return rows.filter((row) => !row.season_id || row.season_id === targetSeason);
+}
+
+function getDungeonOffsetDays(row, index) {
+  const day = Number(row?.day);
+  return Number.isFinite(day) && day > 0 ? day - 1 : index * DUNGEON_OPEN_INTERVAL_DAYS;
+}
+
+function withGeneratedDungeonOpenTimes(presets, dungeonRows = []) {
+  const generated = [];
+
+  presets.forEach((preset) => {
+    const label = String(preset.label || '');
+    const isSeasonStart = isBaselineTimeLabel(label);
+    const isDungeonAnchor = label.includes(DUNGEON_ANCHOR_LABEL);
+    if (!isSeasonStart && !isDungeonAnchor) return;
+
+    const datePart = String(preset.iso || '').slice(0, 10);
+    if (!datePart) return;
+    const serverName = isSeasonStart ? preset.server_name : '';
+    const rowsForSeason = getDungeonRowsForSeason(dungeonRows, preset.season_id);
+    const sourceRows = rowsForSeason.length > 0
+      ? rowsForSeason
+      : Array.from({ length: CURRENT_SEASON_DUNGEON_COUNT }, (_, index) => ({
+          dungeon_name: `第 ${index + 1} 個副本`,
+          day: index * DUNGEON_OPEN_INTERVAL_DAYS + 1,
+        }));
+    const anchorRow = sourceRows.find((row) => row.dungeon_name.includes(DUNGEON_ANCHOR_LABEL));
+    const anchorOffset = isDungeonAnchor && anchorRow ? getDungeonOffsetDays(anchorRow, sourceRows.indexOf(anchorRow)) : 0;
+
+    sourceRows.forEach((row, index) => {
+      generated.push({
+        key: `${preset.key}_dungeon_${index + 1}`,
+        season_id: preset.season_id,
+        server_name: serverName,
+        label: `${DUNGEON_CATEGORY}${row.dungeon_name || `第 ${index + 1} 個副本`}`,
+        iso: addDaysToIsoDate(datePart, getDungeonOffsetDays(row, index) - anchorOffset),
+        generated_from: isDungeonAnchor ? 'global_dungeon_anchor' : 'season_start',
+        dungeon_name: row.dungeon_name || '',
+      });
+    });
+  });
+
+  return generated.length > 0 ? presets.concat(generated) : presets;
+}
 
 function appendStaticTooltip(target, text) {
   if (!target || !text) return;
@@ -103,6 +202,11 @@ function normalizeServerName(name) {
     .trim();
 }
 
+function normalizeSeasonId(value) {
+  const match = String(value || '').match(/\bs\s*(\d+)\b/i);
+  return match ? `s${match[1]}` : '';
+}
+
 function getServerGroupMembers(name) {
   return normalizeServerName(name)
     .replace(/[－—–]/g, '-')
@@ -122,7 +226,13 @@ function areServerGroupsEquivalentOrMerged(a, b) {
   const aMembers = getServerGroupMembers(a);
   const bMembers = getServerGroupMembers(b);
   if (!aMembers.length || !bMembers.length) return false;
-  return isSubsetMembers(aMembers, bMembers) || isSubsetMembers(bMembers, aMembers);
+  if (isSubsetMembers(aMembers, bMembers) || isSubsetMembers(bMembers, aMembers)) return true;
+
+  return aMembers.some((aMember) =>
+    bMembers.some((bMember) =>
+      aMember === bMember || aMember.includes(bMember) || bMember.includes(aMember)
+    )
+  );
 }
 
 function mergeServerOptions(serverNames) {
@@ -139,6 +249,123 @@ function mergeServerOptions(serverNames) {
       return otherMembers.length > members.length && isSubsetMembers(members, otherMembers);
     });
   });
+}
+
+function parseCsvRows(text) {
+  const rows = [];
+  let row = [];
+  let cell = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i += 1) {
+    const char = text[i];
+    const next = text[i + 1];
+
+    if (char === '"' && inQuotes && next === '"') {
+      cell += '"';
+      i += 1;
+    } else if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      row.push(cell);
+      cell = '';
+    } else if ((char === '\n' || char === '\r') && !inQuotes) {
+      if (char === '\r' && next === '\n') i += 1;
+      row.push(cell);
+      if (row.some((value) => String(value).trim() !== '')) rows.push(row);
+      row = [];
+      cell = '';
+    } else {
+      cell += char;
+    }
+  }
+
+  row.push(cell);
+  if (row.some((value) => String(value).trim() !== '')) rows.push(row);
+  return rows;
+}
+
+function normalizeHeader(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function getCsvValue(row, headers, names) {
+  for (const name of names) {
+    const index = headers.indexOf(normalizeHeader(name));
+    if (index >= 0) return String(row[index] || '').trim();
+  }
+  return '';
+}
+
+function getGoogleSheetCsvUrl(sheet) {
+  return `https://docs.google.com/spreadsheets/d/${sheet.id}/export?format=csv&gid=${sheet.gid}`;
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function formatPowerRequirement(value) {
+  const raw = String(value || '').replace(/,/g, '').trim();
+  if (!raw) return '';
+
+  const amountWan = Number(raw);
+  if (!Number.isFinite(amountWan)) return value;
+
+  if (Math.abs(amountWan) >= 10000) {
+    const amountYi = amountWan / 10000;
+    return `${Number.isInteger(amountYi) ? amountYi : amountYi.toFixed(2).replace(/\.?0+$/, '')}億`;
+  }
+  return `${amountWan}萬`;
+}
+
+async function fetchDungeonPowerRows() {
+  if (dungeonPowerRowsCache) return dungeonPowerRowsCache;
+
+  const url = `https://docs.google.com/spreadsheets/d/${DUNGEON_POWER_SHEET.id}/export?format=csv&gid=${DUNGEON_POWER_SHEET.gid}`;
+  try {
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
+    const rows = parseCsvRows(await res.text());
+    const headers = (rows.shift() || []).map(normalizeHeader);
+
+    dungeonPowerRowsCache = rows
+      .map((row) => {
+        const powers = {};
+        DUNGEON_DIFFICULTIES.forEach((difficulty) => {
+          powers[difficulty] = getCsvValue(row, headers, [difficulty]);
+        });
+
+        return {
+          season_id: normalizeSeasonId(getCsvValue(row, headers, ['賽季', 'season'])),
+          day: Number(getCsvValue(row, headers, ['時間', 'time', 'day'])),
+          dungeon_name: getCsvValue(row, headers, ['副本', 'dungeon']),
+          powers,
+        };
+      })
+      .filter((row) => row.dungeon_name);
+  } catch (err) {
+    console.warn('[dungeon power] fetch failed', err);
+    dungeonPowerRowsCache = [];
+  }
+
+  return dungeonPowerRowsCache;
+}
+
+function findDungeonPowerRow(preset, rows, seasonId) {
+  const dungeonName = getPresetDungeonName(preset);
+  if (!dungeonName) return null;
+
+  return getDungeonRowsForSeason(rows, seasonId).find((row) =>
+    row.dungeon_name === dungeonName ||
+    row.dungeon_name.includes(dungeonName) ||
+    dungeonName.includes(row.dungeon_name)
+  ) || null;
 }
 
 function usesLargeExpUnit() {
@@ -434,22 +661,19 @@ function setupAutoUpdate(containers) {
  * 憿舐內??嚗erver_name
  * ---------------------------*/
 async function fetchServerOptionsFromSheet() {
-  const url = `${TIME_PRESETS_SHEET.base}?output=csv&gid=${encodeURIComponent(TIME_PRESETS_SHEET.gid)}`;
+  const url = getGoogleSheetCsvUrl(TIME_PRESETS_SHEET);
   try {
     const res = await fetch(url, { cache: 'no-store' });
     if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
-    const text = await res.text();
-    const lines = text.trim().split('\n');
-    const headers = lines[0].split(',').map(s => s.trim().toLowerCase());
-    const serverIdx = headers.indexOf('server_name');
+    const rows = parseCsvRows(await res.text());
+    const headers = (rows.shift() || []).map(normalizeHeader);
 
     const out = [];
-    for (let i = 1; i < lines.length; i++) {
-      const cols = lines[i].split(',').map(s => s.trim());
-      const server = cols[serverIdx] || '';
+    rows.forEach((cols) => {
+      const server = getCsvValue(cols, headers, ['server_name', '伺服器', 'server']);
       const normalizedServer = normalizeServerName(server);
       if (normalizedServer) out.push(normalizedServer);
-    }
+    });
     return mergeServerOptions(out);
   } catch (err) {
     console.warn('[server options] fetch failed, using fallback', err);
@@ -463,28 +687,21 @@ async function fetchServerOptionsFromSheet() {
  * 憿舐內??嚗description} ({server_name})
  * ??銝敺???閰脫??08:00嚗?08:00嚗?
  * ---------------------------*/
-async function fetchTimePresetsFromSheet() {
-  const url = `${TIME_PRESETS_SHEET.base}?output=csv&gid=${encodeURIComponent(TIME_PRESETS_SHEET.gid)}`;
+async function fetchTimePresetsFromSheet(dungeonPowerRows = []) {
+  const url = getGoogleSheetCsvUrl(TIME_PRESETS_SHEET);
   try {
     const res = await fetch(url, { cache: 'no-store' });
     if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
-    const text = await res.text();
-    const lines = text.trim().split('\n');
-    const headers = lines[0].split(',').map(s => s.trim().toLowerCase());
-
-    const serverIdx = headers.indexOf('server_name');
-    const descIdx   = headers.indexOf('description');
-    const timeIdx   = headers.indexOf('time');
-    const seasonIdx = headers.indexOf('season_id');
+    const rows = parseCsvRows(await res.text());
+    const headers = (rows.shift() || []).map(normalizeHeader);
 
     const out = [];
-    for (let i = 1; i < lines.length; i++) {
-      const cols  = lines[i].split(',').map(s => s.trim());
-      const server = normalizeServerName(cols[serverIdx] || '');
-      const desc   = cols[descIdx]   || '';
-      const time   = cols[timeIdx]   || '';
-      const rawSeasonId = seasonIdx >= 0 ? (cols[seasonIdx] || '') : '';
-      if (!server && !desc && !time) continue;
+    rows.forEach((cols, index) => {
+      const server = normalizeServerName(getCsvValue(cols, headers, ['server_name', '伺服器', 'server']));
+      const desc = getCsvValue(cols, headers, ['description', '說明', '描述']);
+      const time = getCsvValue(cols, headers, ['time', '時間', '日期']);
+      const rawSeasonId = getCsvValue(cols, headers, ['season_id', '賽季', 'season']);
+      if (!server && !desc && !time) return;
 
       // ?芸??交?嚗敺???08:00:00+08:00
       let datePart = '';
@@ -505,27 +722,27 @@ async function fetchTimePresetsFromSheet() {
             datePart = d2.toISOString().slice(0, 10);
           } else {
             // 摰???停?仿??????
-            continue;
+            return;
           }
         }
       }
 
       const isoTime = `${datePart}T08:00:00+08:00`;
 
-      const inferredSeasonId = rawSeasonId || (desc.match(/\b(s\d+)\b/i)?.[1]?.toLowerCase() ?? '');
+      const inferredSeasonId = normalizeSeasonId(rawSeasonId) || normalizeSeasonId(desc);
 
       out.push({
-        key: `${server}_${i}`,
+        key: `${server}_${index + 1}`,
         season_id: inferredSeasonId,
         server_name: server,
         label: `${desc}`,
         iso: isoTime,
       });
-    }
-    return out;
+    });
+    return withGeneratedDungeonOpenTimes(out, dungeonPowerRows);
   } catch (err) {
     console.warn('[time presets] fetch failed, using fallback', err);
-    return TIME_PRESETS_FALLBACK.slice();
+    return withGeneratedDungeonOpenTimes(TIME_PRESETS_FALLBACK.slice(), dungeonPowerRows);
   }
 }
 
@@ -701,6 +918,49 @@ function updateTargetTimeFormDefaults() {
   if (seasonSelect && seasonSelector?.value) seasonSelect.value = String(seasonSelector.value).toUpperCase();
 }
 
+function updateRelicModeButtons() {
+  const mode = document.getElementById('relic-ui-mode')?.value || 'compact';
+  document.querySelectorAll('.relic-mode-btn').forEach((button) => {
+    const active = button.dataset.mode === mode;
+    button.classList.toggle('bg-[#2cb5ab]', active);
+    button.classList.toggle('text-white', active);
+    button.classList.toggle('text-[#0f766e]', !active);
+  });
+}
+
+function renderDungeonPowerPanel(preset, dungeonPowerRows) {
+  const panel = document.getElementById('dungeon-power-panel');
+  const fields = document.getElementById('dungeon-power-fields');
+  if (!panel || !fields) return;
+
+  const isDungeonPreset = preset && preset !== '__custom__' && isDungeonTimeLabel(preset.label);
+  if (!isDungeonPreset) {
+    panel.classList.add('hidden');
+    fields.innerHTML = '';
+    return;
+  }
+
+  const powerRow = findDungeonPowerRow(preset, dungeonPowerRows, state.seasonId);
+  fields.innerHTML = DUNGEON_DIFFICULTIES.map((difficulty) => {
+    const value = formatPowerRequirement(powerRow?.powers?.[difficulty] || '');
+    const safeDifficulty = escapeHtml(difficulty);
+    const safeValue = escapeHtml(value);
+    return `
+      <label class="block min-w-0">
+        <span class="block text-sm font-semibold mb-1">${safeDifficulty}</span>
+        <input
+          class="input-field rounded p-2 w-full text-right"
+          value="${safeValue}"
+          placeholder=""
+          disabled
+          aria-label="${safeDifficulty}戰力需求"
+        />
+      </label>
+    `;
+  }).join('');
+  panel.classList.remove('hidden');
+}
+
 /* -----------------------------
  * ???撩?銝??詨 #server-select
  * 銝行??詨?蝯?摮 state.serverName
@@ -753,19 +1013,43 @@ async function initTargetTimeControls(containers) {
 
   if (!presetSel || !displayBox || !customInput || !hiddenField) return;
 
-  const allPresets = await fetchTimePresetsFromSheet();
+  const dungeonPowerRows = await fetchDungeonPowerRows();
+  const allPresets = await fetchTimePresetsFromSheet(dungeonPowerRows);
   const selectedServer = normalizeServerName(state.serverName);
-  const selectedSeasonId = state.seasonId;
-  const nowTs = Date.now();
+  const selectedSeasonId = normalizeSeasonId(state.seasonId);
 
   // 憛怠 select嚗?整?撩????賊?
   presetSel.innerHTML = '';
-  allPresets.forEach(p => {
-    if (p.server_name && !areServerGroupsEquivalentOrMerged(p.server_name, selectedServer)) return;
-    if (p.season_id && p.season_id !== selectedSeasonId) return;
-    if (p.iso) {
-      const presetTs = new Date(p.iso).getTime();
-      if (Number.isFinite(presetTs) && presetTs < nowTs) return;
+  const matchingPresets = allPresets.filter((p) => {
+    if (normalizeSeasonId(p.season_id) !== selectedSeasonId) return false;
+    if (p.server_name && !areServerGroupsEquivalentOrMerged(p.server_name, selectedServer)) return false;
+    return true;
+  });
+  const hasServerDungeonBaseline = matchingPresets.some((p) =>
+    p.generated_from === 'season_start' &&
+    p.server_name &&
+    areServerGroupsEquivalentOrMerged(p.server_name, selectedServer)
+  ) || matchingPresets.some((p) =>
+    !p.generated_from &&
+    p.server_name &&
+    areServerGroupsEquivalentOrMerged(p.server_name, selectedServer) &&
+    (
+      isDungeonTimeLabel(p.label) ||
+      String(p.label || '').includes(DUNGEON_ANCHOR_LABEL)
+    )
+  );
+
+  matchingPresets.forEach(p => {
+    if (hasServerDungeonBaseline && p.generated_from === 'global_dungeon_anchor') return;
+    if (p.generated_from === 'season_start') {
+      const generatedDungeon = getPresetDungeonName(p);
+      const hasManualSameDungeon = matchingPresets.some((candidate) =>
+        !candidate.generated_from &&
+        candidate.server_name &&
+        areServerGroupsEquivalentOrMerged(candidate.server_name, selectedServer) &&
+        getPresetDungeonName(candidate) === generatedDungeon
+      );
+      if (hasManualSameDungeon) return;
     }
     const opt = document.createElement('option');
     opt.value = p.key;
@@ -794,6 +1078,7 @@ async function initTargetTimeControls(containers) {
     if (v === '__custom__') {
       customInput.classList.remove('hidden');
       displayBox.classList.add('hidden');
+      renderDungeonPowerPanel(null, dungeonPowerRows);
 
       // ?芾????亦蝛????葆?亦?冽???
       if (!customInput.value) {
@@ -809,6 +1094,7 @@ async function initTargetTimeControls(containers) {
       displayBox.classList.remove('hidden');
 
       const found = allPresets.find(p => p.key === v);
+      renderDungeonPowerPanel(found, dungeonPowerRows);
       const ts = found?.iso || '';
       hiddenField.value = ts;
 
@@ -956,14 +1242,24 @@ function bindGlobalHandlers(containers) {
           if (src === 'store') updateStoreRolaCost();
         }
 
-        if (t.classList.contains('relic-dist-input')) updateRelicTotal();
-        triggerRecalculate(containers);
-      }
+      if (t.classList.contains('relic-dist-input')) updateRelicTotal();
+      triggerRecalculate(containers);
+    }
   }, { passive: true });
 
   document.addEventListener('change', (e) => {
     const t = e.target;
     if (t.tagName === 'INPUT' || t.tagName === 'SELECT') {
+      if (t.id === 'relic-ui-mode') {
+        saveAllInputs();
+        renderRelicDistribution(containers.relicDistributionInputs);
+        loadAllInputs(['season-select']);
+        updateRelicModeButtons();
+        updateRelicTotal();
+        triggerRecalculate(containers);
+        return;
+      }
+
       if (t.classList.contains('material-source-input')) {
         const src = t.dataset.source;
         const mat = t.dataset.material;
@@ -975,6 +1271,17 @@ function bindGlobalHandlers(containers) {
       triggerRecalculate(containers);
     }
   }, { passive: true });
+
+  document.addEventListener('click', (e) => {
+    const button = e.target.closest('.relic-mode-btn');
+    if (!button) return;
+
+    const select = document.getElementById('relic-ui-mode');
+    if (!select || select.value === button.dataset.mode) return;
+
+    select.value = button.dataset.mode;
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+  });
 
 }
 
@@ -996,6 +1303,9 @@ async function handleSeasonChange(containers) {
   renderAll(containers);
   bindTooltipLayers();
   loadAllInputs(['season-select']); // 鞈賢迤?冽??撌梁??摩??
+  renderRelicDistribution(containers.relicDistributionInputs);
+  loadAllInputs(['season-select']);
+  updateRelicModeButtons();
 
   // ??憪?隡箸??券?殷???隡箸??刻??亦璅????
   await initServerSelector(containers);
@@ -1147,6 +1457,7 @@ async function init() {
   // ?寞??嗅?鞈賢迤頛撠?鞈?
   await handleSeasonChange(containers);
   updateTargetTimeFormDefaults();
+  updateRelicModeButtons();
 
   // ???亙像?潦??怎???皞?UI
   await loadMaterialAvgDefaults();       // TODO: ?啣?嚗??model.js 銝剔??身撟喳??潸??伐??桀??箏???no-op嚗?
@@ -1167,6 +1478,9 @@ async function init() {
     enhanceStaticFieldTooltips();
     bindTooltipLayers();
     loadAllInputs(['season-select']);
+    renderRelicDistribution(containers.relicDistributionInputs);
+    loadAllInputs(['season-select']);
+    updateRelicModeButtons();
     updateTargetTimeFormDefaults();
     renderMaterialSource(containers);
     bindTooltipLayers();
