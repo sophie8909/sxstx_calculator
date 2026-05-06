@@ -89,9 +89,9 @@ const PRIMORDIAL_RECOMMENDATION_SHEET = {
 };
 const DUNGEON_DIFFICULTIES = ['普通', '困難', '惡夢', '煉獄', '深淵'];
 const PRIMORDIAL_RECOMMENDATION_TIERS = [
-  ['normal', '微氪 normal'],
-  ['heavy', '中氪 heavy'],
-  ['super', '頂氪 super'],
+  ['normal', '微氪'],
+  ['heavy', '中氪'],
+  ['super', '頂氪'],
 ];
 const FRAGMENT_FEE_RATES = {
   normal: [10, 20, 30, 50, 70],
