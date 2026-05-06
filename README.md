@@ -1,5 +1,5 @@
 # 杖劍傳說 素材計算機
-♥　如果這個工具有幫到你，buymeacoffee.com/sophie8909，可以請我喝杯奶茶　♥
+♥　如果這個工具有幫到你，[buymeacoffee.com/sophie8909](buymeacoffee.com/sophie8909)，可以請我喝杯奶茶　♥
 
 ## 原初計算機
 
