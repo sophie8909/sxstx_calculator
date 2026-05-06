@@ -81,6 +81,7 @@ const FRAGMENT_FEE_RATES = {
   normal: [10, 20, 30, 50, 70],
   discount: [5, 12, 20, 40, 60],
 };
+const FRAGMENT_GROUP_SIZE = 10;
 const TARGET_RECOMMENDATION_FIELDS = {
   equipment_level: 'target-equipment_resonance',
   skill_level: 'target-skill_resonance',
@@ -486,7 +487,15 @@ function parseFragmentRowsFromCsvRows(rows) {
 
       stoneColumns.forEach(({ stoneIndex, stoneHeader, displayTier }) => {
         const rawStoneAmount = String(row[stoneIndex] ?? '').trim();
-        const stoneAmount = parseNumberValue(rawStoneAmount);
+        let stoneAmount = parseNumberValue(rawStoneAmount);
+        let hasStoneValue = rawStoneAmount !== '';
+        if (!hasStoneValue && displayTier === '紅') {
+          stoneAmount = 3;
+          hasStoneValue = true;
+        } else if (!hasStoneValue && displayTier === '金') {
+          stoneAmount = 2;
+          hasStoneValue = true;
+        }
 
         const item = {
           ...base,
@@ -494,7 +503,7 @@ function parseFragmentRowsFromCsvRows(rows) {
           fragment_header: header,
           stone_header: stoneHeader,
           display_tier: displayTier || '',
-          has_stone_value: rawStoneAmount !== '',
+          has_stone_value: hasStoneValue,
           stone_per_fragment: stoneAmount,
         };
         const key = makeFragmentKey(item, fragmentName, stoneAmount, stoneHeader);
@@ -1273,6 +1282,12 @@ function formatFragmentNumber(value, fractionDigits = 0) {
   });
 }
 
+function formatFragmentInputNumber(value, fractionDigits = 2) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return '0';
+  return Number(number.toFixed(fractionDigits)).toString();
+}
+
 function getSelectedFragmentRow() {
   const select = document.getElementById('fragment-kind');
   const index = Number(select?.value);
@@ -1333,9 +1348,12 @@ function updateFragmentFeeRates() {
 function updateFragmentCalculator() {
   const row = getSelectedFragmentRow();
   const output = document.getElementById('fragment-stone-output');
+  const decomposedSaleInput = document.getElementById('fragment-decomposed-sale');
+  const saleAfterFeeInput = document.getElementById('fragment-sale-after-fee');
+  const profitInput = document.getElementById('fragment-profit');
   const quantity = parseNumberValue(document.getElementById('fragment-quantity')?.value);
-  const fragmentPrice = parseNumberValue(document.getElementById('fragment-price')?.value);
-  const stonePrice = parseNumberValue(document.getElementById('fragment-stone-price')?.value);
+  const fragmentPricePerGroup = parseNumberValue(document.getElementById('fragment-price')?.value);
+  const stonePricePerGroup = parseNumberValue(document.getElementById('fragment-stone-price')?.value);
   const feeRate = parseNumberValue(document.getElementById('fragment-fee-rate')?.value);
   const selectedKey = document.getElementById('fragment-kind')?.value || '';
   const hasSheetStoneValue = row?.has_stone_value === true;
@@ -1350,22 +1368,19 @@ function updateFragmentCalculator() {
   const stoneOutput = hasSheetStoneValue
     ? quantity * row.stone_per_fragment
     : parseNumberValue(output?.value);
-  const buyCost = quantity * fragmentPrice;
-  const saleBeforeFee = stoneOutput * stonePrice;
+  const stoneOutputPerGroup = row?.has_stone_value === true
+    ? FRAGMENT_GROUP_SIZE * row.stone_per_fragment
+    : parseNumberValue(output?.value);
+  const stoneGroupsFromOneFragmentGroup = Math.floor(stoneOutputPerGroup / FRAGMENT_GROUP_SIZE);
+  const buyCost = fragmentPricePerGroup;
+  const saleBeforeFee = stoneGroupsFromOneFragmentGroup * stonePricePerGroup;
   const saleAfterFee = saleBeforeFee * (1 - feeRate / 100);
   const moonStarGain = saleAfterFee - buyCost;
 
-  if (output && hasSheetStoneValue) output.value = formatFragmentNumber(stoneOutput, 2);
-
-  const result = document.getElementById('fragment-calculator-result');
-  if (result) {
-    result.innerHTML = `
-      <div>可獲得晨星數：${formatFragmentNumber(moonStarGain, 2)}</div>
-      <div class="mt-2 text-sm font-normal text-slate-600">
-        購買成本 ${formatFragmentNumber(buyCost, 2)}，出售扣稅後 ${formatFragmentNumber(saleAfterFee, 2)}
-      </div>
-    `;
-  }
+  if (output && hasSheetStoneValue) output.value = formatFragmentInputNumber(stoneOutput, 2);
+  if (decomposedSaleInput) decomposedSaleInput.value = formatFragmentInputNumber(saleBeforeFee, 2);
+  if (saleAfterFeeInput) saleAfterFeeInput.value = formatFragmentInputNumber(saleAfterFee, 2);
+  if (profitInput) profitInput.value = formatFragmentInputNumber(moonStarGain, 2);
 }
 
 function getDungeonYieldDisplayRows(row) {

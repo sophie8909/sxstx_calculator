@@ -284,15 +284,19 @@
             <input id="fragment-stone-output" type="number" min="0" step="0.01" class="input-field rounded p-2 w-full text-right" value="0" disabled />
           </label>
           <label class="block min-w-0">
-            <span class="block text-sm font-semibold mb-1">當前碎片售價</span>
+            <span class="block text-sm font-semibold mb-1">當前碎片售價（每組）</span>
             <input id="fragment-price" type="number" min="0" step="0.01" class="input-field rounded p-2 w-full text-right" value="0" />
           </label>
           <label class="block min-w-0">
-            <span class="block text-sm font-semibold mb-1">當前神鑄石售價</span>
+            <span class="block text-sm font-semibold mb-1">當前神鑄石售價（每組）</span>
             <input id="fragment-stone-price" type="number" min="0" step="0.01" class="input-field rounded p-2 w-full text-right" value="0" />
           </label>
           <label class="block min-w-0">
-            <span class="flex items-center gap-2 text-sm font-semibold mb-1">
+            <span class="block text-sm font-semibold mb-1">碎片分解神鑄石後售價（每組）</span>
+            <input id="fragment-decomposed-sale" type="number" min="0" step="0.01" class="input-field rounded p-2 w-full text-right" value="0" disabled />
+          </label>
+          <label class="block min-w-0">
+            <span class="flex items-center gap-2 text-sm font-semibold mb-1 min-h-[28px]">
               <span>交易行出售抽成</span>
               <span class="inline-flex overflow-hidden rounded-full border border-[#9ed6d8] bg-[#eefafa] p-0.5 shadow-sm" role="group" aria-label="手續費模式">
                 <button type="button" class="fragment-fee-mode-btn rounded-full px-3 py-1 text-xs font-semibold" data-mode="normal">正常</button>
@@ -301,11 +305,16 @@
             </span>
             <select id="fragment-fee-rate" class="input-field rounded p-2 w-full"></select>
           </label>
+          <label class="block min-w-0">
+            <span class="block text-sm font-semibold mb-1 min-h-[28px]">神鑄石抽成後收入</span>
+            <input id="fragment-sale-after-fee" type="number" min="0" step="0.01" class="input-field rounded p-2 w-full text-right" value="0" disabled />
+          </label>
+          <label class="block min-w-0">
+            <span class="block text-sm font-semibold mb-1 min-h-[28px]">買碎片分解賣神鑄石收入</span>
+            <input id="fragment-profit" type="number" step="0.01" class="input-field rounded p-2 w-full text-right" value="0" disabled />
+          </label>
         </div>
         <input id="fragment-discount-fee" type="checkbox" class="hidden" />
-        <div id="fragment-calculator-result" class="result-item rounded-lg p-4 text-lg font-bold">
-          可獲得晨星數：0
-        </div>
         <div class="border-t border-[#cde5e8] pt-4 space-y-3">
           <label class="block min-w-0">
             <span class="block text-sm font-semibold mb-1">副本神鑄石收益</span>
