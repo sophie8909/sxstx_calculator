@@ -172,8 +172,11 @@ const dataUrl = (name) => new URL(name, DATA_BASE).href;
 const GOOGLE_SHEET_BASE =
   'https://docs.google.com/spreadsheets/d/e/2PACX-1vTS_dK7OUmUkWmUTj_iotltVPzO-2Bjz0cefAshVWuu5qL6e2VXV-cr-wm1bkrVShI7mSZovU_zwz2B/pub';
 
+const GITHUB_DATA_BASE = 
+  'https://sophie8909.github.io/sxstx_calculator/data';
+
 /** 各賽季資料設定，只保留 gid */
-export const DATA_FILES_CONFIG = {
+export const GOOGLE_SHEET_DATA_FILES_CONFIG = {
   characterUpgradeCosts: 314585849,  // 角色等級
   equipmentUpgradeCosts: 1205841685,  // 裝備
   skillUpgradeCosts:     682954597,  // 技能
@@ -182,6 +185,15 @@ export const DATA_FILES_CONFIG = {
   resource:              751788076,  // 資源
   seasonScore:          1012321192,  // 賽季分數
 };
+
+export const GITHUB_DATA_FILES_CONFIGS = {
+  characterUpgradeCosts: 'character_upgrade_costs',
+  equipmentUpgradeCosts: 'equipment_upgrade_costs',
+  skillUpgradeCosts:     'skill_upgrade_costs',  // 技能
+  relicUpgradeCosts:     'relic_upgrade_costs',  // 遺物
+  petUpgradeCosts:       'pet_upgrade_costs',  // 幻獸
+
+}
 
 /** 內部狀態 */
 export const state = {
@@ -278,14 +290,24 @@ function makeCsvUrl(gid) {
   return `${GOOGLE_SHEET_BASE}?gid=${gid}&single=true&output=csv`;
 }
 
+function makeGithubCsvUrl(file) {
+  return  `${GITHUB_DATA_BASE}/${file}.csv`;
+}
+
 /** 載入對應賽季的資料 */
 export async function loadDataForSeason(seasonId) {
   const targetSeason = seasonId;         // 's1' / 's2' / 's3'
   const loaded = {};
   state.missingFiles = [];
 
-  for (const [key, gid] of Object.entries(DATA_FILES_CONFIG)) {
-    const url = makeCsvUrl(gid);
+  for (const [key, gid] of Object.entries(GOOGLE_SHEET_DATA_FILES_CONFIG)) {
+    let url;
+    if (key in GITHUB_DATA_FILES_CONFIGS) {
+      url = makeGithubCsvUrl(GITHUB_DATA_FILES_CONFIGS[key]);
+    } else {
+      url = makeCsvUrl(gid);
+    }
+
     console.log(`[data load] loading ${key} from ${url} for season ${targetSeason}`);
     try {
       const rows = await fetchAndParseCsv(url);
