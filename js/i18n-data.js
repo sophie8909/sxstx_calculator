@@ -348,8 +348,8 @@ export const I18N_DICTIONARIES = {
     "zh-Hans": "角色等级"
   },
   "season_label": {
-    "zh-Hant": "賽季選項:",
-    "zh-Hans": "赛季选项:"
+    "zh-Hant": "賽季選項：",
+    "zh-Hans": "赛季选项："
   },
   "season_name_s1": {
     "zh-Hant": "S1 澤之國",
@@ -404,8 +404,12 @@ export const I18N_DICTIONARIES = {
     "zh-Hans": "结果总览"
   },
   "server_label": {
-    "zh-Hant": "界域：",
-    "zh-Hans": "界域："
+    "zh-Hant": "伺服器：",
+    "zh-Hans": "伺服器："
+  },
+  "player_id": {
+    "zh-Hant": "玩家編號：",
+    "zh-Hans": "玩家编号："
   },
   "server_tooltip": {
     "zh-Hant": "選擇界域後，目標時間預設值會依該界域資料切換。",
