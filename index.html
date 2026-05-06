@@ -29,6 +29,29 @@
         <option value="zh-Hant" data-i18n="language_traditional">繁體中文</option>
         <option value="zh-Hans" data-i18n="language_simplified">簡體中文</option>
       </select>
+      <button
+        type="button"
+        class="calculator-nav-btn bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg text-sm"
+        data-page="primordial"
+      >
+        原初計算機
+      </button>
+      <button
+        type="button"
+        class="calculator-nav-btn bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg text-sm"
+        data-page="fragment"
+      >
+        碎片計算機
+      </button>
+      <button
+        id="open-target-time-form-btn"
+        type="button"
+        class="calculator-nav-btn bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg text-sm"
+        data-page="target-time-form"
+        data-i18n="relay_form_title"
+      >
+        目標時間填寫
+      </button>
     </div>
 
     <div class="text-center mb-6 flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-center gap-3">
@@ -38,14 +61,6 @@
     <div class="text-center mb-6 flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-center gap-3">
       <label for="server-select" class="mr-2 font-semibold" data-i18n="server_label">伺服器：</label>
       <select id="server-select" class="input-field rounded p-2 w-full sm:w-auto sm:min-w-[11.25rem]"></select>
-      <button
-        id="open-target-time-form-btn"
-        type="button"
-        class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg text-sm"
-        data-i18n="relay_form_title"
-      >
-        目標時間填寫
-      </button>
     </div>
     <div id="calculator-page-content">
     <!-- ===== 目標時間 / 現在時間 ===== -->
@@ -96,6 +111,10 @@
     <div id="primordial-star-card" class="card rounded-lg p-4 shadow-lg mb-4 w-full page-section">
       <h3 class="text-xl font-bold text-center mb-4" data-i18n="primordial_star_title">原初之星 (累計)</h3>
       <div id="primordial-star-cumulative" class=""></div> <!-- class ??蝛綽?JS ?? -->
+      <div id="primordial-recommendation-panel" class="mt-4 border-t border-[#cde5e8] pt-4">
+        <h4 class="text-lg font-semibold text-center mb-3">累計原初推薦</h4>
+        <div id="primordial-recommendation-fields" class="grid grid-cols-1 sm:grid-cols-3 gap-4"></div>
+      </div>
     </div>
 
     
@@ -103,6 +122,17 @@
     <!-- ?格?蝑?嚗曈湛? -->
     <div id="target-levels-card" class="card rounded-lg p-4 shadow-lg mb-4 w-full page-section">
       <h3 class="text-xl font-bold text-center mb-4" data-i18n="target_levels_title">目標等級 (共鳴)</h3>
+      <div class="flex justify-center mb-4">
+        <label class="flex flex-col sm:flex-row sm:items-center gap-2 text-sm font-semibold">
+          <span>推薦檔位</span>
+          <select id="target-recommendation-type" class="input-field rounded p-2">
+            <option value="custom">自定義</option>
+            <option value="normal">微氪 normal</option>
+            <option value="heavy">中氪 heavy</option>
+            <option value="super">頂氪 super</option>
+          </select>
+        </label>
+      </div>
       <div id="target-levels" class=""></div> <!-- class ??蝛綽?JS ?? -->
     </div>
     
@@ -233,18 +263,64 @@
   </div>
   </div>
 
+  <div id="fragment-calculator-panel" class="hidden">
+    <div class="card rounded-xl p-0 shadow-lg mb-6 w-full">
+      <div class="border-b sticky top-0 z-10 px-4 py-2 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
+        <h2 class="text-2xl font-bold">碎片神鑄石計算機</h2>
+      </div>
+      <div class="p-4 space-y-4">
+        <div id="fragment-calculator-status" class="text-sm text-slate-600">正在載入碎片資料...</div>
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <label class="block min-w-0">
+            <span class="block text-sm font-semibold mb-1">碎片種類</span>
+            <select id="fragment-kind" class="input-field rounded p-2 w-full"></select>
+          </label>
+          <label class="block min-w-0">
+            <span class="block text-sm font-semibold mb-1">碎片數量</span>
+            <input id="fragment-quantity" type="number" min="0" step="1" class="input-field rounded p-2 w-full text-right" value="0" />
+          </label>
+          <label class="block min-w-0">
+            <span class="block text-sm font-semibold mb-1">分解後神鑄石數量</span>
+            <input id="fragment-stone-output" type="number" min="0" step="0.01" class="input-field rounded p-2 w-full text-right" value="0" disabled />
+          </label>
+          <label class="block min-w-0">
+            <span class="block text-sm font-semibold mb-1">當前碎片售價</span>
+            <input id="fragment-price" type="number" min="0" step="0.01" class="input-field rounded p-2 w-full text-right" value="0" />
+          </label>
+          <label class="block min-w-0">
+            <span class="block text-sm font-semibold mb-1">當前神鑄石售價</span>
+            <input id="fragment-stone-price" type="number" min="0" step="0.01" class="input-field rounded p-2 w-full text-right" value="0" />
+          </label>
+          <label class="block min-w-0">
+            <span class="flex items-center gap-2 text-sm font-semibold mb-1">
+              <span>交易行出售抽成</span>
+              <span class="inline-flex overflow-hidden rounded-full border border-[#9ed6d8] bg-[#eefafa] p-0.5 shadow-sm" role="group" aria-label="手續費模式">
+                <button type="button" class="fragment-fee-mode-btn rounded-full px-3 py-1 text-xs font-semibold" data-mode="normal">正常</button>
+                <button type="button" class="fragment-fee-mode-btn rounded-full px-3 py-1 text-xs font-semibold" data-mode="discount">優惠</button>
+              </span>
+            </span>
+            <select id="fragment-fee-rate" class="input-field rounded p-2 w-full"></select>
+          </label>
+        </div>
+        <input id="fragment-discount-fee" type="checkbox" class="hidden" />
+        <div id="fragment-calculator-result" class="result-item rounded-lg p-4 text-lg font-bold">
+          可獲得晨星數：0
+        </div>
+        <div class="border-t border-[#cde5e8] pt-4 space-y-3">
+          <label class="block min-w-0">
+            <span class="block text-sm font-semibold mb-1">副本神鑄石收益</span>
+            <select id="fragment-dungeon-select" class="input-field rounded p-2 w-full"></select>
+          </label>
+          <div id="fragment-dungeon-yield-result" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="target-time-form-panel" class="hidden">
     <div class="card rounded-xl p-0 shadow-lg mb-6 w-full">
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b sticky top-0 z-10 px-4 py-2 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
+      <div class="border-b sticky top-0 z-10 px-4 py-2 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
         <h2 class="text-2xl font-bold" data-i18n="relay_form_title">目標時間填寫</h2>
-        <button
-          id="close-target-time-form-btn"
-          type="button"
-          class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg text-sm"
-          data-i18n="relay_form_close"
-        >
-          返回計算頁
-        </button>
       </div>
       <div class="p-4 space-y-4">
         <p class="text-sm text-slate-600 leading-relaxed" data-i18n="relay_form_intro">

@@ -67,8 +67,31 @@ const DUNGEON_POWER_SHEET = {
   id: '1boxKipNVI-tCaJEaX-AoOTijEgKcxKfilhbtxkLbX-E',
   gid: '2044399102',
 };
+const PRIMORDIAL_RECOMMENDATION_SHEET = {
+  id: '1boxKipNVI-tCaJEaX-AoOTijEgKcxKfilhbtxkLbX-E',
+  gid: '1955218134',
+};
 const DUNGEON_DIFFICULTIES = ['普通', '困難', '惡夢', '煉獄', '深淵'];
+const PRIMORDIAL_RECOMMENDATION_TIERS = [
+  ['normal', '微氪 normal'],
+  ['heavy', '中氪 heavy'],
+  ['super', '頂氪 super'],
+];
+const FRAGMENT_FEE_RATES = {
+  normal: [10, 20, 30, 50, 70],
+  discount: [5, 12, 20, 40, 60],
+};
+const TARGET_RECOMMENDATION_FIELDS = {
+  equipment_level: 'target-equipment_resonance',
+  skill_level: 'target-skill_resonance',
+  pet_level: 'target-pet_resonance',
+  relic_level: 'target-relic_resonance',
+};
 let dungeonPowerRowsCache = null;
+let primordialRecommendationRowsCache = null;
+let fragmentRowsCache = null;
+let dungeonFragmentYieldRowsCache = null;
+const ACTIVE_PAGE_STORAGE_KEY = 'sxstxCalculatorActivePage';
 
 const liveOwnedExpState = {
   signature: '',
@@ -377,6 +400,264 @@ async function fetchDungeonPowerRows() {
   }
 
   return dungeonPowerRowsCache;
+}
+
+function parseNumberValue(value) {
+  const raw = String(value ?? '').replace(/,/g, '').trim();
+  if (!raw) return 0;
+  const number = Number(raw);
+  return Number.isFinite(number) ? number : 0;
+}
+
+function makeFragmentKey(row, fragmentName, stoneAmount, fragmentHeader) {
+  return [
+    normalizeSeasonId(row.season_id),
+    row.dungeon_name,
+    fragmentHeader,
+    fragmentName,
+    stoneAmount,
+  ].join('|');
+}
+
+function parseFragmentRowsFromCsvRows(rows) {
+  const headers = (rows.shift() || []).map((header) => String(header || '').trim());
+  const findHeaderIndex = (names) => headers.findIndex((header) => names.some((name) => header === name));
+  const fragmentIndex = findHeaderIndex(['裝備碎片']);
+  const infernoIndex = findHeaderIndex(['煉獄裝', '神裝']);
+  const infernoStoneIndex = findHeaderIndex(['煉獄分解神鑄石', '神級分解神鑄石']);
+  const mythicStoneIndex = findHeaderIndex(['神話分解神鑄石', '傳說分解神鑄石']);
+  const miracleStoneIndex = findHeaderIndex(['奇蹟分解神鑄石']);
+  const fragmentColumns = [];
+
+  if (fragmentIndex >= 0) {
+    const stoneColumns = [
+      { stoneIndex: mythicStoneIndex, stoneHeader: headers[mythicStoneIndex] || '神話分解神鑄石', displayTier: '紅' },
+      { stoneIndex: miracleStoneIndex, stoneHeader: headers[miracleStoneIndex] || '奇蹟分解神鑄石', displayTier: '金' },
+    ].filter((column) => column.stoneIndex >= 0);
+    if (stoneColumns.length > 0) fragmentColumns.push({
+      fragmentIndex,
+      stoneColumns,
+      header: headers[fragmentIndex],
+    });
+  }
+
+  if (infernoIndex >= 0 && infernoStoneIndex >= 0) {
+    fragmentColumns.push({
+      fragmentIndex: infernoIndex,
+      stoneColumns: [{
+        stoneIndex: infernoStoneIndex,
+        stoneHeader: headers[infernoStoneIndex] || '煉獄分解神鑄石',
+        displayTier: '煉獄',
+      }],
+      header: headers[infernoIndex],
+    });
+  }
+
+  if (fragmentColumns.length === 0) {
+    headers.forEach((header, index) => {
+      if (!header.includes('裝備碎片')) return;
+
+      const stoneColumns = [];
+      for (let candidateIndex = index + 1; candidateIndex < headers.length; candidateIndex += 1) {
+        const candidate = headers[candidateIndex];
+        if (candidate.includes('裝備碎片')) break;
+        if (candidate.includes('分解神鑄石') || candidate.includes('神鑄石')) {
+          stoneColumns.push({ stoneIndex: candidateIndex, stoneHeader: candidate });
+        }
+      }
+
+      if (stoneColumns.length > 0) fragmentColumns.push({ fragmentIndex: index, stoneColumns, header });
+    });
+  }
+
+  const seen = new Set();
+  const parsed = [];
+  rows.forEach((row) => {
+    const base = {
+      season_id: normalizeSeasonId(row[0]),
+      server_day: Number(row[1]),
+      season_day: Number(row[2]),
+      dungeon_name: String(row[3] || '').trim(),
+    };
+
+    fragmentColumns.forEach(({ fragmentIndex, stoneColumns, header }) => {
+      const fragmentName = String(row[fragmentIndex] || '').trim();
+      if (!fragmentName) return;
+
+      stoneColumns.forEach(({ stoneIndex, stoneHeader, displayTier }) => {
+        const rawStoneAmount = String(row[stoneIndex] ?? '').trim();
+        const stoneAmount = parseNumberValue(rawStoneAmount);
+
+        const item = {
+          ...base,
+          fragment_name: fragmentName,
+          fragment_header: header,
+          stone_header: stoneHeader,
+          display_tier: displayTier || '',
+          has_stone_value: rawStoneAmount !== '',
+          stone_per_fragment: stoneAmount,
+        };
+        const key = makeFragmentKey(item, fragmentName, stoneAmount, stoneHeader);
+        if (seen.has(key)) return;
+        seen.add(key);
+        parsed.push(item);
+      });
+    });
+  });
+
+  return parsed;
+}
+
+async function fetchFragmentRows() {
+  if (fragmentRowsCache) return fragmentRowsCache;
+
+  const url = getGoogleSheetCsvUrl(DUNGEON_POWER_SHEET);
+  try {
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
+    fragmentRowsCache = parseFragmentRowsFromCsvRows(parseCsvRows(await res.text()));
+  } catch (err) {
+    console.warn('[fragment calculator] fetch failed', err);
+    fragmentRowsCache = [];
+  }
+
+  return fragmentRowsCache;
+}
+
+function getHeaderIndex(headers, names) {
+  return headers.findIndex((header) => names.some((name) => header === name));
+}
+
+function parseDungeonFragmentYieldRows(csvRows) {
+  const headers = (csvRows.shift() || []).map((header) => String(header || '').trim());
+  const index = {
+    season: getHeaderIndex(headers, ['賽季', 'season']),
+    serverDay: getHeaderIndex(headers, ['天數', 'server_day']),
+    seasonDay: getHeaderIndex(headers, ['開國天數', '開国天數', 'season_day']),
+    dungeon: getHeaderIndex(headers, ['副本', 'dungeon']),
+    equipmentFragment: getHeaderIndex(headers, ['裝備碎片']),
+    infernoGear: getHeaderIndex(headers, ['煉獄裝', '神裝']),
+    normalPieces: getHeaderIndex(headers, ['普通碎片量']),
+    hardPieces: getHeaderIndex(headers, ['困難碎片量']),
+    nightmarePieces: getHeaderIndex(headers, ['惡夢碎片量', '噩夢碎片量']),
+    hellPieces: getHeaderIndex(headers, ['煉獄碎片量']),
+    abyssPieces: getHeaderIndex(headers, ['深淵碎片量']),
+    infernoStone: getHeaderIndex(headers, ['煉獄分解神鑄石', '神級分解神鑄石']),
+    mythicStone: getHeaderIndex(headers, ['神話分解神鑄石', '傳說分解神鑄石']),
+    miracleStone: getHeaderIndex(headers, ['奇蹟分解神鑄石']),
+  };
+
+  return csvRows
+    .map((row) => ({
+      season_id: normalizeSeasonId(row[index.season]),
+      server_day: Number(row[index.serverDay]) || 0,
+      season_day: Number(row[index.seasonDay]) || 0,
+      dungeon_name: String(row[index.dungeon] || '').trim(),
+      equipment_fragment: String(row[index.equipmentFragment] || '').trim(),
+      inferno_gear: String(row[index.infernoGear] || '').trim(),
+      normal_pieces: parseNumberValue(row[index.normalPieces]) || 8,
+      hard_pieces: parseNumberValue(row[index.hardPieces]) || 10,
+      nightmare_pieces: parseNumberValue(row[index.nightmarePieces]) || 8,
+      hell_pieces: parseNumberValue(row[index.hellPieces]) || 10,
+      abyss_pieces: parseNumberValue(row[index.abyssPieces]) || 3,
+      inferno_stone: parseNumberValue(row[index.infernoStone]),
+      mythic_stone: parseNumberValue(row[index.mythicStone]),
+      miracle_stone: parseNumberValue(row[index.miracleStone]),
+    }))
+    .filter((row) => row.dungeon_name && (row.equipment_fragment || row.inferno_gear));
+}
+
+async function fetchDungeonFragmentYieldRows() {
+  if (dungeonFragmentYieldRowsCache) return dungeonFragmentYieldRowsCache;
+
+  const url = getGoogleSheetCsvUrl(DUNGEON_POWER_SHEET);
+  try {
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
+    dungeonFragmentYieldRowsCache = parseDungeonFragmentYieldRows(parseCsvRows(await res.text()));
+  } catch (err) {
+    console.warn('[fragment dungeon yield] fetch failed', err);
+    dungeonFragmentYieldRowsCache = [];
+  }
+
+  return dungeonFragmentYieldRowsCache;
+}
+
+async function fetchPrimordialRecommendationRows() {
+  if (primordialRecommendationRowsCache) return primordialRecommendationRowsCache;
+
+  const url = getGoogleSheetCsvUrl(PRIMORDIAL_RECOMMENDATION_SHEET);
+  try {
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
+    const rows = parseCsvRows(await res.text());
+    const headers = (rows.shift() || []).map(normalizeHeader);
+
+    primordialRecommendationRowsCache = rows
+      .map((row) => ({
+        season_id: normalizeSeasonId(getCsvValue(row, headers, ['season', '賽季'])),
+        type: getCsvValue(row, headers, ['type', '檔位']).toLowerCase(),
+        star: getCsvValue(row, headers, ['star', '原初']),
+        equipment_level: getCsvValue(row, headers, ['equipment_level', '裝備等級']),
+        skill_level: getCsvValue(row, headers, ['skill_level', '技能等級']),
+        pet_level: getCsvValue(row, headers, ['pet_level', '寵物等級']),
+        relic_level: getCsvValue(row, headers, ['relic_level', '遺物等級']),
+      }))
+      .filter((row) => row.season_id && row.type);
+  } catch (err) {
+    console.warn('[primordial recommendations] fetch failed', err);
+    primordialRecommendationRowsCache = [];
+  }
+
+  return primordialRecommendationRowsCache;
+}
+
+function getRecommendationForCurrentSeason(rows, type) {
+  const currentSeason = normalizeSeasonId(state.seasonId);
+  return rows.find((item) => item.season_id === currentSeason && item.type === type) || null;
+}
+
+async function renderPrimordialRecommendations() {
+  const panel = document.getElementById('primordial-recommendation-panel');
+  const fields = document.getElementById('primordial-recommendation-fields');
+  if (!panel || !fields) return;
+
+  const rows = await fetchPrimordialRecommendationRows();
+
+  fields.innerHTML = PRIMORDIAL_RECOMMENDATION_TIERS.map(([key, label]) => {
+    const row = getRecommendationForCurrentSeason(rows, key);
+    const value = row?.star || '';
+    return `
+      <label class="block min-w-0">
+        <span class="block text-sm font-semibold mb-1">${escapeHtml(label)}</span>
+        <input
+          class="input-field rounded p-2 w-full text-right"
+          value="${escapeHtml(value)}"
+          disabled
+          aria-label="${escapeHtml(label)}累計原初推薦"
+        />
+      </label>
+    `;
+  }).join('');
+}
+
+async function applyTargetRecommendation(type) {
+  if (!type || type === 'custom') return;
+
+  const rows = await fetchPrimordialRecommendationRows();
+  const recommendation = getRecommendationForCurrentSeason(rows, type);
+  if (!recommendation) return;
+
+  Object.entries(TARGET_RECOMMENDATION_FIELDS).forEach(([field, inputId]) => {
+    const input = document.getElementById(inputId);
+    const value = recommendation[field];
+    if (input && value !== '') input.value = value;
+  });
+}
+
+async function applySelectedTargetRecommendationIfNeeded() {
+  const type = document.getElementById('target-recommendation-type')?.value || 'custom';
+  if (type !== 'custom') await applyTargetRecommendation(type);
 }
 
 function findDungeonPowerRow(preset, rows, seasonId) {
@@ -889,29 +1170,48 @@ function applyMobileSectionOrder() {
 }
 
 function bindTargetTimeFormToggle() {
-  const openButton = document.getElementById('open-target-time-form-btn');
-  const closeButton = document.getElementById('close-target-time-form-btn');
+  const navButtons = Array.from(document.querySelectorAll('.calculator-nav-btn'));
   const calculatorPageContent = document.getElementById('calculator-page-content');
+  const fragmentCalculatorPanel = document.getElementById('fragment-calculator-panel');
   const targetTimeFormPanel = document.getElementById('target-time-form-panel');
 
-  if (!openButton || !closeButton || !calculatorPageContent || !targetTimeFormPanel) return;
+  if (!navButtons.length || !calculatorPageContent || !fragmentCalculatorPanel || !targetTimeFormPanel) return;
 
   const scrollToToggle = () => {
-    const top = openButton.getBoundingClientRect().top + window.scrollY - 24;
+    const firstButton = navButtons[0];
+    const top = firstButton.getBoundingClientRect().top + window.scrollY - 24;
     window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
   };
 
-  openButton.addEventListener('click', () => {
-    calculatorPageContent.classList.add('hidden');
-    targetTimeFormPanel.classList.remove('hidden');
-    scrollToToggle();
+  const panels = {
+    primordial: calculatorPageContent,
+    fragment: fragmentCalculatorPanel,
+    'target-time-form': targetTimeFormPanel,
+  };
+
+  const showPage = (page, shouldScroll = true) => {
+    const targetPage = panels[page] ? page : 'primordial';
+    Object.entries(panels).forEach(([key, panel]) => {
+      panel.classList.toggle('hidden', key !== targetPage);
+    });
+
+    navButtons.forEach((button) => {
+      const active = button.dataset.page === targetPage;
+      button.classList.toggle('bg-[#2cb5ab]', active);
+      button.classList.toggle('hover:bg-[#23a69d]', active);
+      button.classList.toggle('bg-gray-600', !active);
+      button.classList.toggle('hover:bg-gray-500', !active);
+    });
+
+    localStorage.setItem(ACTIVE_PAGE_STORAGE_KEY, targetPage);
+    if (shouldScroll) scrollToToggle();
+  };
+
+  navButtons.forEach((button) => {
+    button.addEventListener('click', () => showPage(button.dataset.page || 'primordial'));
   });
 
-  closeButton.addEventListener('click', () => {
-    targetTimeFormPanel.classList.add('hidden');
-    calculatorPageContent.classList.remove('hidden');
-    scrollToToggle();
-  });
+  showPage(localStorage.getItem(ACTIVE_PAGE_STORAGE_KEY) || 'primordial', false);
 }
 
 function updateTargetTimeFormDefaults() {
@@ -948,6 +1248,295 @@ function updateRelicModeButtons() {
     button.classList.toggle('text-white', active);
     button.classList.toggle('text-[#0f766e]', !active);
   });
+}
+
+function getFragmentDisplayName(row) {
+  const baseName = String(row?.fragment_name || '').trim();
+  const fragmentName = baseName.endsWith('碎片') ? baseName : `${baseName}碎片`;
+  const stoneType = row?.display_tier || String(row?.stone_header || '')
+    .replace('分解神鑄石', '')
+    .replace('神鑄石', '')
+    .replace('奇蹟', '金')
+    .replace('神話', '紅')
+    .trim();
+  const typeSuffix = stoneType ? `（${stoneType}）` : '';
+  const dungeonSuffix = row?.dungeon_name ? ` - ${row.dungeon_name}` : '';
+  return `${fragmentName}${typeSuffix}${dungeonSuffix}`;
+}
+
+function formatFragmentNumber(value, fractionDigits = 0) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return '0';
+  return number.toLocaleString('zh-Hant', {
+    maximumFractionDigits: fractionDigits,
+    minimumFractionDigits: 0,
+  });
+}
+
+function getSelectedFragmentRow() {
+  const select = document.getElementById('fragment-kind');
+  const index = Number(select?.value);
+  if (!Number.isInteger(index) || index < 0) return null;
+  return fragmentRowsCache?.[index] || null;
+}
+
+function getPreviousSeasonId(seasonId) {
+  const seasonNumber = Number(String(seasonId || '').replace(/^s/i, ''));
+  if (!Number.isFinite(seasonNumber) || seasonNumber <= 1) return '';
+  return `s${seasonNumber - 1}`;
+}
+
+function getPreviousSeasonFinalDungeonName(rows, seasonId) {
+  const previousSeasonId = getPreviousSeasonId(seasonId);
+  if (!previousSeasonId) return '';
+
+  const finalRow = rows
+    .filter((row) => row.season_id === previousSeasonId && row.dungeon_name)
+    .sort((a, b) => (b.server_day || 0) - (a.server_day || 0))[0];
+  return finalRow?.dungeon_name || '';
+}
+
+function filterRowsForCurrentAndPreviousFinal(rows) {
+  const currentSeason = normalizeSeasonId(state.seasonId);
+  const previousSeasonId = getPreviousSeasonId(currentSeason);
+  const previousFinalDungeon = getPreviousSeasonFinalDungeonName(rows, currentSeason);
+
+  return rows.filter((row) => (
+    row.season_id === currentSeason ||
+    (
+      previousSeasonId &&
+      row.season_id === previousSeasonId &&
+      row.dungeon_name === previousFinalDungeon
+    )
+  ));
+}
+
+function updateFragmentFeeRates() {
+  const discount = document.getElementById('fragment-discount-fee')?.checked || false;
+  const feeSelect = document.getElementById('fragment-fee-rate');
+  if (!feeSelect) return;
+
+  const mode = discount ? 'discount' : 'normal';
+  const current = feeSelect.value;
+  const rates = FRAGMENT_FEE_RATES[mode];
+  feeSelect.innerHTML = rates.map((rate) => `<option value="${rate}">${rate}%</option>`).join('');
+  feeSelect.value = rates.map(String).includes(current) ? current : String(rates[0]);
+
+  document.querySelectorAll('.fragment-fee-mode-btn').forEach((button) => {
+    const active = button.dataset.mode === mode;
+    button.classList.toggle('bg-[#2cb5ab]', active);
+    button.classList.toggle('text-white', active);
+    button.classList.toggle('text-[#0f766e]', !active);
+  });
+}
+
+function updateFragmentCalculator() {
+  const row = getSelectedFragmentRow();
+  const output = document.getElementById('fragment-stone-output');
+  const quantity = parseNumberValue(document.getElementById('fragment-quantity')?.value);
+  const fragmentPrice = parseNumberValue(document.getElementById('fragment-price')?.value);
+  const stonePrice = parseNumberValue(document.getElementById('fragment-stone-price')?.value);
+  const feeRate = parseNumberValue(document.getElementById('fragment-fee-rate')?.value);
+  const selectedKey = document.getElementById('fragment-kind')?.value || '';
+  const hasSheetStoneValue = row?.has_stone_value === true;
+
+  if (output) {
+    const previousKey = output.dataset.fragmentKey || '';
+    output.dataset.fragmentKey = selectedKey;
+    output.disabled = hasSheetStoneValue;
+    if (previousKey && previousKey !== selectedKey && !hasSheetStoneValue) output.value = '0';
+  }
+
+  const stoneOutput = hasSheetStoneValue
+    ? quantity * row.stone_per_fragment
+    : parseNumberValue(output?.value);
+  const buyCost = quantity * fragmentPrice;
+  const saleBeforeFee = stoneOutput * stonePrice;
+  const saleAfterFee = saleBeforeFee * (1 - feeRate / 100);
+  const moonStarGain = saleAfterFee - buyCost;
+
+  if (output && hasSheetStoneValue) output.value = formatFragmentNumber(stoneOutput, 2);
+
+  const result = document.getElementById('fragment-calculator-result');
+  if (result) {
+    result.innerHTML = `
+      <div>可獲得晨星數：${formatFragmentNumber(moonStarGain, 2)}</div>
+      <div class="mt-2 text-sm font-normal text-slate-600">
+        購買成本 ${formatFragmentNumber(buyCost, 2)}，出售扣稅後 ${formatFragmentNumber(saleAfterFee, 2)}
+      </div>
+    `;
+  }
+}
+
+function getDungeonYieldDisplayRows(row) {
+  if (!row) return [];
+
+  return [
+    {
+      name: '普通',
+      fragment: row.equipment_fragment,
+      tier: '金',
+      pieces: row.normal_pieces,
+      stonePerPiece: row.miracle_stone,
+    },
+    {
+      name: '困難',
+      fragment: row.equipment_fragment,
+      tier: '金',
+      pieces: row.hard_pieces,
+      stonePerPiece: row.miracle_stone,
+    },
+    {
+      name: '惡夢',
+      fragment: row.equipment_fragment,
+      tier: '紅',
+      pieces: row.nightmare_pieces,
+      stonePerPiece: row.mythic_stone,
+    },
+    {
+      name: '煉獄',
+      fragment: row.equipment_fragment,
+      tier: '紅',
+      pieces: row.hell_pieces,
+      stonePerPiece: row.mythic_stone,
+    },
+    {
+      name: '深淵',
+      fragment: row.inferno_gear,
+      tier: '煉獄',
+      pieces: row.abyss_pieces,
+      stonePerPiece: row.inferno_stone,
+    },
+  ];
+}
+
+function getPreviousSeasonFinalDungeon(rows, row) {
+  const previousSeasonId = getPreviousSeasonId(row?.season_id);
+  if (!previousSeasonId) return null;
+
+  const previousFinalDungeon = getPreviousSeasonFinalDungeonName(rows, row.season_id);
+  const candidates = rows
+    .filter((candidate) => (
+      candidate.season_id === previousSeasonId &&
+      candidate.dungeon_name === previousFinalDungeon &&
+      candidate.equipment_fragment
+    ))
+    .sort((a, b) => (b.server_day || 0) - (a.server_day || 0));
+  return candidates[0] || null;
+}
+
+function renderDungeonYieldCard(item, extraLabel = '') {
+  if (!item.fragment) {
+    return `
+      <div class="info-item rounded-lg p-3">
+        <div class="font-bold">${escapeHtml(item.name)}${extraLabel}</div>
+        <div class="text-sm text-slate-600 mt-1">無對應碎片資料</div>
+      </div>
+    `;
+  }
+
+  const total = item.pieces * item.stonePerPiece;
+  const fragmentName = item.fragment.endsWith('碎片') ? item.fragment : `${item.fragment}碎片`;
+  const detail = item.stonePerPiece > 0
+    ? `${formatFragmentNumber(item.pieces)} 片 × ${formatFragmentNumber(item.stonePerPiece, 2)} = ${formatFragmentNumber(total, 2)}`
+    : '缺少分解神鑄石數量';
+
+  return `
+    <div class="info-item rounded-lg p-3">
+      <div class="font-bold">${escapeHtml(item.name)}${extraLabel}</div>
+      <div class="text-sm text-slate-600 mt-1">${escapeHtml(fragmentName)}（${escapeHtml(item.tier)}）</div>
+      <div class="mt-2 text-lg font-bold">${formatFragmentNumber(total, 2)}</div>
+      <div class="text-xs text-slate-500">${escapeHtml(detail)}</div>
+    </div>
+  `;
+}
+
+function updateDungeonFragmentYield() {
+  const select = document.getElementById('fragment-dungeon-select');
+  const result = document.getElementById('fragment-dungeon-yield-result');
+  if (!select || !result) return;
+
+  const row = dungeonFragmentYieldRowsCache?.[Number(select.value)] || null;
+  if (!row) {
+    result.innerHTML = '<div class="text-sm text-slate-600">目前沒有可用的副本碎片資料。</div>';
+    return;
+  }
+
+  const rows = getDungeonYieldDisplayRows(row);
+  const previousRow = getPreviousSeasonFinalDungeon(dungeonFragmentYieldRowsCache || [], row);
+  if (previousRow) {
+    const hasPreviousAbyss = previousRow.inferno_gear && previousRow.inferno_stone > 0;
+    rows.push({
+      name: `上季最後副本 ${previousRow.dungeon_name} ${hasPreviousAbyss ? '深淵' : '煉獄'}`,
+      fragment: hasPreviousAbyss ? previousRow.inferno_gear : previousRow.equipment_fragment,
+      tier: hasPreviousAbyss ? '煉獄' : '紅',
+      pieces: hasPreviousAbyss ? previousRow.abyss_pieces : previousRow.hell_pieces,
+      stonePerPiece: hasPreviousAbyss ? previousRow.inferno_stone : previousRow.mythic_stone,
+    });
+  }
+
+  result.innerHTML = rows.map((item) => renderDungeonYieldCard(item)).join('');
+}
+
+async function initFragmentCalculator(saved = {}) {
+  const select = document.getElementById('fragment-kind');
+  const status = document.getElementById('fragment-calculator-status');
+  if (!select) return;
+
+  if (status) status.textContent = '正在載入碎片資料...';
+  const rows = await fetchFragmentRows();
+  const visibleRows = filterRowsForCurrentAndPreviousFinal(rows);
+  select.innerHTML = visibleRows.map((row) => {
+    const index = rows.indexOf(row);
+    return `<option value="${index}">${escapeHtml(getFragmentDisplayName(row))}</option>`;
+  }).join('');
+
+  if (visibleRows.length === 0) {
+    select.innerHTML = '<option value="">目前賽季沒有可用的碎片資料</option>';
+    select.disabled = true;
+    if (status) status.textContent = '目前賽季沒有可用的碎片與神鑄石資料。';
+  } else {
+    select.disabled = false;
+    const savedValue = saved['fragment-kind'];
+    const hasSavedOption = Array.from(select.options).some((option) => option.value === savedValue);
+    if (hasSavedOption) select.value = savedValue;
+    if (status) status.textContent = `已載入 ${visibleRows.length} 筆當前賽季與上季末副本分解資料。`;
+  }
+
+  updateFragmentFeeRates();
+  updateFragmentCalculator();
+}
+
+async function initDungeonFragmentYield(saved = {}) {
+  const select = document.getElementById('fragment-dungeon-select');
+  if (!select) return;
+
+  const rows = await fetchDungeonFragmentYieldRows();
+  const visibleRows = filterRowsForCurrentAndPreviousFinal(rows);
+  select.innerHTML = visibleRows.map((row) => {
+    const index = rows.indexOf(row);
+    return `<option value="${index}">${escapeHtml(String(row.season_id || '').toUpperCase())} ${escapeHtml(row.dungeon_name)}</option>`;
+  }).join('');
+
+  if (visibleRows.length === 0) {
+    select.innerHTML = '<option value="">目前賽季沒有可用的副本資料</option>';
+    select.disabled = true;
+  } else {
+    select.disabled = false;
+    const savedValue = saved['fragment-dungeon-select'];
+    const hasSavedOption = Array.from(select.options).some((option) => option.value === savedValue);
+    if (hasSavedOption) select.value = savedValue;
+  }
+
+  updateDungeonFragmentYield();
+}
+
+function markTargetRecommendationCustom(target) {
+  if (!target?.id || !target.id.startsWith('target-')) return;
+  if (target.id === 'target-primordial_star') return;
+
+  const selector = document.getElementById('target-recommendation-type');
+  if (selector && selector.value !== 'custom') selector.value = 'custom';
 }
 
 function renderDungeonPowerPanel(preset, dungeonPowerRows) {
@@ -1256,6 +1845,14 @@ function bindGlobalHandlers(containers) {
     (e) => {
       const t = e.target;
       if (t.tagName === 'INPUT') {
+        if (t.id?.startsWith('fragment-')) {
+          updateFragmentCalculator();
+          saveAllInputs();
+          return;
+        }
+
+        markTargetRecommendationCustom(t);
+
         // 蝝?靘?隡啁?甈?
         if (t.classList.contains('material-source-input')) {
           const src = t.dataset.source;
@@ -1271,7 +1868,17 @@ function bindGlobalHandlers(containers) {
 
   document.addEventListener('change', (e) => {
     const t = e.target;
-    if (t.tagName === 'INPUT' || t.tagName === 'SELECT') {
+      if (t.tagName === 'INPUT' || t.tagName === 'SELECT') {
+      if (t.id?.startsWith('fragment-')) {
+        if (t.id === 'fragment-discount-fee') updateFragmentFeeRates();
+        if (t.id === 'fragment-dungeon-select') updateDungeonFragmentYield();
+        updateFragmentCalculator();
+        saveAllInputs();
+        return;
+      }
+
+      if (t.tagName === 'INPUT') markTargetRecommendationCustom(t);
+
       if (t.id === 'relic-ui-mode') {
         saveAllInputs();
         renderRelicDistribution(containers.relicDistributionInputs);
@@ -1279,6 +1886,15 @@ function bindGlobalHandlers(containers) {
         updateRelicModeButtons();
         updateRelicTotal();
         triggerRecalculate(containers);
+        return;
+      }
+
+      if (t.id === 'target-recommendation-type') {
+        saveAllInputs();
+        applyTargetRecommendation(t.value).then(() => {
+          saveAllInputs();
+          triggerRecalculate(containers);
+        });
         return;
       }
 
@@ -1295,6 +1911,18 @@ function bindGlobalHandlers(containers) {
   }, { passive: true });
 
   document.addEventListener('click', (e) => {
+    const feeButton = e.target.closest('.fragment-fee-mode-btn');
+    if (feeButton) {
+      const checkbox = document.getElementById('fragment-discount-fee');
+      if (!checkbox) return;
+
+      checkbox.checked = feeButton.dataset.mode === 'discount';
+      updateFragmentFeeRates();
+      updateFragmentCalculator();
+      saveAllInputs();
+      return;
+    }
+
     const button = e.target.closest('.relic-mode-btn');
     if (!button) return;
 
@@ -1328,6 +1956,11 @@ async function handleSeasonChange(containers) {
   renderRelicDistribution(containers.relicDistributionInputs);
   loadAllInputs(['season-select']);
   updateRelicModeButtons();
+  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+  await initFragmentCalculator(saved);
+  await initDungeonFragmentYield(saved);
+  await renderPrimordialRecommendations();
+  await applySelectedTargetRecommendationIfNeeded();
 
   // ??憪?隡箸??券?殷???隡箸??刻??亦璅????
   await initServerSelector(containers);
@@ -1457,6 +2090,8 @@ async function init() {
   bindTargetTimeFormToggle();
 
   const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+  await initFragmentCalculator(saved);
+  await initDungeonFragmentYield(saved);
 
   // ??撱箇?鞈賢迤?詨 + 憟?脣???
   initSeasonSelector(containers, saved);
@@ -1480,6 +2115,9 @@ async function init() {
   await handleSeasonChange(containers);
   updateTargetTimeFormDefaults();
   updateRelicModeButtons();
+  await renderPrimordialRecommendations();
+  updateFragmentFeeRates();
+  updateFragmentCalculator();
 
   // ???亙像?潦??怎???皞?UI
   await loadMaterialAvgDefaults();       // TODO: ?啣?嚗??model.js 銝剔??身撟喳??潸??伐??桀??箏???no-op嚗?
@@ -1503,6 +2141,10 @@ async function init() {
     renderRelicDistribution(containers.relicDistributionInputs);
     loadAllInputs(['season-select']);
     updateRelicModeButtons();
+    renderPrimordialRecommendations();
+    applySelectedTargetRecommendationIfNeeded().then(() => triggerRecalculate(containers));
+    updateFragmentFeeRates();
+    updateFragmentCalculator();
     updateTargetTimeFormDefaults();
     renderMaterialSource(containers);
     bindTooltipLayers();
