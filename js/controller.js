@@ -39,6 +39,22 @@ const TIME_PRESETS_SHEET = {
   id: '1boxKipNVI-tCaJEaX-AoOTijEgKcxKfilhbtxkLbX-E',
   gid: '859085671',
 };
+const GITHUB_DATA_BASE = 'https://sophie8909.github.io/sxstx_calculator/data';
+const SERVERS_CSV_URL = `${GITHUB_DATA_BASE}/servers.csv`;
+const PLAYER_CODE_PATTERN = /^\d{12}$/;
+const seasonMergeMap = {
+  s1: 'merge_2',
+  s2: 'merge_4',
+  s3: 'merge_8',
+  s4: 'merge_16',
+};
+const mergePriority = {
+  single: 1,
+  merge_2: 2,
+  merge_4: 4,
+  merge_8: 8,
+  merge_16: 16,
+};
 
 // 霈銝閰衣?銵冽????渲?????撌脫??08:00嚗?
 const TIME_PRESETS_FALLBACK = [
@@ -92,6 +108,7 @@ let dungeonPowerRowsCache = null;
 let primordialRecommendationRowsCache = null;
 let fragmentRowsCache = null;
 let dungeonFragmentYieldRowsCache = null;
+let serverRowsCache = null;
 const ACTIVE_PAGE_STORAGE_KEY = 'sxstxCalculatorActivePage';
 
 const liveOwnedExpState = {
@@ -277,6 +294,87 @@ function areServerGroupsEquivalentOrMerged(a, b) {
       aMember === bMember || aMember.includes(bMember) || bMember.includes(aMember)
     )
   );
+}
+
+function parseServerRange(value) {
+  const match = String(value || '').trim().match(/^(\d{4})-(\d{4})$/);
+  if (!match) return [];
+
+  const start = Number(match[1]);
+  const end = Number(match[2]);
+  if (!Number.isFinite(start) || !Number.isFinite(end)) return [];
+
+  const values = [];
+  for (let short = Math.min(start, end); short <= Math.max(start, end); short += 1) {
+    values.push(String(short).padStart(4, '0'));
+  }
+  return values;
+}
+
+function normalizeMergeState(value) {
+  const key = String(value || '').trim();
+  return Object.prototype.hasOwnProperty.call(mergePriority, key) ? key : 'single';
+}
+
+function normalizeSeasonMergeKey(seasonId) {
+  return seasonMergeMap[normalizeSeasonId(seasonId)] || 'merge_16';
+}
+
+function getEffectiveMergeKey(server, selectedSeason) {
+  if (!server) return 'single';
+
+  const seasonKey = normalizeSeasonMergeKey(selectedSeason);
+  const currentKey = normalizeMergeState(server.current_state);
+  return mergePriority[currentKey] >= mergePriority[seasonKey] ? currentKey : seasonKey;
+}
+
+function getEffectiveServerGroup(server, selectedSeason) {
+  if (!server) return '';
+
+  const key = getEffectiveMergeKey(server, selectedSeason);
+  return key === 'single' ? server.server_short : (server[key] || server.server_short);
+}
+
+function getServerRowsInGroup(groupKey) {
+  if (!serverRowsCache || !groupKey) return [];
+
+  const range = parseServerRange(groupKey);
+  if (range.length === 0) return serverRowsCache.filter((server) => server.server_short === groupKey);
+
+  const shortSet = new Set(range);
+  return serverRowsCache.filter((server) => shortSet.has(server.server_short));
+}
+
+function getServerByName(name) {
+  const normalizedName = normalizeServerName(name);
+  return (serverRowsCache || []).find((server) => normalizeServerName(server.server_name) === normalizedName) || null;
+}
+
+function getServerById(serverId) {
+  return (serverRowsCache || []).find((server) => server.server_id === String(serverId || '').trim()) || null;
+}
+
+function getSelectedServerRow() {
+  return getServerByName(state.serverName);
+}
+
+function arePresetAndEffectiveGroupMatched(presetServerName, currentServer, selectedSeason) {
+  const normalizedPreset = normalizeServerName(presetServerName);
+  if (!normalizedPreset) return true;
+
+  const effectiveGroup = getEffectiveServerGroup(currentServer, selectedSeason);
+  if (!effectiveGroup) return areServerGroupsEquivalentOrMerged(normalizedPreset, state.serverName);
+
+  const effectiveNameSet = new Set(
+    getServerRowsInGroup(effectiveGroup).map((server) => normalizeServerName(server.server_name))
+  );
+  const presetMembers = getServerGroupMembers(normalizedPreset);
+  if (presetMembers.some((member) => effectiveNameSet.has(member))) return true;
+
+  const presetServer = getServerByName(presetMembers[0] || normalizedPreset);
+  if (presetServer) return getEffectiveServerGroup(presetServer, selectedSeason) === effectiveGroup;
+
+  return areServerGroupsEquivalentOrMerged(normalizedPreset, state.serverName);
 }
 
 function mergeServerOptions(serverNames) {
@@ -972,24 +1070,35 @@ function setupAutoUpdate(containers) {
  * 銵券嚗erver_name, description, time
  * 憿舐內??嚗erver_name
  * ---------------------------*/
-async function fetchServerOptionsFromSheet() {
-  const url = getGoogleSheetCsvUrl(TIME_PRESETS_SHEET);
+async function fetchServerRows() {
+  if (serverRowsCache) return serverRowsCache;
+
   try {
-    const res = await fetch(url, { cache: 'no-store' });
+    const res = await fetch(SERVERS_CSV_URL, { cache: 'no-store' });
     if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
     const rows = parseCsvRows(await res.text());
     const headers = (rows.shift() || []).map(normalizeHeader);
 
-    const out = [];
-    rows.forEach((cols) => {
-      const server = getCsvValue(cols, headers, ['server_name', '伺服器', 'server']);
-      const normalizedServer = normalizeServerName(server);
-      if (normalizedServer) out.push(normalizedServer);
-    });
-    return mergeServerOptions(out);
+    serverRowsCache = rows
+      .map((cols) => ({
+        server_id: getCsvValue(cols, headers, ['server_id']),
+        server_short: getCsvValue(cols, headers, ['server_short']),
+        server_name: getCsvValue(cols, headers, ['server_name']),
+        realm_id: getCsvValue(cols, headers, ['realm_id']),
+        merge_2: getCsvValue(cols, headers, ['merge_2']),
+        merge_4: getCsvValue(cols, headers, ['merge_4']),
+        merge_8: getCsvValue(cols, headers, ['merge_8']),
+        merge_16: getCsvValue(cols, headers, ['merge_16']),
+        current_state: normalizeMergeState(getCsvValue(cols, headers, ['current_state'])),
+      }))
+      .filter((server) => server.server_id && server.server_name);
+    return serverRowsCache;
   } catch (err) {
-    console.warn('[server options] fetch failed, using fallback', err);
-    return ['台港澳'];
+    console.error('伺服器資料載入失敗', err);
+    serverRowsCache = [];
+    const errorEl = document.getElementById('player-code-error');
+    if (errorEl) errorEl.textContent = '伺服器資料載入失敗';
+    return serverRowsCache;
   }
 }
 
@@ -1593,39 +1702,99 @@ function renderDungeonPowerPanel(preset, dungeonPowerRows) {
  * ---------------------------*/
 async function initServerSelector(containers) {
   const serverSel = document.getElementById('server-select');
+  const playerInput = document.getElementById('player-code-input');
+  const playerError = document.getElementById('player-code-error');
   if (!serverSel) return;
 
-  const servers = await fetchServerOptionsFromSheet();
+  const servers = await fetchServerRows();
   serverSel.innerHTML = '';
-  servers.forEach(s => {
+  servers.forEach((server) => {
     const opt = document.createElement('option');
-    opt.value = s;
-    opt.textContent = s;
+    opt.value = server.server_name;
+    opt.textContent = server.server_name;
+    opt.dataset.serverId = server.server_id;
     serverSel.appendChild(opt);
   });
 
   // ?Ｗ儔銋??賊??撩?
   const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
   const savedServer = saved['server-select'];
+  const savedPlayerCode = saved['player-code-input'] || '';
+  if (playerInput) playerInput.value = savedPlayerCode;
+
+  const applyServer = async (serverName, persist = true) => {
+    if (!serverName || ![...serverSel.options].some((option) => option.value === serverName)) return;
+
+    serverSel.value = serverName;
+    state.serverName = serverName;
+
+    if (persist) {
+      const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      data['server-select'] = serverName;
+      if (playerInput) data['player-code-input'] = playerInput.value || '';
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    await initTargetTimeControls(containers);
+    triggerRecalculate(containers);
+    updateTargetTimeFormDefaults();
+  };
+
+  const applyPlayerCode = async () => {
+    if (!playerInput) return;
+
+    const playerCode = playerInput.value.trim();
+    if (!playerCode) {
+      if (playerError) playerError.textContent = '';
+      const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      data['player-code-input'] = '';
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      return;
+    }
+
+    if (!PLAYER_CODE_PATTERN.test(playerCode)) {
+      if (playerError) playerError.textContent = '玩家編號需為 12 碼數字';
+      return;
+    }
+
+    const serverId = playerCode.slice(0, 7);
+    const server = getServerById(serverId);
+    if (!server) {
+      if (playerError) playerError.textContent = '找不到對應伺服器';
+      return;
+    }
+
+    if (playerError) playerError.textContent = '';
+    await applyServer(server.server_name, true);
+  };
+
   if (savedServer && [...serverSel.options].some(o => o.value === savedServer)) {
-    serverSel.value = savedServer;
-    state.serverName = savedServer;
+    await applyServer(savedServer, false);
   } else {
     serverSel.selectedIndex = 0;
     state.serverName = serverSel.value;
   }
 
-  serverSel.addEventListener('change', () => {
-    state.serverName = serverSel.value;
-    const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-    data['server-select'] = serverSel.value;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  if (savedPlayerCode && PLAYER_CODE_PATTERN.test(savedPlayerCode)) {
+    await applyPlayerCode();
+  }
 
-    // ?撩????啗??亙????格????賊?
-    initTargetTimeControls(containers);
-    triggerRecalculate(containers);
-    updateTargetTimeFormDefaults();
-  });
+  if (serverSel.dataset.serverBound !== '1') {
+    serverSel.dataset.serverBound = '1';
+    serverSel.addEventListener('change', () => {
+      applyServer(serverSel.value, true);
+    });
+  }
+
+  if (playerInput && playerInput.dataset.playerBound !== '1') {
+    playerInput.dataset.playerBound = '1';
+    playerInput.addEventListener('input', () => {
+      const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      data['player-code-input'] = playerInput.value.trim();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      applyPlayerCode();
+    });
+  }
 }
 
 /* -----------------------------
@@ -1641,24 +1810,25 @@ async function initTargetTimeControls(containers) {
 
   const dungeonPowerRows = await fetchDungeonPowerRows();
   const allPresets = await fetchTimePresetsFromSheet(dungeonPowerRows);
-  const selectedServer = normalizeServerName(state.serverName);
+  await fetchServerRows();
+  const selectedServerRow = getSelectedServerRow();
   const selectedSeasonId = normalizeSeasonId(state.seasonId);
 
   // 憛怠 select嚗?整?撩????賊?
   presetSel.innerHTML = '';
   const matchingPresets = allPresets.filter((p) => {
     if (normalizeSeasonId(p.season_id) !== selectedSeasonId) return false;
-    if (p.server_name && !areServerGroupsEquivalentOrMerged(p.server_name, selectedServer)) return false;
+    if (p.server_name && !arePresetAndEffectiveGroupMatched(p.server_name, selectedServerRow, selectedSeasonId)) return false;
     return true;
   });
   const hasServerDungeonBaseline = matchingPresets.some((p) =>
     (p.generated_from === 'season_start' || p.generated_from === 'server_open') &&
     p.server_name &&
-    areServerGroupsEquivalentOrMerged(p.server_name, selectedServer)
+    arePresetAndEffectiveGroupMatched(p.server_name, selectedServerRow, selectedSeasonId)
   ) || matchingPresets.some((p) =>
     !p.generated_from &&
     p.server_name &&
-    areServerGroupsEquivalentOrMerged(p.server_name, selectedServer) &&
+    arePresetAndEffectiveGroupMatched(p.server_name, selectedServerRow, selectedSeasonId) &&
     (
       isDungeonTimeLabel(p.label) ||
       String(p.label || '').includes(DUNGEON_ANCHOR_LABEL)
@@ -1672,7 +1842,7 @@ async function initTargetTimeControls(containers) {
       const hasManualSameDungeon = matchingPresets.some((candidate) =>
         !candidate.generated_from &&
         candidate.server_name &&
-        areServerGroupsEquivalentOrMerged(candidate.server_name, selectedServer) &&
+        arePresetAndEffectiveGroupMatched(candidate.server_name, selectedServerRow, selectedSeasonId) &&
         getPresetDungeonName(candidate) === generatedDungeon
       );
       if (hasManualSameDungeon) return;

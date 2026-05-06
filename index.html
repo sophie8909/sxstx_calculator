@@ -54,13 +54,51 @@
       </button>
     </div>
 
-    <div class="text-center mb-6 flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-center gap-3">
-      <label for="season-select" class="mr-2 font-semibold" data-i18n="season_label">賽季選項:</label>
-      <select id="season-select" class="input-field rounded p-2 w-full sm:w-auto sm:min-w-[10rem]"></select>
+    <div class="text-center mb-6 flex flex-col sm:flex-row sm:flex-wrap sm:items-start sm:justify-center gap-3">
+      <div class="flex flex-col min-w-0">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-2 min-h-[38px]">
+          <label for="season-select" class="font-semibold whitespace-nowrap" data-i18n="season_label">賽季選項:</label>
+          <select id="season-select" class="input-field rounded p-2 w-full sm:w-auto sm:min-w-[10rem]"></select>
+        </div>
+        <span class="text-xs mt-1 min-h-[1rem]"></span>
+      </div>
+      <div class="flex flex-col min-w-0">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-2 min-h-[38px]">
+          <label for="player-code-input" class="font-semibold whitespace-nowrap">玩家編號</label>
+          <input
+            id="player-code-input"
+            type="text"
+            inputmode="numeric"
+            maxlength="12"
+            placeholder="請輸入 12 碼玩家編號"
+            class="input-field rounded p-2 w-full sm:w-auto sm:min-w-[12rem]"
+          />
+        </div>
+        <span id="player-code-error" class="text-xs text-red-600 mt-1 min-h-[1rem]"></span>
+      </div>
+      <div class="flex flex-col min-w-0">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-2 min-h-[38px]">
+          <label for="server-select" class="font-semibold whitespace-nowrap" data-i18n="server_label">伺服器：</label>
+          <select id="server-select" class="input-field rounded p-2 w-full sm:w-auto sm:min-w-[11.25rem]"></select>
+        </div>
+        <span class="text-xs mt-1 min-h-[1rem]"></span>
+      </div>
     </div>
-    <div class="text-center mb-6 flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-center gap-3">
-      <label for="server-select" class="mr-2 font-semibold" data-i18n="server_label">伺服器：</label>
-      <select id="server-select" class="input-field rounded p-2 w-full sm:w-auto sm:min-w-[11.25rem]"></select>
+
+    <div id="buymeacoffee" class="text-center mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-center gap-3">
+      <p class="flex flex-wrap items-center justify-center gap-1 sm:gap-2">
+        <span class="text-pink-500">♥</span>
+        <span data-i18n="footer_support_prefix">如果這個工具有幫到你</span>
+        <a
+          href="https://buymeacoffee.com/sophie8909"
+          target="_blank" rel="noopener"
+          class="font-medium text-amber-600 hover:text-amber-500 hover:underline underline-offset-2"
+        >
+          buymeacoffee.com/sophie8909
+        </a>
+        <span data-i18n="footer_support_suffix">可以請我喝杯奶茶</span>
+        <span class="text-pink-500">♥</span>
+      </p>
     </div>
     <div id="calculator-page-content">
     <!-- ===== 目標時間 / 現在時間 ===== -->
@@ -187,7 +225,7 @@
           </button>
         </div>
       </div>
-        
+
       
         <div class="card rounded-xl p-0 shadow-lg lg:flex-1 flex flex-col min-h-0">
           <h2 class="text-2xl font-bold border-b sticky top-0 z-10 px-4 py-2 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
@@ -481,19 +519,7 @@
             https://github.com/sophie8909/sxstx_calculator
           </a>
         </p>
-        <p class="flex flex-wrap items-center justify-center gap-1 sm:gap-2">
-          <span class="text-pink-500">♥</span>
-          <span data-i18n="footer_support_prefix">如果這個工具有幫到你，</span>
-          <a
-            href="https://buymeacoffee.com/sophie8909"
-            target="_blank" rel="noopener"
-            class="font-medium text-amber-600 hover:text-amber-500 hover:underline underline-offset-2"
-          >
-            buymeacoffee.com/sophie8909
-          </a>
-          <span data-i18n="footer_support_suffix">歡迎支持作者。</span>
-          <span class="text-pink-500">♥</span>
-        </p>
+
       </div>
     </div>
   </footer>
@@ -503,7 +529,3 @@
 </body>
 
 </html>
-
-
-
-

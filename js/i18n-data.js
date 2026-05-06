@@ -188,8 +188,8 @@ export const I18N_DICTIONARIES = {
     "zh-Hans": "资料内容会随赛季、服务器与游戏版本调整，请以游戏内实际数值为准。"
   },
   "footer_support_prefix": {
-    "zh-Hant": "如果這個工具有幫到你，",
-    "zh-Hans": "如果这个工具有帮到你，"
+    "zh-Hant": "如果這個工具有幫到你",
+    "zh-Hans": "如果这个工具有帮到你"
   },
   "footer_support_suffix": {
     "zh-Hant": "可以請我喝杯奶茶",
