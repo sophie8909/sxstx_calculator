@@ -811,7 +811,7 @@ export function computeEtaToTargetLevel(currentLevel, ownedExp, bedExpHourly, ta
 /** LocalStorage 儲存/載入 */
 export function saveAllInputs() {
   const data = {};
-  document.querySelectorAll('input[type=number], input[type=text], input[type=datetime-local], input[type=checkbox], select')
+  document.querySelectorAll('input[type=number], input[type=datetime-local], input[type=checkbox], select')
     .forEach(input => {
       if (!input.id) return;
       data[input.id] = input.type === 'checkbox' ? input.checked : input.value;
