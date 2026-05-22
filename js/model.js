@@ -213,9 +213,28 @@ export async function fetchAndParseCsv(url) {
   const lines = text.replace(/\r\n?/g, '\n').trim().split('\n');
   if (lines.length === 0) return [];
   // 標頭去掉 BOM
-  const rawHeaders = lines[0].split(',').map(h => normalizeKey(h));
+  const knownHeaders = new Set([
+    'level',
+    'cost_exp',
+    'season',
+    'type',
+    'resource',
+    'avg_defaults',
+    'cost_stone_ore',
+    'cost_rola',
+    'cost_refining_stone',
+    'cost_essence',
+    'cost_freeze_dried',
+    'cost_sand',
+  ]);
+  const headerIndex = lines.findIndex((line) =>
+    line.split(',').some((cell) => knownHeaders.has(normalizeKey(cell).toLowerCase()))
+  );
+  const headerLineIndex = headerIndex === -1 ? 0 : headerIndex;
+  const rawHeaders = lines[headerLineIndex].split(',').map(h => normalizeKey(h));
   const headers = rawHeaders.map(h => h.toLowerCase()); // 全轉小寫，之後一致用小寫
-  const rows = lines.slice(1).map(line => {
+  const dataLines = lines.filter((_, index) => index !== headerLineIndex);
+  const rows = dataLines.map(line => {
     const values = line.split(',').map(v => v.trim());
     const obj = {};
     headers.forEach((h, i) => {
@@ -409,6 +428,21 @@ export function getCumulative(costTable, level) {
   return idx !== -1 ? { ...empty, ...costTable[idx] } : empty;
 }
 
+export function getCharacterCumulativeExp(level) {
+  const table = state.cumulativeCostData['character'];
+  if (!table || !table.length || level <= 0) return 0;
+
+  const maxLevelInTable = table[table.length - 1]?.level || 0;
+  if (level <= maxLevelInTable) {
+    return getCumulative(table, level).cost_exp || 0;
+  }
+
+  const lastKnownExp = getCumulative(table, maxLevelInTable).cost_exp || 0;
+  const previousKnownExp = getCumulative(table, maxLevelInTable - 1).cost_exp || 0;
+  const lastLevelExp = Math.max(0, lastKnownExp - previousKnownExp);
+  return lastKnownExp + lastLevelExp * (level - maxLevelInTable);
+}
+
 /** 賽季分數計算 **/
 export function calculateSeasonScore(targets) {
   const cfg = state.seasonScore?.[state.seasonId]; // TODO: 加入容錯，避免 seasonScore 缺資料就爆掉
@@ -520,14 +554,14 @@ export function getSpeedupHoursForHours(hours) {
 
 export function computeReachableCharacterLevel(curLv, ownedExp, bedExpHourly, targetTimeStr) {
   const table = state.cumulativeCostData['character'];
-  if (!table || !Number.isFinite(curLv)) return curLv;
+  if (!table || !table.length || !Number.isFinite(curLv)) return curLv;
   // 1) 目標時間 → 小時差（負值視為 0）
   const hours = targetTimeStr
     ? Math.max(0, (new Date(targetTimeStr).getTime() - Date.now()) / 36e5)
     : 0;
   const bonusHours = getSpeedupHoursForHours(hours);
   // 2) 目前已達成的累積經驗：cum(L)
-  const baseCum = (getCumulative(table, curLv - 1)?.cost_exp || 0);
+  const baseCum = getCharacterCumulativeExp(curLv);
   // 3) 可用經驗（持有 + 床產），負值一律當 0 避免汙染
   const available =
     Math.max(0, Number(ownedExp) || 0) +
@@ -536,10 +570,16 @@ export function computeReachableCharacterLevel(curLv, ownedExp, bedExpHourly, ta
   const totalExp = baseCum + available;
   // 5) 找出 cost_exp <= totalExp 的最大等級
   const idx = table.findLastIndex(d => (d.cost_exp || 0) <= totalExp);
-  const reachable = (idx !== -1 ? table[idx].level : curLv);
+  let reachable = (idx !== -1 ? table[idx].level : curLv);
   // 6) 不倒退，且不超過表中最大等級
   const maxLevelInTable = table[table.length - 1]?.level ?? curLv;
-  return Math.min(Math.max(reachable, curLv), maxLevelInTable);
+  const maxKnownExp = getCharacterCumulativeExp(maxLevelInTable);
+  const previousKnownExp = getCharacterCumulativeExp(maxLevelInTable - 1);
+  const lastLevelExp = Math.max(0, maxKnownExp - previousKnownExp);
+  if (totalExp > maxKnownExp && lastLevelExp > 0) {
+    reachable = maxLevelInTable + Math.floor((totalExp - maxKnownExp) / lastLevelExp);
+  }
+  return Math.max(reachable, curLv);
 }
 
 /** 主計算：需求 / 時產收益 / 缺口（渲染用 payload） */
@@ -737,14 +777,14 @@ export function computeAll(containers) {
 
 export function expCalculation(currentLevel, ownedExp, bedExpHourly, targetLevel, bonusHours = 0) {
   const table = state.cumulativeCostData['character'];
-  if (!table || !Number.isFinite(currentLevel) || currentLevel >= MAX_LEVEL) {
+  if (!table || !table.length || !Number.isFinite(currentLevel)) {
     return { levelupTs: NaN, minutesNeeded: 0, expNeeded: NaN };
   }
   if (targetLevel <= currentLevel) {
-    return { minutesNeeded: 0, etaTs: Date.now(), needExp: 0, status: 'reached' };
+    return { levelupTs: Date.now(), minutesNeeded: 0, expNeeded: 0, status: 'reached' };
   }
-  const cumPrev = (getCumulative(table, currentLevel - 1).cost_exp || 0);
-  const cumThis = (getCumulative(table, targetLevel - 1).cost_exp || 0);
+  const cumPrev = getCharacterCumulativeExp(currentLevel);
+  const cumThis = getCharacterCumulativeExp(targetLevel);
   const acceleratedExp = Math.max(0, Number(bedExpHourly) || 0) * Math.max(0, Number(bonusHours) || 0);
   const expNeeded = Math.max(0, cumThis - cumPrev - (Number(ownedExp) || 0) - acceleratedExp);
   if (expNeeded <= 0) return { levelupTs: Date.now(), minutesNeeded: 0, expNeeded: 0 };
@@ -811,7 +851,7 @@ export function computeEtaToTargetLevel(currentLevel, ownedExp, bedExpHourly, ta
 /** LocalStorage 儲存/載入 */
 export function saveAllInputs() {
   const data = {};
-  document.querySelectorAll('input[type=number], input[type=datetime-local], input[type=checkbox], select')
+  document.querySelectorAll('input[type=number], input[type=text], input[type=datetime-local], input[type=checkbox], select')
     .forEach(input => {
       if (!input.id) return;
       data[input.id] = input.type === 'checkbox' ? input.checked : input.value;
