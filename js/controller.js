@@ -13,6 +13,7 @@ import {
   computeEtaToNextLevel,
   computeEtaToTargetLevel,
   getCumulative,
+  getCharacterCumulativeExp,
   getSpeedupHoursForDays,
   getSpeedupHoursForHours,
   loadMaterialAvgDefaults, 
@@ -1010,12 +1011,12 @@ function updateExpRequirements(curLv, ownedExp, targetChar) {
   const table = state.cumulativeCostData['character'];
   if (!table || !table.length) return;
 
-  const cur = getCumulative(table, curLv - 1);
-  const nxt = getCumulative(table, curLv);
-  const tgt = getCumulative(table, targetChar - 1);
+  const currentExpBase = getCharacterCumulativeExp(curLv - 1);
+  const nextLevelExpBase = getCharacterCumulativeExp(curLv);
+  const targetExpBase = getCharacterCumulativeExp(targetChar - 1);
 
-  const needNextExp = Math.max(0, (nxt.cost_exp || 0) - (cur.cost_exp || 0) - ownedExp);
-  const needTargetExp = Math.max(0, (tgt.cost_exp || 0) - (cur.cost_exp || 0) - ownedExp);
+  const needNextExp = Math.max(0, nextLevelExpBase - currentExpBase - ownedExp);
+  const needTargetExp = Math.max(0, targetExpBase - currentExpBase - ownedExp);
 
   const elNext = document.getElementById('bed-levelup-exp');
   const elTarget = document.getElementById('bed-target-exp');
