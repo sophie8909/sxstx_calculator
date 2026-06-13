@@ -16,7 +16,8 @@ import {
   getSpeedupHoursForDays,
   getSpeedupHoursForHours,
   loadMaterialAvgDefaults, 
-} from './model.js';
+  STAMINA_BIG_MINE_EXPECTED_MULTIPLIER,
+} from '../model.js';
 
 import {
   getContainers,
@@ -29,7 +30,8 @@ import {
   renderMaterialSource,
   renderRelicDistribution,
 } from './view.js';
-import { applyStaticTranslations, getCurrentLanguage, initLanguage, t } from './i18n-inline.js';
+import { applyStaticTranslations, getCurrentLanguage, initLanguage, t } from '../i18n-inline.js';
+import { loadServers } from '../services/dataService.js';
 
 /* ============================================================
  * Google 閰衣?銵剁?Published CSV嚗身摰????賊? / 隡箸??其?皞?
@@ -39,8 +41,6 @@ const TIME_PRESETS_SHEET = {
   id: '1boxKipNVI-tCaJEaX-AoOTijEgKcxKfilhbtxkLbX-E',
   gid: '859085671',
 };
-const GITHUB_DATA_BASE = 'https://sophie8909.github.io/sxstx_calculator/data';
-const SERVERS_CSV_URL = `${GITHUB_DATA_BASE}/servers.csv`;
 const PLAYER_CODE_PATTERN = /^\d{12}$/;
 const seasonMergeMap = {
   s1: 'merge_2',
@@ -1003,6 +1003,13 @@ function getMaterialInput(source, material, role) {
 }
 
 
+function formatMaterialSourceNumber(value, maximumFractionDigits = 2) {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number === 0) return '0';
+  return number.toLocaleString('zh-TW', { maximumFractionDigits });
+}
+
+
 /* -----------------------------
  * 憿舐內????蝬?
  * ---------------------------*/
@@ -1074,22 +1081,18 @@ async function fetchServerRows() {
   if (serverRowsCache) return serverRowsCache;
 
   try {
-    const res = await fetch(SERVERS_CSV_URL, { cache: 'no-store' });
-    if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
-    const rows = parseCsvRows(await res.text());
-    const headers = (rows.shift() || []).map(normalizeHeader);
-
+    const rows = await loadServers();
     serverRowsCache = rows
       .map((cols) => ({
-        server_id: getCsvValue(cols, headers, ['server_id']),
-        server_short: getCsvValue(cols, headers, ['server_short']),
-        server_name: getCsvValue(cols, headers, ['server_name']),
-        realm_id: getCsvValue(cols, headers, ['realm_id']),
-        merge_2: getCsvValue(cols, headers, ['merge_2']),
-        merge_4: getCsvValue(cols, headers, ['merge_4']),
-        merge_8: getCsvValue(cols, headers, ['merge_8']),
-        merge_16: getCsvValue(cols, headers, ['merge_16']),
-        current_state: normalizeMergeState(getCsvValue(cols, headers, ['current_state'])),
+        server_id: String(cols.server_id || '').trim(),
+        server_short: String(cols.server_short || '').trim(),
+        server_name: String(cols.server_name || '').trim(),
+        realm_id: String(cols.realm_id || '').trim(),
+        merge_2: String(cols.merge_2 || '').trim(),
+        merge_4: String(cols.merge_4 || '').trim(),
+        merge_8: String(cols.merge_8 || '').trim(),
+        merge_16: String(cols.merge_16 || '').trim(),
+        current_state: normalizeMergeState(cols.current_state),
       }))
       .filter((server) => server.server_id && server.server_name);
     return serverRowsCache;
@@ -1944,6 +1947,16 @@ function updateDaysRemainingFromTarget() {
   daysInput.value = days;
 }
 
+function updateStoreMaterialDerived(material) {
+  const dailySlots = getMaterialInput('store', material, 'avg');
+  const days = parseInt(document.getElementById('days-remaining')?.value || '0', 10) || 0;
+  const bigMineTotalEl = document.getElementById(`material-source-store-${material}-big-mine-total`);
+
+  if (bigMineTotalEl) {
+    bigMineTotalEl.textContent = formatMaterialSourceNumber(dailySlots * days * STAMINA_BIG_MINE_EXPECTED_MULTIPLIER, 2);
+  }
+}
+
 function updateMaterialSourceRow(source, material) {
   const days = parseInt(
     document.getElementById('days-remaining')?.value || '0',
@@ -1958,15 +1971,16 @@ function updateMaterialSourceRow(source, material) {
   let total = 0;
 
   if (source === 'store') { // TODO: 靽格迤靘??迂??'store'嚗? view.js ??data-source 銝??
-    const dailyBuy = getMaterialInput(source, material, 'avg');
-    total = dailyBuy * days; // TODO: ??蝝?脣? = 瘥鞈潸眺 ? ?拚?憭拇
+    const dailySlots = getMaterialInput(source, material, 'avg');
+    total = dailySlots * days;
+    updateStoreMaterialDerived(material);
   } else {
     const daily = getMaterialInput(source, material, 'daily');
     const avg = getMaterialInput(source, material, 'avg');
     total = daily * avg * days; // TODO: 蝘?/?Ｙ揣蝝?脣? = 瘥甈⊥ ? 撟喳?瘥活 ? ?拚?憭拇
   }
 
-  totalSpan.textContent = total ? total.toLocaleString() : '0';
+  totalSpan.textContent = formatMaterialSourceNumber(total, 2);
 }
 
 
@@ -1979,7 +1993,7 @@ function updateAllMaterialSources() {
   exploreMats.forEach((m) => updateMaterialSourceRow('explore', m));
   storeMats.forEach((m) => updateMaterialSourceRow('store', m)); 
 
-  updateStoreRolaCost(); 
+  updateStoreSummaries(); 
 }
 
 
@@ -1987,9 +2001,8 @@ function updateStoreRolaCost() {
   const days =
     parseInt(document.getElementById('days-remaining')?.value || '0', 10) || 0;
 
-  // 蝝?皜???getMaterialSourceConfig().sourceMaterials.store 銝??
   const storeMats = ['stone', 'essence', 'sand', 'freeze_dried'];
-  let autoDailyCost = 0; // TODO: ?芸?閮??箇?瘥?梯祥
+  let autoDailyCost = 0;
 
   storeMats.forEach((mat) => {
     const unit = getMaterialInput('store', mat, 'rola-cost');
@@ -2001,10 +2014,8 @@ function updateStoreRolaCost() {
   const dailyManualEl = document.getElementById('store-rola-daily-cost-manual');
   const totalEl = document.getElementById('store-rola-total-cost');
 
-  // TODO: ?身雿輻?芸?閮????亥鞎?
   let dailyCost = autoDailyCost;
 
-  // TODO: ?交?憛怒????亥鞎颯??誑???箔蜓嚗征?質??箸憛恬?
   if (dailyManualEl) {
     const manualRaw = dailyManualEl.value.trim();
     if (manualRaw !== '') {
@@ -2015,8 +2026,37 @@ function updateStoreRolaCost() {
     }
   }
 
-  if (dailyEl) dailyEl.textContent = dailyCost ? dailyCost.toLocaleString() : '0';
-  if (totalEl) totalEl.textContent = (dailyCost * days).toLocaleString();
+  if (dailyEl) dailyEl.textContent = formatMaterialSourceNumber(dailyCost, 2);
+  if (totalEl) totalEl.textContent = formatMaterialSourceNumber(dailyCost * days, 2);
+}
+
+
+function updateStoreEstimateSummary() {
+  const days =
+    parseInt(document.getElementById('days-remaining')?.value || '0', 10) || 0;
+
+  // 蝝?皜???getMaterialSourceConfig().sourceMaterials.store 銝??
+  const storeMats = ['stone', 'essence', 'sand', 'freeze_dried'];
+  let dailyPriceTotal = 0;
+
+  storeMats.forEach((mat) => {
+    const price = getMaterialInput('store', mat, 'shop-price');
+    const dailySlots = getMaterialInput('store', mat, 'avg');
+    dailyPriceTotal += dailySlots * price;
+    updateStoreMaterialDerived(mat);
+  });
+
+  const dailyPriceEl = document.getElementById('store-price-daily-total');
+  const totalPriceEl = document.getElementById('store-price-period-total');
+
+  if (dailyPriceEl) dailyPriceEl.textContent = formatMaterialSourceNumber(dailyPriceTotal, 2);
+  if (totalPriceEl) totalPriceEl.textContent = formatMaterialSourceNumber(dailyPriceTotal * days, 2);
+}
+
+
+function updateStoreSummaries() {
+  updateStoreRolaCost();
+  updateStoreEstimateSummary();
 }
 
 
@@ -2043,7 +2083,7 @@ function bindGlobalHandlers(containers) {
           const src = t.dataset.source;
           const mat = t.dataset.material;
           if (src && mat) updateMaterialSourceRow(src, mat);
-          if (src === 'store') updateStoreRolaCost();
+          if (src === 'store') updateStoreSummaries();
         }
 
       if (t.classList.contains('relic-dist-input')) updateRelicTotal();
@@ -2087,7 +2127,7 @@ function bindGlobalHandlers(containers) {
         const src = t.dataset.source;
         const mat = t.dataset.material;
         if (src && mat) updateMaterialSourceRow(src, mat);
-        if (src === 'store') updateStoreRolaCost();
+        if (src === 'store') updateStoreSummaries();
       }
 
       if (t.classList.contains('relic-dist-input')) updateRelicTotal();

@@ -459,6 +459,26 @@ export const I18N_DICTIONARIES = {
     "zh-Hant": "加速套用到目標時間：+{hours} 小時",
     "zh-Hans": "加速套用到目标时间：+{hours} 小时"
   },
+  "big_mine_total_gain_header": {
+    "zh-Hant": "大礦後總量",
+    "zh-Hans": "大矿后总量"
+  },
+  "daily_store_price_total": {
+    "zh-Hant": "每日售價合計",
+    "zh-Hans": "每日售价合计"
+  },
+  "daily_store_slots_header": {
+    "zh-Hant": "每日格數",
+    "zh-Hans": "每日格数"
+  },
+  "store_calculation_rule": {
+    "zh-Hant": "商店售價僅用於推算售價合計；大礦後總量套用大礦機率 {bonus}%。",
+    "zh-Hans": "商店售价仅用于推算售价合计；大矿后总量套用大矿概率 {bonus}%。"
+  },
+  "store_resource_price_header": {
+    "zh-Hant": "商店售價",
+    "zh-Hans": "商店售价"
+  },
   "store_source_title": {
     "zh-Hant": "商店購買",
     "zh-Hans": "商店购买"
@@ -598,6 +618,10 @@ export const I18N_DICTIONARIES = {
   "total_rola_cost": {
     "zh-Hant": "總羅拉成本：",
     "zh-Hans": "总罗拉成本："
+  },
+  "total_store_price": {
+    "zh-Hant": "期間售價合計",
+    "zh-Hans": "期间售价合计"
   },
   "relay_page_title": {
     "zh-Hant": "杖劍傳說 目標時間填寫",

@@ -2,10 +2,9 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>杖劍傳說 素材計算機</title>
   <link rel="icon" type="image/png" href="./images/favicon_v1.png" />
-
   <!-- Tailwind CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
 
@@ -17,15 +16,15 @@
   <link rel="stylesheet" href="./css/style.css" type="text/css" />
 </head>
 
-<body class="p-3 sm:p-4 lg:p-6 compact">
-  <div class="w-full max-w-7xl mx-auto">
+<body class="p-3 md:p-4 lg:p-6 compact">
+  <div class="app-shell w-full max-w-7xl mx-auto">
     <header class="text-center mb-6">
       <h1 class="text-3xl md:text-4xl font-bold text-teal-800" data-i18n="app_title">杖劍傳說 素材計算機</h1>
     </header>
 
-    <div class="text-center mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-center gap-3">
+    <div class="app-toolbar text-center mb-4 flex flex-col md:flex-row md:items-center md:justify-center gap-3">
       <label for="language-select" class="mr-2 font-semibold" data-i18n="language_label">語言：</label>
-      <select id="language-select" class="input-field rounded p-2 w-full sm:w-auto sm:min-w-[10rem]">
+      <select id="language-select" class="input-field rounded p-2 w-full md:w-auto md:min-w-[10rem]">
         <option value="zh-Hant" data-i18n="language_traditional">繁體中文</option>
         <option value="zh-Hans" data-i18n="language_simplified">簡體中文</option>
       </select>
@@ -54,16 +53,16 @@
       </button>
     </div>
 
-    <div class="text-center mb-6 flex flex-col sm:flex-row sm:flex-wrap sm:items-start sm:justify-center gap-3">
+    <div class="selector-bar text-center mb-6 flex flex-col md:flex-row md:flex-wrap md:items-start md:justify-center gap-3">
       <div class="flex flex-col min-w-0">
-        <div class="flex flex-col sm:flex-row sm:items-center gap-2 min-h-[38px]">
+        <div class="flex flex-col md:flex-row md:items-center gap-2 min-h-[38px]">
           <label for="season-select" class="font-semibold whitespace-nowrap" data-i18n="season_label">賽季選項：</label>
-          <select id="season-select" class="input-field rounded p-2 w-full sm:w-auto sm:min-w-[10rem]"></select>
+          <select id="season-select" class="input-field rounded p-2 w-full md:w-auto md:min-w-[10rem]"></select>
         </div>
         <span class="text-xs mt-1 min-h-[1rem]"></span>
       </div>
       <div class="flex flex-col min-w-0">
-        <div class="flex flex-col sm:flex-row sm:items-center gap-2 min-h-[38px]">
+        <div class="flex flex-col md:flex-row md:items-center gap-2 min-h-[38px]">
           <label for="player-code-input" class="font-semibold whitespace-nowrap" data-i18n="player_id">玩家編號：</label>
           <input
             id="player-code-input"
@@ -71,22 +70,22 @@
             inputmode="numeric"
             maxlength="12"
             placeholder="請輸入 12 碼玩家編號"
-            class="input-field rounded p-2 w-full sm:w-auto sm:min-w-[12rem]"
+            class="input-field rounded p-2 w-full md:w-auto md:min-w-[12rem]"
           />
         </div>
         <span id="player-code-error" class="text-xs text-red-600 mt-1 min-h-[1rem]"></span>
       </div>
       <div class="flex flex-col min-w-0">
-        <div class="flex flex-col sm:flex-row sm:items-center gap-2 min-h-[38px]">
+        <div class="flex flex-col md:flex-row md:items-center gap-2 min-h-[38px]">
           <label for="server-select" class="font-semibold whitespace-nowrap" data-i18n="server_label">伺服器：</label>
-          <select id="server-select" class="input-field rounded p-2 w-full sm:w-auto sm:min-w-[11.25rem]"></select>
+          <select id="server-select" class="input-field rounded p-2 w-full md:w-auto md:min-w-[11.25rem]"></select>
         </div>
         <span class="text-xs mt-1 min-h-[1rem]"></span>
       </div>
     </div>
 
-    <div id="buymeacoffee" class="text-center mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-center gap-3">
-      <p class="flex flex-wrap items-center justify-center gap-1 sm:gap-2">
+    <div id="buymeacoffee" class="text-center mb-4 flex flex-col md:flex-row md:items-center md:justify-center gap-3">
+      <p class="flex flex-wrap items-center justify-center gap-1 md:gap-2">
         <span class="text-pink-500">♥</span>
         <span data-i18n="footer_support_prefix">如果這個工具有幫到你</span>
         <a
@@ -110,9 +109,9 @@
           <h3 class="text-lg font-semibold mb-2" data-i18n="target_time_title">目標時間</h3>
 
           <!-- 璈怠?皛輻?嚗elect ?箏?撖穿??喳 flex-1 -->
-          <div class="flex flex-col xl:flex-row xl:items-center gap-3 w-full">
+          <div class="flex flex-col lg:flex-row lg:items-center gap-3 w-full">
             <!-- 銝?嚗摰祝 -->
-            <select id="target-time-preset" class="input-field rounded p-2 w-full xl:w-[180px]"></select>
+            <select id="target-time-preset" class="input-field rounded p-2 w-full lg:w-auto"></select>
 
             <!-- ?航???璇??遛?拚?撖砍漲 -->
             <div id="target-time-display"
@@ -140,7 +139,7 @@
 
       <div id="dungeon-power-panel" class="hidden mt-4 border-t border-[#cde5e8] pt-4">
         <h3 class="text-lg font-semibold mb-3">副本戰力需求</h3>
-        <div id="dungeon-power-fields" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3"></div>
+        <div id="dungeon-power-fields" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3"></div>
       </div>
 
     </div>
@@ -151,7 +150,7 @@
       <div id="primordial-star-cumulative" class=""></div> <!-- class ??蝛綽?JS ?? -->
       <div id="primordial-recommendation-panel" class="mt-4 border-t border-[#cde5e8] pt-4">
         <h4 class="text-lg font-semibold text-center mb-3">累計原初推薦</h4>
-        <div id="primordial-recommendation-fields" class="grid grid-cols-1 sm:grid-cols-3 gap-4"></div>
+        <div id="primordial-recommendation-fields" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
       </div>
     </div>
 
@@ -161,7 +160,7 @@
     <div id="target-levels-card" class="card rounded-lg p-4 shadow-lg mb-4 w-full page-section">
       <h3 class="text-xl font-bold text-center mb-4" data-i18n="target_levels_title">目標等級 (共鳴)</h3>
       <div class="flex justify-center mb-4">
-        <label class="flex flex-col sm:flex-row sm:items-center gap-2 text-sm font-semibold">
+        <label class="flex flex-col md:flex-row md:items-center gap-2 text-sm font-semibold">
           <span>推薦檔位</span>
           <select id="target-recommendation-type" class="input-field rounded p-2">
             <option value="custom">自定義</option>
@@ -189,14 +188,14 @@
           <option value="legacy">舊版分布</option>
         </select>
       </div>
-      <div id="relic-distribution-inputs" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-12 gap-4"></div>
+      <div id="relic-distribution-inputs" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 xl:grid-cols-12 gap-4"></div>
     </div>
     
     <!-- ===== 銝?銝餃摰?===== -->
-    <div id="primary-content-grid" class="grid grid-cols-1 xl:grid-cols-3 gap-4 page-section"><!-- gap-6 ??gap-4 -->
-      <!-- 撌佗?閫 + ???-->
+    <div id="primary-content-grid" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 page-section"><!-- gap-6 ??gap-4 -->
+      <!-- Main character and skill column -->
       <div class="main-grid-column xl:max-h-[75vh] xl:flex xl:flex-col xl:gap-4"><!-- gap-6 ??gap-4 -->
-        <!-- 閫??嚗??瘀? -->
+      <!-- Character EXP section -->
       <div class="card rounded-xl p-0 shadow-lg xl:flex-[1.1] flex flex-col min-h-0">
         <h2 class="text-2xl font-bold border-b sticky top-0 z-10 px-4 py-2 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
           <span data-i18n="section_role_exp">角色經驗</span>
@@ -280,7 +279,7 @@
           <span data-i18n="section_owned_materials">目前持有素材</span>
         </h2>
         <div class="overflow-y-auto custom-scrollbar p-4 min-h-0 responsive-scroll tooltip-safe-scroll">
-          <div id="owned-materials" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3"></div>
+          <div id="owned-materials" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-3"></div>
         </div>
       </div>
     
@@ -358,7 +357,7 @@
             <span class="block text-sm font-semibold mb-1">副本神鑄石收益</span>
             <select id="fragment-dungeon-select" class="input-field rounded p-2 w-full"></select>
           </label>
-          <div id="fragment-dungeon-yield-result" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3"></div>
+          <div id="fragment-dungeon-yield-result" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"></div>
         </div>
       </div>
     </div>
@@ -377,7 +376,7 @@
         <div class="space-y-4">
           <div>
             <label for="relay-server-name" class="block font-semibold mb-2" data-i18n="relay_server_label">伺服器 / 界域</label>
-            <div class="flex flex-col sm:flex-row gap-3">
+            <div class="flex flex-col md:flex-row gap-3">
               <select id="relay-server-name" class="input-field rounded p-3 w-full" required></select>
               <button
                 id="relay-server-manual-toggle"
@@ -401,7 +400,7 @@
             </p>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label for="relay-season" class="block font-semibold mb-2" data-i18n="relay_season_label">賽季</label>
               <select id="relay-season" class="input-field rounded p-3 w-full" required>
@@ -421,7 +420,7 @@
           </div>
 
           <div>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label for="relay-description-category" class="block font-semibold mb-2" data-i18n="relay_category_label">類別</label>
                 <select id="relay-description-category" class="input-field rounded p-3 w-full">
@@ -432,7 +431,7 @@
                   <option value="【賽季開始】" data-i18n="relay_category_season_start">【賽季開始】</option>
                 </select>
               </div>
-              <div class="sm:col-span-2">
+              <div class="md:col-span-2">
                 <label for="relay-description" class="block font-semibold mb-2" data-i18n="relay_description_label">說明</label>
                 <input
                   id="relay-description"
@@ -446,15 +445,15 @@
             </div>
           </div>
 
-          <div class="flex flex-col sm:flex-row gap-3 justify-center sm:justify-center items-center">
-            <button id="relay-submit-btn" type="button" class="btn-primary rounded-lg px-4 py-3 font-semibold w-full sm:w-auto" data-i18n="relay_submit">
+          <div class="flex flex-col md:flex-row gap-3 justify-center md:justify-center items-center">
+            <button id="relay-submit-btn" type="button" class="btn-primary rounded-lg px-4 py-3 font-semibold w-full md:w-auto" data-i18n="relay_submit">
               送出到 Google 表單
             </button>
             <a
               href="https://docs.google.com/forms/d/e/1FAIpQLSdDK_zxUq21HXgrK3TMsQ7Vj6lqiKlJrekk8PkfrH920AMiQg/viewform"
               target="_blank"
               rel="noopener"
-              class="inline-flex items-center justify-center rounded-lg border border-[#b6d7da] bg-white px-4 py-3 text-teal-700 hover:bg-teal-50 w-full sm:w-auto"
+              class="inline-flex items-center justify-center rounded-lg border border-[#b6d7da] bg-white px-4 py-3 text-teal-700 hover:bg-teal-50 w-full md:w-auto"
               data-i18n="relay_open_google_form"
             >
               開啟原始 Google 表單
@@ -493,7 +492,7 @@
       <div class="flex flex-wrap items-center justify-center gap-4 mb-3">
         <button id="clear-local-data-btn"
           class="bg-red-800 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg text-xs">
-          皜?砍蝝??
+          清除本機資料
         </button>
       </div>
       <div class="max-w-7xl mx-auto px-4
@@ -524,8 +523,7 @@
     </div>
   </footer>
   <!-- ?亙暺??批?剁? -->
-  <script type="module" src="./js/controller.js"></script>
-  <script type="module" src="./js/form-relay.js"></script>
+  <script type="module" src="./src/main.js"></script>
 </body>
 
 </html>

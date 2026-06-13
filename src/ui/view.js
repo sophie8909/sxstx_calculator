@@ -1,5 +1,5 @@
-﻿import { el, fmt } from './utils.js';
-import { getCurrentLanguage, t } from './i18n-inline.js';
+﻿import { el, fmt } from '../utils/format.js';
+import { getCurrentLanguage, t } from '../i18n-inline.js';
 import {
   categories,
   seasonOptions,
@@ -8,7 +8,8 @@ import {
   productionSources,
   getMaterialSourceConfig,
   getAvailableRelicLevels,
-} from './model.js';
+  STAMINA_BIG_MINE_RATE,
+} from '../model.js';
 
 function getLocale() {
   return getCurrentLanguage() === 'zh-Hans' ? 'zh-CN' : 'zh-TW';
@@ -133,7 +134,7 @@ export function createInputGroup(id, labelText, placeholder, isSub = false, extr
 }
 
 export function renderPrimordialStarCumulative(container) {
-  container.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4';
+  container.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4';
   container.innerHTML = '';
 
   [
@@ -159,7 +160,7 @@ export function renderPrimordialStarCumulative(container) {
 }
 
 export function renderTargetLevels(container) {
-  container.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4';
+  container.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4';
   container.innerHTML = '';
 
   targetLevelConfig.forEach((target) => {
@@ -221,7 +222,7 @@ export function renderRelicDistribution(container) {
   const mode = document.getElementById('relic-ui-mode')?.value || 'compact';
 
   if (mode === 'legacy') {
-    container.className = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-11 gap-3';
+    container.className = 'grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 xl:grid-cols-11 gap-3';
     const relicLevels = getAvailableRelicLevels();
     const levels = relicLevels.length > 0
       ? relicLevels
@@ -243,7 +244,7 @@ export function renderRelicDistribution(container) {
     return;
   }
 
-  container.className = 'grid grid-cols-1 sm:grid-cols-2 gap-4';
+  container.className = 'grid grid-cols-1 md:grid-cols-2 gap-4';
 
   [
     ['relic-completed-level', '已完成遺物等級', '等級'],
@@ -301,7 +302,7 @@ export function renderSkillInputs(container) {
 
 export function renderPetInputs(container) {
   const frag = document.createDocumentFragment();
-  const petRow = el('div', ['grid', 'grid-cols-2', 'sm:grid-cols-4', 'gap-4']);
+  const petRow = el('div', ['grid', 'grid-cols-1', 'md:grid-cols-2', 'lg:grid-cols-4', 'gap-4']);
 
   categories
     .filter((category) => category.id.startsWith('pet'))
@@ -345,15 +346,15 @@ export function renderCharBed(container) {
 
   const row = ({ id, type = 'number', label, placeholder = '', readOnly = false }) => {
     const wrap = el('div', ['w-full']);
-    const line = el('div', ['flex', 'flex-col', 'sm:flex-row', 'sm:items-center', 'sm:justify-between', 'gap-2']);
+    const line = el('div', ['flex', 'flex-col', 'md:flex-row', 'md:items-center', 'md:justify-between', 'gap-2']);
     const left = el('div', ['flex', 'items-center', 'gap-2', 'min-w-0']);
     const text = el('span', ['text-sm', 'font-semibold']);
     text.textContent = label;
     left.appendChild(text);
     appendTooltip(text, getTooltipText(id, label));
 
-    const right = el('div', ['flex', 'items-center', 'justify-end', 'w-full', 'sm:w-auto']);
-    const input = el('input', ['input-field', 'rounded', 'p-2', inputHeight, 'w-full', 'sm:w-[200px]']);
+    const right = el('div', ['flex', 'items-center', 'justify-end', 'w-full', 'md:w-1/2']);
+    const input = el('input', ['input-field', 'rounded', 'p-2', inputHeight, 'w-full']);
     input.id = id;
     input.placeholder = placeholder;
 
@@ -382,7 +383,7 @@ export function renderCharBed(container) {
   speedupTitle.textContent = t('speedup_settings');
   appendTooltip(speedupTitle, t('speedup_settings_tooltip'));
 
-  const freeRow = el('label', ['flex', 'items-center', 'justify-between', 'gap-3', 'text-sm', 'text-slate-700']);
+  const freeRow = el('label', ['flex', 'flex-col', 'items-start', 'md:flex-row', 'md:items-center', 'md:justify-between', 'gap-3', 'text-sm', 'text-slate-700']);
   freeRow.htmlFor = 'free-speedup-used-today';
   const freeText = el('span');
   freeText.textContent = t('free_speedup_used');
@@ -393,12 +394,12 @@ export function renderCharBed(container) {
   freeCheckbox.classList.add('h-4', 'w-4');
   freeRow.append(freeText, freeCheckbox);
 
-  const stoneRow = el('div', ['flex', 'items-center', 'justify-between', 'gap-3']);
+  const stoneRow = el('div', ['flex', 'flex-col', 'items-start', 'md:flex-row', 'md:items-center', 'md:justify-between', 'gap-3']);
   const stoneLabel = el('label', ['text-sm', 'font-semibold', 'text-slate-700']);
   stoneLabel.htmlFor = 'speedup-stone-count';
   stoneLabel.textContent = t('speedup_stone_count');
   appendTooltip(stoneLabel, getTooltipText('speedup-stone-count', t('speedup_stone_count')));
-  const stoneInput = el('input', ['input-field', 'rounded', 'p-2', inputHeight, 'w-full', 'sm:w-[120px]', 'text-right']);
+  const stoneInput = el('input', ['input-field', 'rounded', 'p-2', inputHeight, 'w-full', 'md:w-1/2', 'text-right']);
   stoneInput.type = 'number';
   stoneInput.id = 'speedup-stone-count';
   stoneInput.min = '0';
@@ -444,20 +445,20 @@ export function renderMaterialSource(containers) {
   const storeHtml = renderMaterialSourceTable('store', t('store_source_title'), sourceMaterials.store, dailyDefaults, avgDefaults, { showAvg: false });
 
   wrapper.innerHTML = `
-    <div class="flex justify-between items-center mb-4">
+    <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-3 mb-4">
       <h3 class="text-lg font-bold text-emerald-700">${t('material_source_title')}</h3>
-      <div class="flex items-center gap-2 text-sm">
+      <div class="flex flex-col md:flex-row md:items-center gap-2 text-sm w-full md:w-auto">
         <span class="font-semibold">${t('days_remaining_label')}</span>
         <input
           id="days-remaining"
           type="number"
-          class="border rounded px-2 py-1 w-20 text-right bg-gray-50"
+          class="input-field rounded px-2 py-1 text-right bg-gray-50 w-full md:w-auto"
           readonly
         />
       </div>
     </div>
 
-    <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
       ${dungeonHtml}
       ${exploreHtml}
       ${storeHtml}
@@ -477,23 +478,33 @@ export function renderMaterialSource(containers) {
 
 function renderMaterialSourceTable(source, title, materialList, dailyDefaults, avgDefaults, options) {
   const showAvg = options.showAvg;
+  const isStore = source === 'store';
   const dailyBySource = dailyDefaults[source] || {};
   const avgBySource = avgDefaults[source] || {};
 
   const headerCols = showAvg
     ? `<th>${t('material_header')}</th><th>${t('daily_runs_header')}</th><th>${t('avg_gain_header')}</th><th>${t('total_gain_header')}</th>`
-    : `<th>${t('material_header')}</th><th>${t('daily_purchase_header')}</th><th>${t('rola_cost_header')}</th><th>${t('total_gain_header')}</th>`;
+    : isStore
+      ? `<th>${t('material_header')}</th><th>${t('daily_purchase_header')}</th><th>${t('rola_cost_header')}</th><th>${t('total_gain_header')}</th><th>${t('store_resource_price_header')}</th><th>${t('big_mine_total_gain_header')}</th>`
+      : `<th>${t('material_header')}</th><th>${t('daily_purchase_header')}</th><th>${t('rola_cost_header')}</th><th>${t('total_gain_header')}</th>`;
 
   const storeSummary =
-    source === 'store'
+    isStore
       ? `
         <div class="mt-3 p-2 bg-gray-50 rounded border text-right text-sm space-y-1">
           <div>${t('daily_rola_cost')} <span id="store-rola-daily-cost">0</span></div>
           <div class="flex items-center justify-end gap-2">
             <span>${t('manual_daily_rola_cost')}</span>
-            <input id="store-rola-daily-cost-manual" type="number" class="input-field rounded px-1 py-0.5 w-24 text-right material-source-input" data-source="${source}" data-material="rolaCost" data-role="manual" value="0" />
+            <input id="store-rola-daily-cost-manual" type="number" class="input-field rounded px-1 py-0.5 text-right material-source-input" data-source="${source}" data-material="rolaCost" data-role="manual" value="0" />
           </div>
           <div>${t('total_rola_cost')} <span id="store-rola-total-cost">0</span></div>
+        </div>
+        <div class="mt-3 p-2 bg-gray-50 rounded border text-sm space-y-1">
+          <div class="text-slate-600">${t('store_calculation_rule', {
+            bonus: (STAMINA_BIG_MINE_RATE * 100).toFixed(2),
+          })}</div>
+          <div class="text-right">${t('daily_store_price_total')} <span id="store-price-daily-total">0</span></div>
+          <div class="text-right">${t('total_store_price')} <span id="store-price-period-total">0</span></div>
         </div>
       `
       : '';
@@ -505,18 +516,21 @@ function renderMaterialSourceTable(source, title, materialList, dailyDefaults, a
       const avg = avgBySource[mat] ?? 0;
 
       if (showAvg) {
+        const inputIdPrefix = `material-source-${source}-${mat}`;
         return `
           <tr class="border-b">
             <td class="py-1 text-center">${label}</td>
             <td class="py-1 text-center">
               <input type="number"
-                class="input-field rounded px-1 py-0.5 w-20 text-right material-source-input"
+                id="${inputIdPrefix}-daily"
+                class="input-field rounded px-1 py-0.5 text-right material-source-input"
                 data-source="${source}" data-material="${mat}" data-role="daily"
                 value="${daily}" />
             </td>
             <td class="py-1 text-center">
               <input type="number"
-                class="input-field rounded px-1 py-0.5 w-24 text-right material-source-input"
+                id="${inputIdPrefix}-avg"
+                class="input-field rounded px-1 py-0.5 text-right material-source-input"
                 data-source="${source}" data-material="${mat}" data-role="avg"
                 value="${avg}" />
             </td>
@@ -527,18 +541,54 @@ function renderMaterialSourceTable(source, title, materialList, dailyDefaults, a
         `;
       }
 
+      if (isStore) {
+        const inputIdPrefix = `material-source-${source}-${mat}`;
+        return `
+          <tr class="border-b">
+            <td class="py-1 text-center">${label}</td>
+            <td class="py-1 text-center">
+              <input type="number"
+                id="${inputIdPrefix}-slots"
+                class="input-field rounded px-1 py-0.5 text-right material-source-input"
+                data-source="${source}" data-material="${mat}" data-role="avg"
+                value="${avg}" />
+            </td>
+            <td class="py-1 text-center">
+              <input type="number"
+                id="${inputIdPrefix}-rola-cost"
+                class="input-field rounded px-1 py-0.5 text-right material-source-input"
+                data-source="${source}" data-material="${mat}" data-role="rola-cost"
+                value="0" />
+            </td>
+            <td class="py-1 text-right">
+              <span class="material-source-total" data-source="${source}" data-material="${mat}">0</span>
+            </td>
+            <td class="py-1 text-center">
+              <input type="number"
+                id="${inputIdPrefix}-shop-price"
+                class="input-field rounded px-1 py-0.5 text-right material-source-input"
+                data-source="${source}" data-material="${mat}" data-role="shop-price"
+                value="0" />
+            </td>
+            <td class="py-1 text-right">
+              <span id="${inputIdPrefix}-big-mine-total" class="material-source-derived" data-source="${source}" data-material="${mat}" data-role="big-mine-total">0</span>
+            </td>
+          </tr>
+        `;
+      }
+
       return `
         <tr class="border-b">
           <td class="py-1 text-center">${label}</td>
           <td class="py-1 text-center">
             <input type="number"
-              class="input-field rounded px-1 py-0.5 w-24 text-right material-source-input"
+              class="input-field rounded px-1 py-0.5 text-right material-source-input"
               data-source="${source}" data-material="${mat}" data-role="avg"
               value="${avg}" />
           </td>
           <td class="py-1 text-center">
             <input type="number"
-              class="input-field rounded px-1 py-0.5 w-24 text-right material-source-input"
+              class="input-field rounded px-1 py-0.5 text-right material-source-input"
               data-source="${source}" data-material="${mat}" data-role="rola-cost"
               value="0" />
           </td>
@@ -551,10 +601,10 @@ function renderMaterialSourceTable(source, title, materialList, dailyDefaults, a
     .join('');
 
   return `
-    <section>
+    <section class="material-source-section">
       <h4 class="font-semibold mb-2 text-center">${title}</h4>
       <div class="overflow-x-auto responsive-table">
-        <table class="w-full min-w-[28rem] text-sm border-collapse">
+        <table class="material-source-table w-full ${isStore ? 'material-source-table-wide' : ''} text-sm border-collapse">
           <thead>
             <tr class="border-b">
               ${headerCols}
@@ -680,10 +730,11 @@ export function renderResults(containers, payload, missingFiles = []) {
     else classes += ' bg-orange-100 border-orange-300';
 
     const row = el('div', classes.split(' '));
+    row.classList.add('result-summary-row');
     const left = el('div', ['flex', 'items-center', 'gap-2', 'min-w-0']);
     left.innerHTML = `<span class="font-bold text-slate-700">${getMaterialLabel(matId)}</span>`;
 
-    const right = el('div', ['ml-auto', 'flex', 'items-center', 'gap-6', 'text-sm']);
+    const right = el('div', ['ml-auto', 'flex', 'items-center', 'gap-x-6', 'gap-y-1', 'text-sm', 'result-summary-values']);
     if (hasError) {
       right.innerHTML = `<span class="text-red-700 font-semibold">${materialErrors[matId]}</span>`;
     } else {

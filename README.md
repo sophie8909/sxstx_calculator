@@ -19,3 +19,15 @@
 
 - 素材數據整合檔：https://docs.google.com/spreadsheets/d/1boxKipNVI-tCaJEaX-AoOTijEgKcxKfilhbtxkLbX-E
 - 各伺服器目標時間表單（當前推薦使用網站內介面填寫更方便）：https://forms.gle/9kH8GbNuaJ3VdJau9
+
+## Development
+
+- Install dependencies: `npm ci`
+- Run locally: `npm run dev`
+- Build raw CSV data into generated JSON: `npm run build:data`
+- Build the static site: `npm run build`
+- Preview the production build: `npm run preview`
+
+Raw CSV files live in `data/raw/`. The build-data script writes generated JSON to `data/generated/upgrade-costs.json`.
+
+GitHub Pages deployment uses `.github/workflows/deploy.yml`. The workflow runs `npm ci`, `npm run build:data`, `npm run build`, and publishes `dist/`.

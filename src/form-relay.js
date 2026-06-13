@@ -1,3 +1,4 @@
+import './ads.js';
 import { initLanguage, applyStaticTranslations, t } from './i18n-inline.js';
 
 const SEASON_START_CATEGORY = '【賽季開始】';
@@ -398,7 +399,9 @@ function updateManualToggleLabel() {
 
 function applyRelayTranslations() {
   applyStaticTranslations();
-  document.title = t('relay_page_title');
+  if (document.querySelector('h1[data-i18n="relay_page_title"]')) {
+    document.title = t('relay_page_title');
+  }
   updateManualToggleLabel();
 }
 
