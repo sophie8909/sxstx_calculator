@@ -436,13 +436,13 @@ export function renderCharBed(container) {
 
 export function renderMaterialSource(containers) {
   const cfg = getMaterialSourceConfig();
-  const { dailyDefaults, avgDefaults, sourceMaterials } = cfg;
+  const { dailyDefaults, avgDefaults, rolaCostDefaults, powerCostDefaults, sourceMaterials } = cfg;
   const wrapper = containers.materialSource;
   if (!wrapper) return;
 
-  const dungeonHtml = renderMaterialSourceTable('dungeon', t('dungeon_source_title'), sourceMaterials.dungeon, dailyDefaults, avgDefaults, { showAvg: true });
-  const exploreHtml = renderMaterialSourceTable('explore', t('explore_source_title'), sourceMaterials.explore, dailyDefaults, avgDefaults, { showAvg: true });
-  const storeHtml = renderMaterialSourceTable('store', t('store_source_title'), sourceMaterials.store, dailyDefaults, avgDefaults, { showAvg: false });
+  const dungeonHtml = renderMaterialSourceTable('dungeon', t('dungeon_source_title'), sourceMaterials.dungeon, dailyDefaults, avgDefaults, rolaCostDefaults, powerCostDefaults, { showAvg: true });
+  const exploreHtml = renderMaterialSourceTable('explore', t('explore_source_title'), sourceMaterials.explore, dailyDefaults, avgDefaults, rolaCostDefaults, powerCostDefaults, { showAvg: true });
+  const storeHtml = renderMaterialSourceTable('store', t('store_source_title'), sourceMaterials.store, dailyDefaults, avgDefaults, rolaCostDefaults, powerCostDefaults, { showAvg: false });
 
   wrapper.innerHTML = `
     <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-3 mb-4">
@@ -476,11 +476,13 @@ export function renderMaterialSource(containers) {
   }
 }
 
-function renderMaterialSourceTable(source, title, materialList, dailyDefaults, avgDefaults, options) {
+function renderMaterialSourceTable(source, title, materialList, dailyDefaults, avgDefaults, rolaCostDefaults, powerCostDefaults, options) {
   const showAvg = options.showAvg;
   const isStore = source === 'store';
   const dailyBySource = dailyDefaults[source] || {};
   const avgBySource = avgDefaults[source] || {};
+  const rolaCostBySource = rolaCostDefaults[source] || {};
+  const powerCostBySource = powerCostDefaults[source] || {};
 
   const headerCols = showAvg
     ? `<th>${t('material_header')}</th><th>${t('daily_runs_header')}</th><th>${t('avg_gain_header')}</th><th>${t('total_gain_header')}</th>`
@@ -514,6 +516,8 @@ function renderMaterialSourceTable(source, title, materialList, dailyDefaults, a
       const label = getSourceMaterialLabel(mat);
       const daily = dailyBySource[mat] ?? 0;
       const avg = avgBySource[mat] ?? 0;
+      const rolaCost = rolaCostBySource[mat] ?? 0;
+      const powerCost = powerCostBySource[mat] ?? 0;
 
       if (showAvg) {
         const inputIdPrefix = `material-source-${source}-${mat}`;
@@ -558,7 +562,7 @@ function renderMaterialSourceTable(source, title, materialList, dailyDefaults, a
                 id="${inputIdPrefix}-rola-cost"
                 class="input-field rounded px-1 py-0.5 text-right material-source-input"
                 data-source="${source}" data-material="${mat}" data-role="rola-cost"
-                value="0" />
+                value="${rolaCost}" />
             </td>
             <td class="py-1 text-right">
               <span class="material-source-total" data-source="${source}" data-material="${mat}">0</span>
@@ -568,7 +572,7 @@ function renderMaterialSourceTable(source, title, materialList, dailyDefaults, a
                 id="${inputIdPrefix}-shop-price"
                 class="input-field rounded px-1 py-0.5 text-right material-source-input"
                 data-source="${source}" data-material="${mat}" data-role="shop-price"
-                value="0" />
+                value="${powerCost}" />
             </td>
             <td class="py-1 text-right">
               <span id="${inputIdPrefix}-big-mine-total" class="material-source-derived" data-source="${source}" data-material="${mat}" data-role="big-mine-total">0</span>
@@ -590,7 +594,7 @@ function renderMaterialSourceTable(source, title, materialList, dailyDefaults, a
             <input type="number"
               class="input-field rounded px-1 py-0.5 text-right material-source-input"
               data-source="${source}" data-material="${mat}" data-role="rola-cost"
-              value="0" />
+              value="${rolaCost}" />
           </td>
           <td class="py-1 text-right">
             <span class="material-source-total" data-source="${source}" data-material="${mat}">0</span>

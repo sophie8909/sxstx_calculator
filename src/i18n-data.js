@@ -152,8 +152,8 @@ export const I18N_DICTIONARIES = {
     "zh-Hans": "剩余天数："
   },
   "dungeon_source_title": {
-    "zh-Hant": "素材副本",
-    "zh-Hans": "素材副本"
+    "zh-Hant": "素材秘境",
+    "zh-Hans": "素材秘境"
   },
   "enable_notify": {
     "zh-Hant": "匯入下一級日曆",

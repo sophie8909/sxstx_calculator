@@ -1,7 +1,7 @@
 ﻿// model.js
 // ??鞈?撅歹?撣豢???SV 頛??????蝞?頛胯摮?????
 
-import { loadUpgradeCostTablesForSeason } from './services/dataService.js';
+import { getGoogleSheetCsvUrl, loadUpgradeCostTablesForSeason } from './services/dataService.js';
 import {
   buildCumulativeCostData,
   getCharacterCumulativeExpFromTable,
@@ -180,10 +180,6 @@ const MATERIAL_DAILY_DEFAULTS = {
 };
 
 
-/** Google 閰衣?銵典摨??嚗摰??? */
-const GOOGLE_SHEET_BASE =
-  'https://docs.google.com/spreadsheets/d/e/2PACX-1vTS_dK7OUmUkWmUTj_iotltVPzO-2Bjz0cefAshVWuu5qL6e2VXV-cr-wm1bkrVShI7mSZovU_zwz2B/pub';
-
 /** ?魚摮???身摰??芯???gid */
 export const DATA_FILES_CONFIG = {
   characterUpgradeCosts: 314585849,  // 閫蝑?
@@ -210,6 +206,16 @@ export const state = {
   cumulativeCostData: {}, // 蝝舐??銵?
   missingFiles: [],       // 頛憭望?皜
   materialAvgDefaults: {             // TODO: ?啣?嚗策蝝?靘?隡啁?雿輻?像??
+    dungeon: {},
+    explore: {},
+    store: {},
+  },
+  materialRolaCostDefaults: {
+    dungeon: {},
+    explore: {},
+    store: {},
+  },
+  materialPowerCostDefaults: {
     dungeon: {},
     explore: {},
     store: {},
@@ -272,7 +278,7 @@ export function preprocessCostData() {
 
 /** ?寞? gid ?芸??澆 CSV URL */
 function makeCsvUrl(gid) {
-  return `${GOOGLE_SHEET_BASE}?gid=${gid}&single=true&output=csv`;
+  return getGoogleSheetCsvUrl(gid);
 }
 
 /** 頛撠?鞈賢迤????*/
@@ -365,6 +371,16 @@ export async function loadMaterialAvgDefaults() {
     explore: {},
     store: {},  // ?桀?銝蝙?剁?雿???瑽?
   };
+  const rolaCostDefaults = {
+    dungeon: {},
+    explore: {},
+    store: {},
+  };
+  const powerCostDefaults = {
+    dungeon: {},
+    explore: {},
+    store: {},
+  };
 
   const resourceData = state.resource || {};
   const toNum = (v) => {
@@ -384,14 +400,28 @@ export async function loadMaterialAvgDefaults() {
 
     Object.entries(byMat).forEach(([mat, row]) => {
       const avg = toNum(row['avg_defaults']);
-      if (avg === undefined) return;
-      if (!avgDefaults[targetSource]) avgDefaults[targetSource] = {};
-      avgDefaults[targetSource][mat] = avg;
+      const rolaCost = toNum(row['rola_cost']);
+      const powerCost = toNum(row['power_cost']);
+
+      if (avg !== undefined) {
+        if (!avgDefaults[targetSource]) avgDefaults[targetSource] = {};
+        avgDefaults[targetSource][mat] = avg;
+      }
+      if (rolaCost !== undefined) {
+        if (!rolaCostDefaults[targetSource]) rolaCostDefaults[targetSource] = {};
+        rolaCostDefaults[targetSource][mat] = rolaCost;
+      }
+      if (powerCost !== undefined) {
+        if (!powerCostDefaults[targetSource]) powerCostDefaults[targetSource] = {};
+        powerCostDefaults[targetSource][mat] = powerCost;
+      }
     });
   });
 
   console.log('[data load] loaded material average defaults:', avgDefaults);
   state.materialAvgDefaults = avgDefaults;
+  state.materialRolaCostDefaults = rolaCostDefaults;
+  state.materialPowerCostDefaults = powerCostDefaults;
 }
 
 
@@ -399,11 +429,17 @@ export async function loadMaterialAvgDefaults() {
 export function getMaterialSourceConfig() {
   const avgDefaults =
     state.materialAvgDefaults || { dungeon: {}, explore: {}, store: {} }; // TODO: ??摰?身
+  const rolaCostDefaults =
+    state.materialRolaCostDefaults || { dungeon: {}, explore: {}, store: {} };
+  const powerCostDefaults =
+    state.materialPowerCostDefaults || { dungeon: {}, explore: {}, store: {} };
 
   return {
     displayNames: MATERIAL_DISPLAY_NAMES,
     dailyDefaults: MATERIAL_DAILY_DEFAULTS,
     avgDefaults,
+    rolaCostDefaults,
+    powerCostDefaults,
     sourceMaterials: {
       dungeon: ['stone', 'essence', 'sand', 'rola'],
       explore: ['stone', 'essence', 'sand', 'rola'],
