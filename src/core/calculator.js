@@ -320,7 +320,7 @@ export function calculateUpgradeResults(input, context) {
   });
   const score = calculateSeasonScore(targets, seasonScore, seasonId);
   const primordialStar = convertPrimordialStar(score, seasonScore, seasonId);
-  const primordialStarTotal = (primordial.accumulated || 0) + (primordial.currentSeason || 0);
+  const primordialStarTotal = (primordial.accumulated || 0) + primordialStar;
 
   let relicCount = 0;
   relicDistribution.forEach(({ level, count }) => {

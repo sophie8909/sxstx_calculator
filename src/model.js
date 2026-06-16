@@ -610,6 +610,9 @@ export function computeAll(containers) {
   const primordialStarInput = document.getElementById('target-primordial_star');
   if (primordialStarInput) primordialStarInput.value = result.derived?.primordialStar || 0;
 
+  const currentSeasonPrimordialStarInput = document.getElementById('primordial-star-current-season');
+  if (currentSeasonPrimordialStarInput) currentSeasonPrimordialStarInput.value = result.derived?.primordialStar || 0;
+
   const totalPrimordialStarInput = document.getElementById('primordial-star-total');
   if (totalPrimordialStarInput) totalPrimordialStarInput.value = result.derived?.primordialStarTotal || 0;
 

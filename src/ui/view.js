@@ -139,7 +139,7 @@ export function renderPrimordialStarCumulative(container) {
 
   [
     ['primordial-star-accumulated', '目前累計原初', t('quantity_placeholder'), false],
-    ['primordial-star-current-season', '當前賽季目標原初', t('quantity_placeholder'), false],
+    ['primordial-star-current-season', '當前賽季目標原初', t('readonly_badge'), true],
     ['primordial-star-total', '加入當前賽季後總原初', t('readonly_badge'), true],
   ].forEach(([id, labelText, placeholder, isReadOnly]) => {
     const group = createInputGroup(id, labelText, placeholder, false);
