@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://sophie8909.github.io/sxstx_calculator/sitemap.xml

@@ -291,6 +291,11 @@ input[type='number']::-webkit-outer-spin-button {
   overflow-wrap: anywhere;
 }
 
+.seo-explanation-copy {
+  display: grid;
+  gap: .75rem;
+}
+
 .custom-scrollbar::-webkit-scrollbar {
   width: 8px;
   height: 8px;
