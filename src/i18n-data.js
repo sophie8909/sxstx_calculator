@@ -631,6 +631,10 @@ export const I18N_DICTIONARIES = {
     "zh-Hant": "目標時間填寫",
     "zh-Hans": "目标时间填写"
   },
+  "relay_form_button_title": {
+    "zh-Hant": "伺服器及目標時間填寫",
+    "zh-Hans": "服务器及目标时间填写"
+  },
   "relay_form_close": {
     "zh-Hant": "返回計算頁",
     "zh-Hans": "返回计算页"
