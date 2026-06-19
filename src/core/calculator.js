@@ -1,5 +1,4 @@
 import {
-  findMissingUpgradeLevel,
   getCharacterCumulativeExpFromTable,
   getCostDelta,
 } from './upgradeCost.js';
@@ -7,6 +6,17 @@ import {
 function addMaterialDelta(target, delta) {
   Object.entries(delta).forEach(([materialId, value]) => {
     target[materialId] = (target[materialId] || 0) + value;
+  });
+}
+
+function mergeEstimateHints(target, materials, estimatedRanges) {
+  if (!Array.isArray(estimatedRanges) || estimatedRanges.length === 0) return;
+
+  Object.keys(materials).forEach((materialId) => {
+    if (!target[materialId]) target[materialId] = new Set();
+    estimatedRanges.forEach((range) => {
+      target[materialId].add(`${range.from}-${range.to}`);
+    });
   });
 }
 
@@ -277,6 +287,7 @@ export function calculateUpgradeResults(input, context) {
   const gains = {};
   const deficit = {};
   const materialErrors = {};
+  const estimated = {};
   let hasError = false;
   let hasInput = false;
 
@@ -332,15 +343,9 @@ export function calculateUpgradeResults(input, context) {
       const targetLevel = Math.max(currentLevel, targets.relic_resonance || 0);
       if (targetLevel <= currentLevel) continue;
 
-      const missingLevel = findMissingUpgradeLevel(gameData.relicUpgradeCosts, currentLevel, targetLevel);
-      if (missingLevel !== null) {
-        const message = context.messages.missingRelicLevel(missingLevel);
-        if (!materialErrors.sand) materialErrors.sand = message;
-        if (!materialErrors.rola) materialErrors.rola = message;
-        continue;
-      }
-
-      addMaterialDelta(required, getCostDelta(cumulativeCostData.relic, currentLevel, targetLevel));
+      const { materials: delta, estimatedRanges } = getCostDelta(cumulativeCostData.relic, currentLevel, targetLevel);
+      addMaterialDelta(required, delta);
+      mergeEstimateHints(estimated, delta, estimatedRanges);
     }
   });
   if (relicCount > 0 && relicCount !== relicCountRequired) hasError = true;
@@ -358,16 +363,10 @@ export function calculateUpgradeResults(input, context) {
       cumulativeCostData,
       context.labels
     );
-    const missingLevel = findMissingUpgradeLevel(costConfig.sourceTable, currentLevel, targetLevel);
-    if (missingLevel !== null) {
-      const message = context.messages.missingItemLevel(costConfig.itemName, missingLevel);
-      costConfig.affected.forEach((materialId) => {
-        if (!materialErrors[materialId]) materialErrors[materialId] = message;
-      });
-      return;
-    }
 
-    addMaterialDelta(required, getCostDelta(costConfig.costTable, currentLevel, targetLevel));
+    const { materials: delta, estimatedRanges } = getCostDelta(costConfig.costTable, currentLevel, targetLevel);
+    addMaterialDelta(required, delta);
+    mergeEstimateHints(estimated, delta, estimatedRanges);
   });
 
   const derived = {
@@ -403,5 +402,5 @@ export function calculateUpgradeResults(input, context) {
     deficit[materialId] = Math.max(0, need - owned - gain);
   });
 
-  return { required, gains, deficit, materialErrors, derived };
+  return { required, gains, deficit, materialErrors, estimated, derived };
 }

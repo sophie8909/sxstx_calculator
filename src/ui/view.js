@@ -82,6 +82,28 @@ function appendTooltip(target, helpText) {
   target.appendChild(createTooltip(helpText));
 }
 
+function formatEstimateText(estimatedRanges = []) {
+  if (!Array.isArray(estimatedRanges) || estimatedRanges.length === 0) return '';
+
+  const ranges = Array.from(estimatedRanges)
+    .map((range) => {
+      if (typeof range === 'string') {
+        const [rawFrom, rawTo] = range.split('-').map((value) => Number(value));
+        if (!Number.isFinite(rawFrom) || !Number.isFinite(rawTo)) return '';
+        return rawFrom === rawTo ? `${rawFrom}等級` : `${rawFrom}~${rawTo}等級`;
+      }
+
+      const from = Number(range?.from);
+      const to = Number(range?.to);
+      if (!Number.isFinite(from) || !Number.isFinite(to)) return '';
+      return from === to ? `${from}等級` : `${from}~${to}等級`;
+    })
+    .filter(Boolean);
+
+  if (!ranges.length) return '';
+  return `（${ranges.join('、')}等級數據為推算）`;
+}
+
 function getReadonlyBadgeHtml() {
   return `<span class="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 align-middle">${t('readonly_badge')}</span>`;
 }
@@ -716,7 +738,7 @@ export function renderResults(containers, payload, missingFiles = []) {
     return;
   }
 
-  const { required = {}, gains = {}, deficit = {}, materialErrors = {} } = payload;
+  const { required = {}, gains = {}, deficit = {}, materialErrors = {}, estimated = {} } = payload;
   const displayOrder = ['rola', 'stoneOre', 'essence', 'sand', 'freezeDried'];
   const list = el('div', ['flex', 'flex-col', 'gap-3', 'w-full']);
 
@@ -725,6 +747,7 @@ export function renderResults(containers, payload, missingFiles = []) {
     const lack = deficit[matId] || 0;
     const gain = gains[matId] || 0;
     const hasError = !!materialErrors[matId];
+    const estimateHint = formatEstimateText(Array.from(estimated[matId] || []));
 
     let classes = 'border rounded-lg w-full px-4 py-3';
     if (hasError) classes += ' bg-red-100 border-red-300';
@@ -749,7 +772,8 @@ export function renderResults(containers, payload, missingFiles = []) {
           lack > 0
             ? `<strong class="text-red-700">-${fmt(lack)}</strong>`
             : `<strong class="text-emerald-700">${t('summary_done')}</strong>`
-        }</span>`;
+        }</span>
+        ${estimateHint ? `<span class="text-amber-700 text-xs">${estimateHint}</span>` : ''}`;
     }
 
     row.append(left, right);

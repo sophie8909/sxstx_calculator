@@ -1,7 +1,24 @@
-import { costKeyToMaterialId, findLastIndexByLevel } from '../utils/format.js';
+import { costKeyToMaterialId } from '../utils/format.js';
 
 export function normalizeKey(key) {
   return key ? String(key).replace(/^\uFEFF/, '').trim() : key;
+}
+
+function readLevelFromRow(normalizedRow, rawRow) {
+  const direct = Number(normalizedRow.level ?? normalizedRow.lvl ?? 0);
+  if (Number.isFinite(direct)) return direct;
+
+  const nonCostCandidates = Object.entries(normalizedRow).filter(
+    ([key, value]) => !key.startsWith('cost_') && Number.isFinite(Number(value))
+  );
+  if (nonCostCandidates.length > 0) return Number(nonCostCandidates[0][1]) || 0;
+
+  const rawCandidates = Object.entries(rawRow || {}).filter(
+    ([key, value]) => !normalizeKey(key).toLowerCase().startsWith('cost_') && Number.isFinite(Number(value))
+  );
+  if (rawCandidates.length > 0) return Number(rawCandidates[0][1]) || 0;
+
+  return 0;
 }
 
 export function buildCumulativeCostData(gameData) {
@@ -33,7 +50,7 @@ export function buildCumulativeCostData(gameData) {
         row[normalizeKey(key).toLowerCase()] = rawRow[key];
       });
 
-      const level = Number(row.level ?? row['等級'] ?? row.lvl ?? 0);
+      const level = readLevelFromRow(row, rawRow);
       costKeys.forEach((key) => {
         const normalized = key.toLowerCase();
         const value = Number(row[normalized] ?? 0);
@@ -46,17 +63,90 @@ export function buildCumulativeCostData(gameData) {
   return output;
 }
 
-export function getCumulative(costTable, level) {
+function getTableTemplate(costTable) {
   const empty = {};
   if (!costTable || costTable.length === 0) return empty;
-  costTable.forEach((row) => Object.keys(row).forEach((key) => {
-    empty[key] = 0;
-  }));
-  delete empty.level;
-  if (level <= 0) return empty;
 
-  const index = findLastIndexByLevel(costTable, level);
-  return index !== -1 ? { ...empty, ...costTable[index] } : empty;
+  costTable.forEach((row) => {
+    Object.keys(row).forEach((key) => {
+      empty[key] = 0;
+    });
+  });
+  delete empty.level;
+  return empty;
+}
+
+function normalizeRange(range) {
+  const from = Number(range?.from);
+  const to = Number(range?.to);
+  if (!Number.isFinite(from) || !Number.isFinite(to)) return '';
+  if (from === to) return `${from}-${to}`;
+  return `${Math.min(from, to)}-${Math.max(from, to)}`;
+}
+
+function getCumulativeWithMeta(costTable, level, options = {}) {
+  const template = getTableTemplate(costTable);
+  if (!costTable || costTable.length === 0) return { row: template, estimatedRanges: [], exact: false };
+  if (level <= 0) return { row: template, estimatedRanges: [], exact: true };
+
+  const sorted = [...costTable].sort((a, b) => (Number(a.level) || 0) - (Number(b.level) || 0));
+  const requestLevel = Number(level);
+  const exact = sorted.find((row) => Number(row.level) === requestLevel);
+  if (exact) {
+    return { row: { ...template, ...exact }, estimatedRanges: [], exact: true };
+  }
+
+  let lower = null;
+  let upper = null;
+  for (let i = 0; i < sorted.length; i += 1) {
+    const currentLevel = Number(sorted[i].level) || 0;
+    if (currentLevel < requestLevel) {
+      if (!lower || currentLevel > (Number(lower.level) || 0)) lower = sorted[i];
+      continue;
+    }
+    if (currentLevel > requestLevel && !upper) upper = sorted[i];
+    break;
+  }
+
+  if (!lower) return { row: template, estimatedRanges: [], exact: false };
+
+  const lowerLevel = Number(lower.level) || 0;
+  if (!upper) {
+    if (sorted.length < 2) return { row: { ...template, ...lower }, estimatedRanges: [], exact: false };
+
+    const secondLast = sorted[sorted.length - 2];
+    const secondLastLevel = Number(secondLast.level) || 0;
+    const span = lowerLevel - secondLastLevel;
+    if (span === 0) return { row: { ...template, ...lower }, estimatedRanges: [], exact: false };
+
+    const estimated = { ...template, ...lower };
+    const range = { from: lowerLevel, to: requestLevel };
+    Object.keys(template).forEach((key) => {
+      const prev = Number(secondLast[key]) || 0;
+      const last = Number(lower[key]) || 0;
+      const deltaPerLevel = (last - prev) / span;
+      estimated[key] = Math.max(0, Math.round(last + deltaPerLevel * (requestLevel - lowerLevel)));
+    });
+    return { row: estimated, estimatedRanges: options.trackRange ? [range] : [range], exact: false };
+  }
+
+  const upperLevel = Number(upper.level) || 0;
+  const span = upperLevel - lowerLevel;
+  if (span <= 0) return { row: { ...template, ...lower }, estimatedRanges: [], exact: false };
+
+  const ratio = (requestLevel - lowerLevel) / span;
+  const estimated = { ...template };
+  const range = { from: lowerLevel, to: upperLevel };
+  Object.keys(template).forEach((key) => {
+    const lowerValue = Number(lower[key]) || 0;
+    const upperValue = Number(upper[key]) || 0;
+    estimated[key] = Math.max(0, Math.round(lowerValue + (upperValue - lowerValue) * ratio));
+  });
+  return { row: estimated, estimatedRanges: options.trackRange ? [range] : [range], exact: false };
+}
+
+export function getCumulative(costTable, level) {
+  return getCumulativeWithMeta(costTable, level).row;
 }
 
 export function getCharacterCumulativeExpFromTable(table, level) {
@@ -74,40 +164,46 @@ export function getCharacterCumulativeExpFromTable(table, level) {
 }
 
 export function getCostDelta(costTable, currentLevel, targetLevel) {
-  if (!costTable) return {};
+  if (!costTable) return { materials: {}, estimatedRanges: [] };
 
-  const start = getCumulative(costTable, currentLevel - 1);
-  const end = getCumulative(costTable, targetLevel - 1);
-  const delta = {};
+  const start = getCumulativeWithMeta(costTable, currentLevel - 1, { trackRange: true });
+  const end = getCumulativeWithMeta(costTable, targetLevel - 1, { trackRange: true });
+  const materials = {};
+  const estimatedRangesMap = new Map();
 
-  Object.keys(end).forEach((key) => {
+  Object.keys(end.row).forEach((key) => {
     if (!key.startsWith('cost_')) return;
     const materialId = costKeyToMaterialId(key);
-    delta[materialId] = (end[key] || 0) - (start[key] || 0);
+    const value = (end.row[key] || 0) - (start.row[key] || 0);
+    if (value !== 0) materials[materialId] = value;
   });
 
-  return delta;
+  [start, end].forEach((info) => {
+    info.estimatedRanges?.forEach((range) => {
+      const rangeKey = normalizeRange(range);
+      if (!rangeKey) return;
+      if (!estimatedRangesMap.has(rangeKey)) estimatedRangesMap.set(rangeKey, range);
+    });
+  });
+
+  return {
+    materials,
+    estimatedRanges: Array.from(estimatedRangesMap.values()),
+  };
 }
 
 export function findMissingUpgradeLevel(sourceTable, currentLevel, targetLevel) {
   if (!sourceTable || sourceTable.length === 0) return null;
 
-  const levels = new Set(
-    sourceTable
-      .map((row) => Number(row.level))
-      .filter((value) => Number.isFinite(value) && value >= 0)
-  );
-  if (levels.size === 0) return null;
+  const sorted = [...sourceTable]
+    .map((row) => Number(row.level))
+    .filter((value) => Number.isFinite(value));
+  if (sorted.length <= 1) return null;
 
+  const minLevel = Math.min(...sorted);
   const start = Math.max(0, Math.floor(Number(currentLevel) || 0));
   const end = Math.max(start, Math.floor(Number(targetLevel) || 0));
-  const minLevel = Math.min(...Array.from(levels));
-  const effectiveStart = Math.max(start, minLevel);
+  if (end <= minLevel) return null;
 
-  if (effectiveStart >= end) return null;
-
-  for (let level = effectiveStart; level < end; level += 1) {
-    if (!levels.has(level)) return level;
-  }
   return null;
 }
