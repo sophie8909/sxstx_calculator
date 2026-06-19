@@ -92,10 +92,16 @@ export function getCostDelta(costTable, currentLevel, targetLevel) {
 export function findMissingUpgradeLevel(sourceTable, currentLevel, targetLevel) {
   if (!sourceTable) return null;
 
-  for (let level = currentLevel; level < targetLevel; level += 1) {
-    if (!sourceTable.find((row) => row.level === level)) {
-      return level;
-    }
+  const levels = new Set(
+    sourceTable
+      .map((row) => Number(row.level))
+      .filter(Number.isFinite)
+  );
+  const start = Math.max(0, Math.floor(Number(currentLevel) || 0));
+  const end = Math.max(start, Math.floor(Number(targetLevel) || 0));
+
+  for (let level = start; level < end; level += 1) {
+    if (!levels.has(level)) return level;
   }
   return null;
 }

@@ -877,41 +877,6 @@ function updateSpeedupHints(nextLevelHours, targetHours) {
   if (targetEl) targetEl.textContent = t('speedup_target_time', { hours: targetHours });
 }
 
-function localizeEtaDisplays(levelupMinutes, levelupTs, targetMinutes, etaTs) {
-  const levelupEl = document.getElementById('bed-levelup-time');
-  const targetEl = document.getElementById('bed-target-eta');
-
-  if (levelupEl) {
-    if (!Number.isFinite(levelupTs)) levelupEl.textContent = t('levelup_eta_empty');
-    else if (levelupMinutes <= 0) levelupEl.textContent = t('levelup_eta_ready');
-    else {
-      const timeText = new Date(levelupTs).toLocaleString('zh-TW', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-      levelupEl.textContent = t('levelup_eta_value', { minutes: levelupMinutes.toLocaleString(), time: timeText });
-    }
-  }
-
-  if (targetEl) {
-    if (!Number.isFinite(etaTs)) targetEl.textContent = t('target_eta_empty');
-    else if (targetMinutes <= 0) targetEl.textContent = t('target_eta_ready');
-    else {
-      const timeText = new Date(etaTs).toLocaleString('zh-TW', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-      targetEl.textContent = t('target_eta_value', { minutes: targetMinutes.toLocaleString(), time: timeText });
-    }
-  }
-}
-
 function refreshBedProgressSummary() {
   const { currentLevel, ownedExp, bedHourly, targetLevel } = readBedProgressState();
   const nextLevelBonusHours = getNextLevelSpeedupHours(currentLevel, ownedExp, bedHourly);
@@ -929,7 +894,6 @@ function refreshBedProgressSummary() {
     bonusHours: targetBonusHours,
   } = computeEtaToTargetLevel(currentLevel, ownedExp, bedHourly, targetLevel);
   renderTargetEtaText(targetMinutesNeeded, etaTs);
-  localizeEtaDisplays(minutesNeeded, levelupTs, targetMinutesNeeded, etaTs);
 
   updateExpRequirements(currentLevel, ownedExp, targetLevel);
   updateSpeedupHints(nextLevelBonusHours, targetBonusHours);
@@ -952,39 +916,9 @@ function refreshBedProgressSummary() {
  * 蝯曹???
  * ---------------------------*/
 function triggerRecalculate(containers) {
+  refreshBedProgressSummary();
   const payload = computeAll(containers);
   renderResults(containers, payload, state.missingFiles);
-  refreshBedProgressSummary();
-  saveAllInputs();
-  return;
-
-  const curLv = parseInt(document.getElementById('character-current')?.value) || 0;
-  const ownedWanStr = document.getElementById('owned-exp-wan')?.value?.trim();
-  const ownedWan = ownedWanStr === '' ? NaN : parseFloat(ownedWanStr);
-  const bedHourly = parseFloat(document.getElementById('bed-exp-hourly')?.value) || 0;
-
-  const ownedExpInput = document.getElementById('owned-exp');
-  if (ownedExpInput) {
-    if (seasonOptions.some((s) => s.season >= 4)) {
-      // S4 隞亙??箏雿?蝞?
-      ownedExpInput.value = isNaN(ownedWan) ? '' : Math.floor(ownedWan * 100000000);
-    }
-    else {
-      // S1-S3 隞誑?祉?桐???
-      ownedExpInput.value = isNaN(ownedWan) ? '' : Math.floor(ownedWan * 10000);
-    }
-  }
-  const ownedExp = parseInt(ownedExpInput?.value) || 0;
-
-  const { levelupTs, minutesNeeded } = computeEtaToNextLevel(curLv, ownedExp, bedHourly);
-  renderLevelupTimeText(minutesNeeded, levelupTs);
-
-  const targetChar = parseInt(document.getElementById('target-character')?.value) || 0;
-  const { minutesNeeded: m2, etaTs } =
-    computeEtaToTargetLevel(curLv, ownedExp, bedHourly, targetChar);
-  renderTargetEtaText(m2, etaTs);
-
-  updateExpRequirements(curLv, ownedExp, targetChar);
   saveAllInputs();
 }
 
@@ -1033,42 +967,9 @@ function updateExpRequirements(curLv, ownedExp, targetChar) {
 /* -----------------------------
  * 瘥??郊?湔蝬?
  * ---------------------------*/
-function setupAutoUpdate(containers) {
+function setupAutoUpdate() {
   setInterval(() => {
     refreshBedProgressSummary();
-    return;
-
-    const curLv = parseInt(document.getElementById('character-current')?.value) || 0;
-    const ownedWanStr = document.getElementById('owned-exp-wan')?.value?.trim();
-    const ownedWan = ownedWanStr === '' ? NaN : parseFloat(ownedWanStr);
-    const bedHourly = parseFloat(document.getElementById('bed-exp-hourly')?.value) || 0;
-    const targetChar = parseInt(document.getElementById('target-character')?.value) || 0;
-
-    const ownedExpInput = document.getElementById('owned-exp');
-    if (!ownedExpInput || isNaN(ownedWan)) return;
-
-    if (seasonOptions.some((s) => s.season >= 4)) {
-      // S4 隞亙??箏雿?蝞?
-      ownedExpInput.value = Math.floor(ownedWan * 100000000);
-    }
-    else {
-      // S1-S3 隞誑?祉?桐???
-      ownedExpInput.value = Math.floor(ownedWan * 10000);
-    }
-    const base = parseFloat(ownedExpInput.value) || ownedWan * 10000;
-    const newExp = base + (bedHourly / 3600);
-    ownedExpInput.value = Math.floor(newExp);
-    const ownedExp = parseInt(ownedExpInput.value) || 0;
-
-    const { levelupTs, minutesNeeded } =
-      computeEtaToNextLevel(curLv, ownedExp, bedHourly);
-    renderLevelupTimeText(minutesNeeded, levelupTs);
-
-    const { minutesNeeded: m2, etaTs } =
-      computeEtaToTargetLevel(curLv, ownedExp, bedHourly, targetChar);
-    renderTargetEtaText(m2, etaTs);
-
-    updateExpRequirements(curLv, ownedExp, targetChar);
   }, 1000);
 }
 
@@ -2352,7 +2253,7 @@ async function init() {
   updateAllMaterialSources();
 
   // ?芸??湔蝬???冽???
-  setupAutoUpdate(containers);
+  setupAutoUpdate();
   setInterval(() => updateCurrentTime(containers.currentTimeDisplay), 1000);
   updateCurrentTime(containers.currentTimeDisplay);
   window.addEventListener('languagechange', () => {
