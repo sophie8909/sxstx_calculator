@@ -463,10 +463,6 @@ export const I18N_DICTIONARIES = {
     "zh-Hant": "每日格數",
     "zh-Hans": "每日格数"
   },
-  "store_calculation_rule": {
-    "zh-Hant": "售價欄位使用 rola_cost，單位為萬；每次平均使用 avg_defaults。",
-    "zh-Hans": "售价栏位使用 rola_cost，单位为万；每次平均使用 avg_defaults。"
-  },
   "store_resource_price_header": {
     "zh-Hant": "售價(萬)",
     "zh-Hans": "售价(万)"

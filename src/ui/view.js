@@ -510,7 +510,6 @@ function renderMaterialSourceTable(source, title, materialList, dailyDefaults, a
     isStore
       ? `
         <div class="mt-3 p-2 bg-gray-50 rounded border text-sm space-y-1">
-          <div class="text-slate-600">${t('store_calculation_rule')}</div>
           <div class="text-right">${t('daily_store_price_total')} <span id="store-price-daily-total">0</span></div>
           <div class="text-right">${t('total_store_price')} <span id="store-price-period-total">0</span></div>
         </div>
