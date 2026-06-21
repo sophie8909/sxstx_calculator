@@ -64,15 +64,11 @@ export function getNextDailyResetTimestamp(fromTs = Date.now()) {
 export function countAvailableFreeSpeedupsUntil(targetTs, freeUsedToday, nowTs = Date.now()) {
   if (!Number.isFinite(targetTs) || targetTs <= nowTs) return 0;
 
-  let uses = freeUsedToday ? 0 : 1;
-  let resetTs = getNextDailyResetTimestamp(nowTs);
-  while (resetTs <= targetTs) {
-    uses += 1;
-    const nextReset = new Date(resetTs);
-    nextReset.setDate(nextReset.getDate() + 1);
-    resetTs = nextReset.getTime();
-  }
-  return uses;
+  const firstResetTs = getNextDailyResetTimestamp(nowTs);
+  const futureResetUses = targetTs >= firstResetTs
+    ? Math.floor((targetTs - firstResetTs) / 86400000) + 1
+    : 0;
+  return (freeUsedToday ? 0 : 1) + Math.max(0, futureResetUses);
 }
 
 export function getSpeedupHoursForDays(dayCount, speedupState = {}, hoursPerUse = 2) {
@@ -109,11 +105,12 @@ export function computeReachableCharacterLevel({
   const table = cumulativeCostData.character;
   if (!table || !table.length || !Number.isFinite(currentLevel)) return currentLevel;
 
+  const normalizedCurrentLevel = Math.max(0, Math.floor(Number(currentLevel) || 0));
   const hours = targetTime
     ? Math.max(0, (new Date(targetTime).getTime() - now) / 36e5)
     : 0;
   const bonusHours = getSpeedupHoursForHours(hours, speedupState, speedupHoursPerUse);
-  const baseCum = getCharacterCumulativeExpFromTable(table, currentLevel);
+  const baseCum = getCharacterCumulativeExpFromTable(table, normalizedCurrentLevel);
   const available =
     Math.max(0, Number(ownedExp) || 0) +
     Math.max(0, Number(bedExpHourly) || 0) * (hours + bonusHours);
@@ -129,7 +126,7 @@ export function computeReachableCharacterLevel({
     reachable = maxLevelInTable + Math.floor((totalExp - maxKnownExp) / lastLevelExp);
   }
 
-  return Math.max(reachable, currentLevel);
+  return Math.max(reachable, normalizedCurrentLevel);
 }
 
 export function expCalculation({
@@ -145,14 +142,16 @@ export function expCalculation({
   if (!table || !table.length || !Number.isFinite(currentLevel)) {
     return { levelupTs: NaN, minutesNeeded: 0, expNeeded: NaN };
   }
-  if (targetLevel <= currentLevel) {
+  const normalizedCurrentLevel = Math.max(0, Math.floor(Number(currentLevel) || 0));
+  const normalizedTargetLevel = Math.max(0, Math.floor(Number(targetLevel) || 0));
+  if (normalizedTargetLevel <= normalizedCurrentLevel) {
     return { levelupTs: now, minutesNeeded: 0, expNeeded: 0, status: 'reached' };
   }
 
-  const cumPrev = getCharacterCumulativeExpFromTable(table, currentLevel);
-  const cumThis = getCharacterCumulativeExpFromTable(table, targetLevel);
+  const cumPrev = getCharacterCumulativeExpFromTable(table, normalizedCurrentLevel);
+  const cumThis = getCharacterCumulativeExpFromTable(table, normalizedTargetLevel);
   const acceleratedExp = Math.max(0, Number(bedExpHourly) || 0) * Math.max(0, Number(bonusHours) || 0);
-  const expNeeded = Math.max(0, cumThis - cumPrev - (Number(ownedExp) || 0) - acceleratedExp);
+  const expNeeded = Math.max(0, cumThis - cumPrev - Math.max(0, Number(ownedExp) || 0) - acceleratedExp);
   if (expNeeded <= 0) return { levelupTs: now, minutesNeeded: 0, expNeeded: 0 };
 
   const ratePerHour = Number(bedExpHourly);

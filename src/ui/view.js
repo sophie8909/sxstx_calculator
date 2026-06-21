@@ -366,7 +366,7 @@ export function renderCharBed(container) {
   container.innerHTML = '';
   const inputHeight = 'h-9';
 
-  const row = ({ id, type = 'number', label, placeholder = '', readOnly = false }) => {
+  const row = ({ id, type = 'number', label, placeholder = '', readOnly = false, min, step }) => {
     const wrap = el('div', ['w-full']);
     const line = el('div', ['flex', 'flex-col', 'md:flex-row', 'md:items-center', 'md:justify-between', 'gap-2']);
     const left = el('div', ['flex', 'items-center', 'gap-2', 'min-w-0']);
@@ -387,6 +387,8 @@ export function renderCharBed(container) {
       input.style.appearance = 'none';
     } else {
       input.type = type;
+      if (min !== undefined) input.min = String(min);
+      if (step !== undefined) input.step = String(step);
     }
 
     right.appendChild(input);
@@ -395,10 +397,10 @@ export function renderCharBed(container) {
     return wrap;
   };
 
-  container.appendChild(row({ id: 'character-current', label: t('role_level'), placeholder: t('current_placeholder') }));
-  container.appendChild(row({ id: 'owned-exp-wan', label: t('owned_exp_wan'), placeholder: getOwnedExpUnitPlaceholder() }));
+  container.appendChild(row({ id: 'character-current', label: t('role_level'), placeholder: t('current_placeholder'), min: 0, step: 1 }));
+  container.appendChild(row({ id: 'owned-exp-wan', label: t('owned_exp_wan'), placeholder: getOwnedExpUnitPlaceholder(), min: 0, step: 0.01 }));
   container.appendChild(row({ id: 'owned-exp', label: t('actual_exp'), placeholder: t('auto_convert_readonly'), readOnly: true }));
-  container.appendChild(row({ id: 'bed-exp-hourly', label: t('exp_hourly'), placeholder: t('zero_placeholder') }));
+  container.appendChild(row({ id: 'bed-exp-hourly', label: t('exp_hourly'), placeholder: t('zero_placeholder'), min: 0, step: 1 }));
 
   const speedupBox = el('div', ['mt-3', 'rounded-lg', 'border', 'border-slate-200', 'bg-slate-50', 'p-3', 'space-y-3']);
   const speedupTitle = el('div', ['text-sm', 'font-semibold', 'text-slate-700']);

@@ -787,12 +787,12 @@ function getOwnedExpWanValue() {
   if (raw === '') return NaN;
 
   const value = parseFloat(raw);
-  return Number.isNaN(value) ? NaN : value;
+  return Number.isNaN(value) ? NaN : Math.max(0, value);
 }
 
 function convertWanToOwnedExp(ownedWan) {
   if (Number.isNaN(ownedWan)) return NaN;
-  return Math.floor(ownedWan * (usesLargeExpUnit() ? 100000000 : 10000));
+  return Math.floor(Math.max(0, ownedWan) * (usesLargeExpUnit() ? 100000000 : 10000));
 }
 
 function syncOwnedExpInputFromWan(ownedWan) {
@@ -840,10 +840,10 @@ function getLiveOwnedExp(currentLevel, ownedWan, bedHourly) {
 }
 
 function readBedProgressState() {
-  const currentLevel = parseInt(document.getElementById('character-current')?.value, 10) || 0;
+  const currentLevel = Math.max(0, parseInt(document.getElementById('character-current')?.value, 10) || 0);
   const ownedWan = getOwnedExpWanValue();
-  const bedHourly = parseFloat(document.getElementById('bed-exp-hourly')?.value) || 0;
-  const targetLevel = parseInt(document.getElementById('target-character')?.value, 10) || 0;
+  const bedHourly = Math.max(0, parseFloat(document.getElementById('bed-exp-hourly')?.value) || 0);
+  const targetLevel = Math.max(0, parseInt(document.getElementById('target-character')?.value, 10) || 0);
   const ownedExp = getLiveOwnedExp(currentLevel, ownedWan, bedHourly);
 
   return {
