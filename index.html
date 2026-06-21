@@ -56,7 +56,27 @@
   <link rel="stylesheet" href="./css/style.css" type="text/css" />
 </head>
 
-<body class="p-3 md:p-4 lg:p-6 compact">
+<body class="p-3 md:p-4 lg:p-6 compact app-loading" aria-busy="true">
+  <div id="app-loading-overlay" class="app-loading-overlay" role="status" aria-live="polite">
+    <div class="app-loading-panel">
+      <div class="app-loading-mark" aria-hidden="true">
+        <img src="./images/favicon_v1.png" alt="" />
+        <span class="app-loading-ring"></span>
+      </div>
+      <div class="app-loading-copy">
+        <p class="app-loading-title" data-i18n="app_title">杖劍傳說 素材計算機</p>
+        <p id="app-loading-message" class="app-loading-message" data-i18n="loading_app_data">資料讀取中，請稍候...</p>
+      </div>
+      <div class="app-loading-progress" aria-hidden="true">
+        <span></span>
+      </div>
+      <div class="app-loading-dots" aria-hidden="true">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+  </div>
   <div class="app-shell w-full max-w-7xl mx-auto">
     <header class="text-center mb-6">
       <h1 class="text-3xl md:text-4xl font-bold text-teal-800" data-i18n="app_title">杖劍傳說 素材計算機</h1>

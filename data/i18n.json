@@ -208,8 +208,8 @@
     "zh-Hans": "升级时间：{minutes} 分钟，约 {time}"
   },
   "loading_season_data": {
-    "zh-Hant": "正在載入賽季資料...",
-    "zh-Hans": "正在载入赛季数据..."
+    "zh-Hant": "正在讀取賽季資料...",
+    "zh-Hans": "正在读取赛季资料..."
   },
   "manual_daily_rola_cost": {
     "zh-Hant": "手動每日羅拉成本：",
@@ -606,5 +606,9 @@
   "zero_placeholder": {
     "zh-Hant": "0",
     "zh-Hans": "0"
+  },
+  "loading_app_data": {
+    "zh-Hant": "資料讀取中，請稍候...",
+    "zh-Hans": "资料读取中，请稍候..."
   }
 }

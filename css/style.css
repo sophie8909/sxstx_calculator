@@ -20,6 +20,10 @@ body {
   overflow-x: hidden;
 }
 
+body.app-loading {
+  cursor: wait;
+}
+
 body,
 main,
 section,
@@ -94,6 +98,171 @@ h2 {
 input[type='number']::-webkit-inner-spin-button,
 input[type='number']::-webkit-outer-spin-button {
   opacity: .4;
+}
+
+.app-loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background:
+    linear-gradient(135deg, rgba(247, 252, 252, .96) 0%, rgba(230, 244, 242, .96) 52%, rgba(248, 250, 252, .96) 100%),
+    repeating-linear-gradient(90deg, rgba(15, 118, 110, .06) 0 1px, transparent 1px 5rem);
+  backdrop-filter: blur(4px);
+}
+
+body.app-loading .app-loading-overlay {
+  display: flex;
+}
+
+.app-loading-panel {
+  display: flex;
+  width: min(100%, 24rem);
+  min-height: 20rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 2rem 1.5rem;
+  border: 1px solid rgba(20, 184, 166, .28);
+  border-radius: .5rem;
+  background: rgba(255, 255, 255, .9);
+  color: #164e63;
+  text-align: center;
+  box-shadow: 0 1.25rem 2.5rem rgba(15, 23, 42, .18);
+}
+
+.app-loading-panel p {
+  margin: 0;
+}
+
+.app-loading-mark {
+  position: relative;
+  display: grid;
+  width: 6rem;
+  height: 6rem;
+  place-items: center;
+}
+
+.app-loading-mark img {
+  width: 4.25rem;
+  height: 4.25rem;
+  border-radius: .5rem;
+  object-fit: cover;
+  box-shadow: 0 .75rem 1.5rem rgba(15, 95, 99, .18);
+}
+
+.app-loading-ring {
+  position: absolute;
+  inset: 0;
+  border: 3px solid rgba(15, 118, 110, .14);
+  border-top-color: #0f766e;
+  border-right-color: #d4a418;
+  border-radius: 999px;
+  animation: app-loading-spin 1.05s linear infinite;
+}
+
+.app-loading-copy {
+  display: grid;
+  gap: .35rem;
+}
+
+.app-loading-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  line-height: 1.25;
+  color: #165f63;
+}
+
+.app-loading-message {
+  color: #475569;
+  font-size: .95rem;
+  font-weight: 700;
+}
+
+.app-loading-progress {
+  position: relative;
+  width: min(100%, 15rem);
+  height: .5rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #d7eeed;
+}
+
+.app-loading-progress span {
+  position: absolute;
+  inset-block: 0;
+  left: -45%;
+  width: 45%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #0f766e, #1fb7ad, #d4a418);
+  animation: app-loading-progress 1.25s ease-in-out infinite;
+}
+
+.app-loading-dots {
+  display: flex;
+  gap: .35rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.app-loading-dots span {
+  width: .45rem;
+  height: .45rem;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #0f766e;
+  animation: app-loading-dot 1s ease-in-out infinite;
+}
+
+.app-loading-dots span:nth-child(2) {
+  animation-delay: .14s;
+}
+
+.app-loading-dots span:nth-child(3) {
+  animation-delay: .28s;
+}
+
+@keyframes app-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes app-loading-progress {
+  0% {
+    left: -45%;
+  }
+
+  55%,
+  100% {
+    left: 100%;
+  }
+}
+
+@keyframes app-loading-dot {
+  0%,
+  80%,
+  100% {
+    opacity: .35;
+    transform: translateY(0);
+  }
+
+  40% {
+    opacity: 1;
+    transform: translateY(-.25rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-loading-ring,
+  .app-loading-progress span,
+  .app-loading-dots span {
+    animation: none;
+  }
 }
 
 /* ===== layout ===== */

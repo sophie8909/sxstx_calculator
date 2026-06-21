@@ -55,6 +55,38 @@ const mergePriority = {
   merge_8: 8,
   merge_16: 16,
 };
+let isAppLoading = true;
+const LOADING_DISABLED_ATTR = 'data-loading-disabled';
+
+function setAppLoading(loading) {
+  isAppLoading = loading;
+  document.body.classList.toggle('app-loading', loading);
+  document.body.setAttribute('aria-busy', loading ? 'true' : 'false');
+
+  const loadingMessage = document.getElementById('app-loading-message');
+  if (loadingMessage) loadingMessage.textContent = t('loading_app_data');
+
+  const appShell = document.querySelector('.app-shell');
+  if (appShell) {
+    appShell.inert = loading;
+    appShell.setAttribute('aria-hidden', loading ? 'true' : 'false');
+  }
+
+  document.querySelectorAll('button, input, select, textarea').forEach((control) => {
+    if (loading) {
+      if (!control.disabled) {
+        control.disabled = true;
+        control.setAttribute(LOADING_DISABLED_ATTR, '1');
+      }
+      return;
+    }
+
+    if (control.getAttribute(LOADING_DISABLED_ATTR) === '1') {
+      control.disabled = false;
+      control.removeAttribute(LOADING_DISABLED_ATTR);
+    }
+  });
+}
 
 // 霈銝閰衣?銵冽????渲?????撌脫??08:00嚗?
 const TIME_PRESETS_FALLBACK = [
@@ -1969,6 +2001,11 @@ function bindGlobalHandlers(containers) {
 
   document.addEventListener('input',
     (e) => {
+      if (isAppLoading) {
+        e.preventDefault();
+        return;
+      }
+
       const t = e.target;
       if (t.tagName === 'INPUT') {
         if (t.id?.startsWith('fragment-')) {
@@ -1990,9 +2027,14 @@ function bindGlobalHandlers(containers) {
       if (t.classList.contains('relic-dist-input')) updateRelicTotal();
       triggerRecalculate(containers);
     }
-  }, { passive: true });
+  });
 
   document.addEventListener('change', (e) => {
+    if (isAppLoading) {
+      e.preventDefault();
+      return;
+    }
+
     const t = e.target;
       if (t.tagName === 'INPUT' || t.tagName === 'SELECT') {
       if (t.id?.startsWith('fragment-')) {
@@ -2034,9 +2076,14 @@ function bindGlobalHandlers(containers) {
       if (t.classList.contains('relic-dist-input')) updateRelicTotal();
       triggerRecalculate(containers);
     }
-  }, { passive: true });
+  });
 
   document.addEventListener('click', (e) => {
+    if (isAppLoading) {
+      e.preventDefault();
+      return;
+    }
+
     const feeButton = e.target.closest('.fragment-fee-mode-btn');
     if (feeButton) {
       const checkbox = document.getElementById('fragment-discount-fee');
@@ -2069,31 +2116,38 @@ async function handleSeasonChange(containers) {
   const seasonSelector = document.getElementById('season-select');
   // ??selector 摮撠曹誑?恍?箸?嚗?窒??state ?桀???
   state.seasonId = seasonSelector?.value || state.seasonId || 's2';
+  setAppLoading(true);
 
   containers.results.innerHTML =
     `<p class="text-gray-500 text-center py-8">${t('loading_season_data')}</p>`;
 
-  await loadDataForSeason(state.seasonId);
-  preprocessCostData();
+  try {
+    await loadDataForSeason(state.seasonId);
+    preprocessCostData();
 
-  renderAll(containers);
-  bindTooltipLayers();
-  loadAllInputs(['season-select']); // 鞈賢迤?冽??撌梁??摩??
-  renderRelicDistribution(containers.relicDistributionInputs);
-  loadAllInputs(['season-select']);
-  updateRelicModeButtons();
-  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-  await initFragmentCalculator(saved);
-  await initDungeonFragmentYield(saved);
-  await renderPrimordialRecommendations();
-  await applySelectedTargetRecommendationIfNeeded();
+    renderAll(containers);
+    setAppLoading(true);
+    bindTooltipLayers();
+    loadAllInputs(['season-select']); // 鞈賢迤?冽??撌梁??摩??
+    renderRelicDistribution(containers.relicDistributionInputs);
+    setAppLoading(true);
+    loadAllInputs(['season-select']);
+    updateRelicModeButtons();
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    await initFragmentCalculator(saved);
+    await initDungeonFragmentYield(saved);
+    await renderPrimordialRecommendations();
+    await applySelectedTargetRecommendationIfNeeded();
 
-  // ??憪?隡箸??券?殷???隡箸??刻??亦璅????
-  await initServerSelector(containers);
-  await initTargetTimeControls(containers);
+    // ??憪?隡箸??券?殷???隡箸??刻??亦璅????
+    await initServerSelector(containers);
+    await initTargetTimeControls(containers);
 
-  updateRelicTotal();
-  triggerRecalculate(containers);
+    updateRelicTotal();
+    triggerRecalculate(containers);
+  } finally {
+    setAppLoading(false);
+  }
 }
 
 /* -----------------------------
@@ -2210,6 +2264,7 @@ async function init() {
   const containers = getContainers();
   applyMobileSectionOrder();
   renderAll(containers);
+  setAppLoading(true);
   enhanceStaticFieldTooltips();
   bindTooltipLayers();
   bindGlobalHandlers(containers);
@@ -2221,6 +2276,7 @@ async function init() {
 
   // ??撱箇?鞈賢迤?詨 + 憟?脣???
   initSeasonSelector(containers, saved);
+  setAppLoading(true);
 
   // ?????
   const levelUpNotifyBtn = document.getElementById('enable-levelup-notify-btn');
