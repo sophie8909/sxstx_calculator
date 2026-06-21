@@ -8,6 +8,7 @@
 html {
   min-width: 0;
   font-size: 16px;
+  scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
 }
 
@@ -272,6 +273,50 @@ body.app-loading .app-loading-overlay {
   margin-inline: auto;
 }
 
+.app-layout {
+  width: 100%;
+  max-width: min(100%, 92rem);
+  margin-inline: auto;
+}
+
+.section-side-nav {
+  display: none;
+}
+
+.section-side-nav-title {
+  margin: 0 0 .35rem;
+  padding: 0 .5rem;
+  color: #165f63;
+  font-size: .78rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.section-side-nav a {
+  display: flex;
+  min-height: 2.25rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: .5rem;
+  color: #0f766e;
+  font-size: .86rem;
+  font-weight: 800;
+  line-height: 1.15;
+  text-align: center;
+  text-decoration: none;
+  transition: background-color .18s ease, border-color .18s ease, color .18s ease, transform .18s ease;
+}
+
+.section-side-nav a:hover,
+.section-side-nav a:focus-visible {
+  border-color: #9ed6d8;
+  background: #eefafa;
+  color: #165f63;
+  outline: none;
+  transform: translateX(2px);
+}
+
 .form-shell {
   max-width: min(100%, 48rem);
 }
@@ -296,6 +341,21 @@ body.app-loading .app-loading-overlay {
 #fragment-calculator-panel,
 #target-time-form-panel {
   min-width: 0;
+}
+
+#target-time-card,
+#primordial-star-card,
+#target-levels-card,
+#relic-card,
+#character-exp-card,
+#skill-card,
+#equipment-card,
+#pet-card,
+#production-card,
+#owned-materials-card,
+#results-card,
+#material-source-card {
+  scroll-margin-top: 1rem;
 }
 
 #primary-content-grid {
@@ -764,11 +824,48 @@ main a[data-i18n='relay_open_google_form'] {
 }
 
 @media (min-width: 1280px) {
+  .app-layout {
+    display: grid;
+    grid-template-columns: 7.5rem minmax(0, 1fr);
+    align-items: start;
+    gap: 1rem;
+  }
+
+  .app-layout .app-shell {
+    max-width: none;
+  }
+
+  .section-side-nav {
+    position: sticky;
+    top: 1rem;
+    z-index: 80;
+    display: flex;
+    flex-direction: column;
+    gap: .25rem;
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+    padding: .75rem;
+    border: 1px solid #cde5e8;
+    border-radius: .5rem;
+    background: rgba(255, 255, 255, .9);
+    box-shadow: 0 2px 8px rgba(38, 115, 119, .15);
+  }
+
+  .section-side-nav.is-hidden {
+    display: none;
+  }
+
   .responsive-scroll {
     overflow-y: visible !important;
   }
 
   .tooltip-safe-scroll {
     overflow-y: visible !important;
+  }
+}
+
+@media (min-width: 1536px) {
+  .app-layout {
+    grid-template-columns: 8.75rem minmax(0, 1fr);
   }
 }

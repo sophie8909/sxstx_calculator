@@ -1228,6 +1228,7 @@ function bindTargetTimeFormToggle() {
   const calculatorPageContent = document.getElementById('calculator-page-content');
   const fragmentCalculatorPanel = document.getElementById('fragment-calculator-panel');
   const targetTimeFormPanel = document.getElementById('target-time-form-panel');
+  const sectionSideNav = document.getElementById('section-side-nav');
 
   if (!navButtons.length || !calculatorPageContent || !fragmentCalculatorPanel || !targetTimeFormPanel) return;
 
@@ -1256,6 +1257,12 @@ function bindTargetTimeFormToggle() {
       button.classList.toggle('bg-gray-600', !active);
       button.classList.toggle('hover:bg-gray-500', !active);
     });
+
+    if (sectionSideNav) {
+      const showSectionNav = targetPage === 'primordial';
+      sectionSideNav.classList.toggle('is-hidden', !showSectionNav);
+      sectionSideNav.setAttribute('aria-hidden', showSectionNav ? 'false' : 'true');
+    }
 
     localStorage.setItem(ACTIVE_PAGE_STORAGE_KEY, targetPage);
     if (shouldScroll) scrollToToggle();

@@ -77,6 +77,22 @@
       </div>
     </div>
   </div>
+  <div class="app-layout">
+    <nav id="section-side-nav" class="section-side-nav" aria-label="區塊導覽">
+      <p class="section-side-nav-title">快速導覽</p>
+      <a href="#target-time-card">時間</a>
+      <a href="#primordial-star-card">原初</a>
+      <a href="#target-levels-card">目標</a>
+      <a href="#relic-card">遺物</a>
+      <a href="#character-exp-card">角色</a>
+      <a href="#skill-card">技能</a>
+      <a href="#equipment-card">裝備</a>
+      <a href="#pet-card">寵物</a>
+      <a href="#production-card">推車</a>
+      <a href="#owned-materials-card">素材</a>
+      <a href="#results-card">結果</a>
+      <a href="#material-source-card">來源</a>
+    </nav>
   <div class="app-shell w-full max-w-7xl mx-auto">
     <header class="text-center mb-6">
       <h1 class="text-3xl md:text-4xl font-bold text-teal-800" data-i18n="app_title">杖劍傳說 素材計算機</h1>
@@ -268,7 +284,7 @@
       <!-- Main character and skill column -->
       <div class="main-grid-column"><!-- gap-6 ??gap-4 -->
       <!-- Character EXP section -->
-      <div class="card calculator-section-card rounded-lg p-4 shadow-lg flex flex-col min-h-0">
+      <div id="character-exp-card" class="card calculator-section-card rounded-lg p-4 shadow-lg flex flex-col min-h-0">
         <h2 class="text-2xl font-bold border-b sticky top-0 z-10 px-4 py-2 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
           <span data-i18n="section_role_exp">角色經驗</span>
         </h2>
@@ -298,7 +314,7 @@
       </div>
 
       
-        <div class="card calculator-section-card rounded-lg p-4 shadow-lg flex flex-col min-h-0">
+        <div id="skill-card" class="card calculator-section-card rounded-lg p-4 shadow-lg flex flex-col min-h-0">
           <h2 class="text-2xl font-bold border-b sticky top-0 z-10 px-4 py-2 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
             <span data-i18n="section_skill">技能等級</span>
           </h2>
@@ -310,7 +326,7 @@
     
     <!-- 銝哨?閫 + 撟餌 + 撠頠?-->
     <div class="main-grid-column">
-      <div class="card calculator-section-card rounded-lg p-4 shadow-lg flex flex-col min-h-0">
+      <div id="equipment-card" class="card calculator-section-card rounded-lg p-4 shadow-lg flex flex-col min-h-0">
           <h2 class="text-2xl font-bold border-b sticky top-0 z-10 px-4 py-2 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
             <span data-i18n="section_equip">裝備等級</span>
           </h2>
@@ -320,7 +336,7 @@
         </div>
     
       <!-- 撟餌蝑?嚗葬?哨? -->
-      <div class="card calculator-section-card rounded-lg p-4 shadow-lg flex flex-col min-h-0">
+      <div id="pet-card" class="card calculator-section-card rounded-lg p-4 shadow-lg flex flex-col min-h-0">
         <h2 class="text-2xl font-bold border-b sticky top-0 z-10 px-4 py-2 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
           <span data-i18n="section_pet">寵物等級</span>
         </h2>
@@ -330,7 +346,7 @@
       </div>
     
       <!-- 撠頠?敺株矽嚗?-->
-      <div class="card calculator-section-card rounded-lg p-4 shadow-lg flex flex-col min-h-0">
+      <div id="production-card" class="card calculator-section-card rounded-lg p-4 shadow-lg flex flex-col min-h-0">
         <h2 class="text-2xl font-bold border-b sticky top-0 z-10 px-4 py-2 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
           <span data-i18n="section_cart">推車時產</span>
         </h2>
@@ -346,7 +362,7 @@
     <!-- ?喉?蝝?鞈? + 閮?蝮質汗嚗?擃?朣? -->
     <div class="main-grid-column">
       <!-- 蝝?鞈?嚗葬?哨? -->
-      <div class="card calculator-section-card rounded-lg p-4 shadow-lg flex flex-col min-h-0">
+      <div id="owned-materials-card" class="card calculator-section-card rounded-lg p-4 shadow-lg flex flex-col min-h-0">
         <h2 class="text-2xl font-bold border-b pb-3 sticky top-0 z-10 px-6 py-3 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
           <span data-i18n="section_owned_materials">目前持有素材</span>
         </h2>
@@ -356,7 +372,7 @@
       </div>
     
       <!-- 閮?蝮質汗嚗??瘀? -->
-      <div class="card calculator-section-card rounded-lg p-4 shadow-lg flex flex-col min-h-0">
+      <div id="results-card" class="card calculator-section-card rounded-lg p-4 shadow-lg flex flex-col min-h-0">
         <h2 class="text-2xl font-bold border-b pb-3 sticky top-0 z-10 px-6 py-3 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
           <span data-i18n="section_summary">結果總覽</span>
         </h2>
@@ -594,6 +610,8 @@
       </div>
     </div>
   </footer>
+  </div>
+  </div>
   <!-- ?亙暺??批?剁? -->
   <script type="module" src="./src/main.js"></script>
 </body>
