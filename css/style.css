@@ -348,6 +348,22 @@ body.app-loading .app-loading-overlay {
   transition: all .25s ease;
 }
 
+.calculator-section-card {
+  gap: 1rem;
+}
+
+.calculator-section-card > h2 {
+  position: static !important;
+  z-index: auto !important;
+  padding: 0 0 .75rem !important;
+  margin: 0 !important;
+  border-bottom: 1px solid #cde5e8;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  font-size: 1.25rem;
+  line-height: 1.25;
+}
+
 .input-field {
   width: 100%;
   background-color: #f7fbfc;
@@ -749,10 +765,10 @@ main a[data-i18n='relay_open_google_form'] {
 
 @media (min-width: 1280px) {
   .responsive-scroll {
-    overflow-y: auto !important;
+    overflow-y: visible !important;
   }
 
   .tooltip-safe-scroll {
-    overflow-y: auto !important;
+    overflow-y: visible !important;
   }
 }

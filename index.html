@@ -266,16 +266,16 @@
     <!-- ===== 銝?銝餃摰?===== -->
     <div id="primary-content-grid" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 page-section"><!-- gap-6 ??gap-4 -->
       <!-- Main character and skill column -->
-      <div class="main-grid-column xl:max-h-[75vh] xl:flex xl:flex-col xl:gap-4"><!-- gap-6 ??gap-4 -->
+      <div class="main-grid-column"><!-- gap-6 ??gap-4 -->
       <!-- Character EXP section -->
-      <div class="card rounded-xl p-0 shadow-lg xl:flex-[1.1] flex flex-col min-h-0">
+      <div class="card calculator-section-card rounded-lg p-4 shadow-lg flex flex-col min-h-0">
         <h2 class="text-2xl font-bold border-b sticky top-0 z-10 px-4 py-2 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
           <span data-i18n="section_role_exp">角色經驗</span>
         </h2>
-        <div class="overflow-y-auto custom-scrollbar p-4 min-h-0 responsive-scroll tooltip-safe-scroll">
+        <div class="overflow-y-auto custom-scrollbar min-h-0 responsive-scroll tooltip-safe-scroll">
           <div id="char-bed-inputs" class="space-y-3"></div>
         </div>
-        <div class="flex flex-wrap items-center justify-center gap-4 px-4 pb-3 shrink-0">
+        <div class="flex flex-wrap items-center justify-center gap-4 pt-3 shrink-0">
           <label for="notify-time-select" class="font-semibold" data-i18n="notify_time_label">???????:</label>
           <select id="notify-time-select" class="input-field rounded p-2">
             <option value="min0" data-i18n="notify_now">準時</option>
@@ -285,7 +285,7 @@
             <option value="min5" data-i18n="notify_5min">5 分鐘</option>
           </select>
         </div>
-        <div class="flex flex-wrap items-center justify-center gap-4 px-4 pb-4 shrink-0">
+        <div class="flex flex-wrap items-center justify-center gap-4 pt-3 shrink-0">
           <button id="enable-levelup-notify-btn"
             class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg text-xs">
             <span data-i18n="enable_notify">匯入下一級日曆</span>
@@ -298,43 +298,43 @@
       </div>
 
       
-        <div class="card rounded-xl p-0 shadow-lg lg:flex-1 flex flex-col min-h-0">
+        <div class="card calculator-section-card rounded-lg p-4 shadow-lg flex flex-col min-h-0">
           <h2 class="text-2xl font-bold border-b sticky top-0 z-10 px-4 py-2 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
             <span data-i18n="section_skill">技能等級</span>
           </h2>
-          <div class="overflow-y-auto custom-scrollbar p-4 min-h-0 responsive-scroll tooltip-safe-scroll">
+          <div class="overflow-y-auto custom-scrollbar min-h-0 responsive-scroll tooltip-safe-scroll">
             <div id="skill-inputs" class="space-y-4"></div>
           </div>
         </div>
       </div>
     
     <!-- 銝哨?閫 + 撟餌 + 撠頠?-->
-    <div class="main-grid-column xl:max-h-[75vh] xl:flex xl:flex-col xl:gap-4">
-      <div class="card rounded-xl p-0 shadow-lg xl:flex-1 flex flex-col min-h-0">
+    <div class="main-grid-column">
+      <div class="card calculator-section-card rounded-lg p-4 shadow-lg flex flex-col min-h-0">
           <h2 class="text-2xl font-bold border-b sticky top-0 z-10 px-4 py-2 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
             <span data-i18n="section_equip">裝備等級</span>
           </h2>
-          <div class="overflow-y-auto custom-scrollbar p-4 min-h-0 responsive-scroll tooltip-safe-scroll"><!-- p-6 ??p-4 -->
+          <div class="overflow-y-auto custom-scrollbar min-h-0 responsive-scroll tooltip-safe-scroll"><!-- p-6 ??p-4 -->
             <div id="equip-inputs" class="space-y-4"></div><!-- 靽? -->
           </div>
         </div>
     
       <!-- 撟餌蝑?嚗葬?哨? -->
-      <div class="card rounded-xl p-0 shadow-lg xl:flex-[0.5] flex flex-col min-h-0">
+      <div class="card calculator-section-card rounded-lg p-4 shadow-lg flex flex-col min-h-0">
         <h2 class="text-2xl font-bold border-b sticky top-0 z-10 px-4 py-2 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
           <span data-i18n="section_pet">寵物等級</span>
         </h2>
-        <div class="overflow-y-auto custom-scrollbar p-4 min-h-0 responsive-scroll tooltip-safe-scroll">
+        <div class="overflow-y-auto custom-scrollbar min-h-0 responsive-scroll tooltip-safe-scroll">
           <div id="pet-inputs" class="space-y-3"></div>
         </div>
       </div>
     
       <!-- 撠頠?敺株矽嚗?-->
-      <div class="card rounded-xl p-0 shadow-lg xl:flex-[1.2] flex flex-col min-h-0">
+      <div class="card calculator-section-card rounded-lg p-4 shadow-lg flex flex-col min-h-0">
         <h2 class="text-2xl font-bold border-b sticky top-0 z-10 px-4 py-2 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
           <span data-i18n="section_cart">推車時產</span>
         </h2>
-        <div class="overflow-y-auto custom-scrollbar p-4 min-h-0 responsive-scroll tooltip-safe-scroll">
+        <div class="overflow-y-auto custom-scrollbar min-h-0 responsive-scroll tooltip-safe-scroll">
           <div id="production-inputs" class="space-y-4 mb-4"></div>
         </div>
       </div>
@@ -344,30 +344,30 @@
     
     
     <!-- ?喉?蝝?鞈? + 閮?蝮質汗嚗?擃?朣? -->
-    <div class="main-grid-column xl:max-h-[75vh] xl:flex xl:flex-col xl:gap-4">
+    <div class="main-grid-column">
       <!-- 蝝?鞈?嚗葬?哨? -->
-      <div class="card rounded-xl p-0 shadow-lg xl:flex-[0.75] flex flex-col min-h-0">
+      <div class="card calculator-section-card rounded-lg p-4 shadow-lg flex flex-col min-h-0">
         <h2 class="text-2xl font-bold border-b pb-3 sticky top-0 z-10 px-6 py-3 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
           <span data-i18n="section_owned_materials">目前持有素材</span>
         </h2>
-        <div class="overflow-y-auto custom-scrollbar p-4 min-h-0 responsive-scroll tooltip-safe-scroll">
+        <div class="overflow-y-auto custom-scrollbar min-h-0 responsive-scroll tooltip-safe-scroll">
           <div id="owned-materials" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-3"></div>
         </div>
       </div>
     
       <!-- 閮?蝮質汗嚗??瘀? -->
-      <div class="card rounded-xl p-0 shadow-lg xl:flex-[1.25] flex flex-col min-h-0">
+      <div class="card calculator-section-card rounded-lg p-4 shadow-lg flex flex-col min-h-0">
         <h2 class="text-2xl font-bold border-b pb-3 sticky top-0 z-10 px-6 py-3 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
           <span data-i18n="section_summary">結果總覽</span>
         </h2>
-        <div class="overflow-y-auto custom-scrollbar p-4 min-h-0 responsive-scroll tooltip-safe-scroll">
+        <div class="overflow-y-auto custom-scrollbar min-h-0 responsive-scroll tooltip-safe-scroll">
           <div id="results" class="space-y-3 pt-2"></div>
         </div>
       </div>
     </div>
   </div>
   <!-- 蝝?靘?隡啁?嚗 view.js ??皜脫??批捆嚗?-->
-  <div id="material-source-card" class="card rounded-lg p-4 shadow-lg mb-6 w-full page-section">
+  <div id="material-source-card" class="card rounded-lg p-4 shadow-lg mt-4 mb-6 w-full page-section">
     <div id="material-source-container"></div>
   </div>
   </div>
