@@ -545,6 +545,11 @@ export function computeAll(containers) {
     const total = Number(String(span.textContent || '').replace(/,/g, '').trim()) || 0;
     if (total > 0) materialSourceGains[materialId] = (materialSourceGains[materialId] || 0) + total;
   });
+  const materialSourceCosts = {};
+  const storeRolaCost = Number(
+    String(document.getElementById('store-rola-total-cost')?.textContent || '').replace(/,/g, '').trim()
+  ) || 0;
+  if (storeRolaCost > 0) materialSourceCosts.rola = storeRolaCost;
 
   const productionHourly = {};
   Object.keys(productionSources).forEach((sourceId) => {
@@ -574,6 +579,7 @@ export function computeAll(containers) {
       },
       productionHourly,
       materialSourceGains,
+      materialSourceCosts,
       ownedMaterials,
       now: Date.now(),
     },

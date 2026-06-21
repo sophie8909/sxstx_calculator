@@ -304,6 +304,7 @@ export function calculateUpgradeResults(input, context) {
   const {
     bedProgress,
     categoryCurrentLevels,
+    materialSourceCosts,
     materialSourceGains,
     ownedMaterials,
     primordial,
@@ -368,6 +369,20 @@ export function calculateUpgradeResults(input, context) {
     mergeEstimateHints(estimated, delta, estimatedRanges);
   });
 
+  Object.entries(materialSourceCosts || {}).forEach(([materialId, total]) => {
+    if (total > 0) {
+      required[materialId] = (required[materialId] || 0) + total;
+      hasInput = true;
+    }
+  });
+
+  Object.entries(materialSourceGains || {}).forEach(([materialId, total]) => {
+    if (total > 0) {
+      gains[materialId] = (gains[materialId] || 0) + total;
+      hasInput = true;
+    }
+  });
+
   const derived = {
     reachableLevel,
     seasonScore: score,
@@ -389,10 +404,6 @@ export function calculateUpgradeResults(input, context) {
       gains.exp = (gains.exp || 0) + Math.floor(bedProgress.bedExpHourly * hours);
     }
   }
-
-  Object.entries(materialSourceGains).forEach(([materialId, total]) => {
-    if (total > 0) gains[materialId] = (gains[materialId] || 0) + total;
-  });
 
   Object.keys(materials).forEach((materialId) => {
     const need = required[materialId] || 0;
