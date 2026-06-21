@@ -139,10 +139,6 @@ export const I18N_DICTIONARIES = {
     "zh-Hant": "每日購買",
     "zh-Hans": "每日购买"
   },
-  "daily_rola_cost": {
-    "zh-Hant": "每日羅拉成本：",
-    "zh-Hans": "每日罗拉成本："
-  },
   "daily_runs_header": {
     "zh-Hant": "每日次數",
     "zh-Hans": "每日次数"
@@ -226,10 +222,6 @@ export const I18N_DICTIONARIES = {
   "loading_season_data": {
     "zh-Hant": "正在讀取賽季資料...",
     "zh-Hans": "正在读取赛季资料..."
-  },
-  "manual_daily_rola_cost": {
-    "zh-Hant": "手動每日羅拉成本：",
-    "zh-Hans": "手动每日罗拉成本："
   },
   "material_essence": {
     "zh-Hant": "歷戰精華",
@@ -472,12 +464,12 @@ export const I18N_DICTIONARIES = {
     "zh-Hans": "每日格数"
   },
   "store_calculation_rule": {
-    "zh-Hant": "商店售價僅用於推算售價合計。",
-    "zh-Hans": "商店售价仅用于推算售价合计。"
+    "zh-Hant": "售價欄位使用 rola_cost，單位為萬；每次平均使用 avg_defaults。",
+    "zh-Hans": "售价栏位使用 rola_cost，单位为万；每次平均使用 avg_defaults。"
   },
   "store_resource_price_header": {
-    "zh-Hant": "商店售價",
-    "zh-Hans": "商店售价"
+    "zh-Hant": "售價(萬)",
+    "zh-Hans": "售价(万)"
   },
   "store_source_title": {
     "zh-Hant": "商店購買",
@@ -614,10 +606,6 @@ export const I18N_DICTIONARIES = {
   "total_gain_header": {
     "zh-Hant": "總收益",
     "zh-Hans": "总收益"
-  },
-  "total_rola_cost": {
-    "zh-Hant": "總羅拉成本：",
-    "zh-Hans": "总罗拉成本："
   },
   "total_store_price": {
     "zh-Hant": "期間售價合計",

@@ -43,7 +43,6 @@ function getTooltipText(id, labelText = '') {
     'target-time-custom': 'target_time_custom_tooltip',
     'notify-time-select': 'notify_tooltip',
     'days-remaining': 'tooltip_days_remaining',
-    'store-rola-daily-cost-manual': 'tooltip_store_rola_daily_cost_manual',
     'free-speedup-used-today': 'tooltip_free_speedup_used',
     'speedup-stone-count': 'tooltip_speedup_stone_count',
   };
@@ -460,13 +459,13 @@ export function renderCharBed(container) {
 
 export function renderMaterialSource(containers) {
   const cfg = getMaterialSourceConfig();
-  const { dailyDefaults, avgDefaults, rolaCostDefaults, powerCostDefaults, sourceMaterials } = cfg;
+  const { dailyDefaults, avgDefaults, rolaCostDefaults, sourceMaterials } = cfg;
   const wrapper = containers.materialSource;
   if (!wrapper) return;
 
-  const dungeonHtml = renderMaterialSourceTable('dungeon', t('dungeon_source_title'), sourceMaterials.dungeon, dailyDefaults, avgDefaults, rolaCostDefaults, powerCostDefaults, { showAvg: true });
-  const exploreHtml = renderMaterialSourceTable('explore', t('explore_source_title'), sourceMaterials.explore, dailyDefaults, avgDefaults, rolaCostDefaults, powerCostDefaults, { showAvg: true });
-  const storeHtml = renderMaterialSourceTable('store', t('store_source_title'), sourceMaterials.store, dailyDefaults, avgDefaults, rolaCostDefaults, powerCostDefaults, { showAvg: false });
+  const dungeonHtml = renderMaterialSourceTable('dungeon', t('dungeon_source_title'), sourceMaterials.dungeon, dailyDefaults, avgDefaults, rolaCostDefaults, { showAvg: true });
+  const exploreHtml = renderMaterialSourceTable('explore', t('explore_source_title'), sourceMaterials.explore, dailyDefaults, avgDefaults, rolaCostDefaults, { showAvg: true });
+  const storeHtml = renderMaterialSourceTable('store', t('store_source_title'), sourceMaterials.store, dailyDefaults, avgDefaults, rolaCostDefaults, { showAvg: false });
 
   wrapper.innerHTML = `
     <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-3 mb-4">
@@ -492,39 +491,24 @@ export function renderMaterialSource(containers) {
   const daysLabel = wrapper.querySelector('span.font-semibold');
   appendTooltip(daysLabel, getTooltipText('days-remaining'));
 
-  const manualCostInput = wrapper.querySelector('#store-rola-daily-cost-manual');
-  if (manualCostInput) {
-    const row = manualCostInput.closest('div');
-    const labelNode = row?.querySelector('span');
-    appendTooltip(labelNode, getTooltipText('store-rola-daily-cost-manual'));
-  }
 }
 
-function renderMaterialSourceTable(source, title, materialList, dailyDefaults, avgDefaults, rolaCostDefaults, powerCostDefaults, options) {
+function renderMaterialSourceTable(source, title, materialList, dailyDefaults, avgDefaults, rolaCostDefaults, options) {
   const showAvg = options.showAvg;
   const isStore = source === 'store';
   const dailyBySource = dailyDefaults[source] || {};
   const avgBySource = avgDefaults[source] || {};
   const rolaCostBySource = rolaCostDefaults[source] || {};
-  const powerCostBySource = powerCostDefaults[source] || {};
 
   const headerCols = showAvg
     ? `<th>${t('material_header')}</th><th>${t('daily_runs_header')}</th><th>${t('avg_gain_header')}</th><th>${t('total_gain_header')}</th>`
     : isStore
-      ? `<th>${t('material_header')}</th><th>${t('daily_purchase_header')}</th><th>${t('rola_cost_header')}</th><th>${t('total_gain_header')}</th><th>${t('store_resource_price_header')}</th>`
+      ? `<th>${t('material_header')}</th><th>${t('daily_purchase_header')}</th><th>${t('store_resource_price_header')}</th><th>${t('avg_gain_header')}</th><th>${t('total_gain_header')}</th>`
       : `<th>${t('material_header')}</th><th>${t('daily_purchase_header')}</th><th>${t('rola_cost_header')}</th><th>${t('total_gain_header')}</th>`;
 
   const storeSummary =
     isStore
       ? `
-        <div class="mt-3 p-2 bg-gray-50 rounded border text-right text-sm space-y-1">
-          <div>${t('daily_rola_cost')} <span id="store-rola-daily-cost">0</span></div>
-          <div class="flex items-center justify-end gap-2">
-            <span>${t('manual_daily_rola_cost')}</span>
-            <input id="store-rola-daily-cost-manual" type="number" class="input-field rounded px-1 py-0.5 text-right material-source-input" data-source="${source}" data-material="rolaCost" data-role="manual" value="0" />
-          </div>
-          <div>${t('total_rola_cost')} <span id="store-rola-total-cost">0</span></div>
-        </div>
         <div class="mt-3 p-2 bg-gray-50 rounded border text-sm space-y-1">
           <div class="text-slate-600">${t('store_calculation_rule')}</div>
           <div class="text-right">${t('daily_store_price_total')} <span id="store-price-daily-total">0</span></div>
@@ -558,7 +542,6 @@ function renderMaterialSourceTable(source, title, materialList, dailyDefaults, a
       const daily = dailyBySource[mat] ?? 0;
       const avg = avgBySource[mat] ?? 0;
       const rolaCost = rolaCostBySource[mat] ?? 0;
-      const powerCost = powerCostBySource[mat] ?? 0;
 
       if (showAvg) {
         const inputIdPrefix = `material-source-${source}-${mat}`;
@@ -595,25 +578,25 @@ function renderMaterialSourceTable(source, title, materialList, dailyDefaults, a
               <input type="number"
                 id="${inputIdPrefix}-slots"
                 class="input-field rounded px-1 py-0.5 text-right material-source-input"
-                data-source="${source}" data-material="${mat}" data-role="avg"
-                value="${avg}" />
-            </td>
-            <td class="py-1 text-center">
-              <input type="number"
-                id="${inputIdPrefix}-rola-cost"
-                class="input-field rounded px-1 py-0.5 text-right material-source-input"
-                data-source="${source}" data-material="${mat}" data-role="rola-cost"
-                value="${rolaCost}" />
-            </td>
-            <td class="py-1 text-right">
-              <span class="material-source-total" data-source="${source}" data-material="${mat}">0</span>
+                data-source="${source}" data-material="${mat}" data-role="daily"
+                value="${daily}" />
             </td>
             <td class="py-1 text-center">
               <input type="number"
                 id="${inputIdPrefix}-shop-price"
                 class="input-field rounded px-1 py-0.5 text-right material-source-input"
                 data-source="${source}" data-material="${mat}" data-role="shop-price"
-                value="${powerCost}" />
+                value="${rolaCost}" />
+            </td>
+            <td class="py-1 text-center">
+              <input type="number"
+                id="${inputIdPrefix}-avg"
+                class="input-field rounded px-1 py-0.5 text-right material-source-input"
+                data-source="${source}" data-material="${mat}" data-role="avg"
+                value="${avg}" />
+            </td>
+            <td class="py-1 text-right">
+              <span class="material-source-total" data-source="${source}" data-material="${mat}">0</span>
             </td>
           </tr>
         `;

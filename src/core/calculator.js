@@ -304,7 +304,6 @@ export function calculateUpgradeResults(input, context) {
   const {
     bedProgress,
     categoryCurrentLevels,
-    materialSourceCosts,
     materialSourceGains,
     ownedMaterials,
     primordial,
@@ -367,13 +366,6 @@ export function calculateUpgradeResults(input, context) {
     const { materials: delta, estimatedRanges } = getCostDelta(costConfig.costTable, currentLevel, targetLevel);
     addMaterialDelta(required, delta);
     mergeEstimateHints(estimated, delta, estimatedRanges);
-  });
-
-  Object.entries(materialSourceCosts || {}).forEach(([materialId, total]) => {
-    if (total > 0) {
-      required[materialId] = (required[materialId] || 0) + total;
-      hasInput = true;
-    }
   });
 
   Object.entries(materialSourceGains || {}).forEach(([materialId, total]) => {

@@ -1903,8 +1903,9 @@ function updateMaterialSourceRow(source, material) {
   let total = 0;
 
   if (source === 'store') { // TODO: 靽格迤靘??迂??'store'嚗? view.js ??data-source 銝??
-    const dailySlots = getMaterialInput(source, material, 'avg');
-    total = dailySlots * days;
+    const dailyBuy = getMaterialInput(source, material, 'daily');
+    const avg = getMaterialInput(source, material, 'avg');
+    total = dailyBuy * avg * days;
   } else {
     const daily = getMaterialInput(source, material, 'daily');
     const avg = getMaterialInput(source, material, 'avg');
@@ -1931,40 +1932,6 @@ function updateAllMaterialSources() {
 }
 
 
-function updateStoreRolaCost() {
-  const days =
-    parseInt(document.getElementById('days-remaining')?.value || '0', 10) || 0;
-
-  const storeMats = ['stone', 'essence', 'sand', 'freeze_dried'];
-  let autoDailyCost = 0;
-
-  storeMats.forEach((mat) => {
-    const unit = getMaterialInput('store', mat, 'rola-cost');
-    const dailyBuy = getMaterialInput('store', mat, 'avg');
-    autoDailyCost += dailyBuy * unit;
-  });
-
-  const dailyEl = document.getElementById('store-rola-daily-cost');
-  const dailyManualEl = document.getElementById('store-rola-daily-cost-manual');
-  const totalEl = document.getElementById('store-rola-total-cost');
-
-  let dailyCost = autoDailyCost;
-
-  if (dailyManualEl) {
-    const manualRaw = dailyManualEl.value.trim();
-    if (manualRaw !== '') {
-      const manualVal = parseFloat(manualRaw);
-      if (!Number.isNaN(manualVal)) {
-        dailyCost = manualVal;
-      }
-    }
-  }
-
-  if (dailyEl) dailyEl.textContent = formatMaterialSourceNumber(dailyCost, 2);
-  if (totalEl) totalEl.textContent = formatMaterialSourceNumber(dailyCost * days, 2);
-}
-
-
 function updateStoreEstimateSummary() {
   const days =
     parseInt(document.getElementById('days-remaining')?.value || '0', 10) || 0;
@@ -1974,9 +1941,9 @@ function updateStoreEstimateSummary() {
   let dailyPriceTotal = 0;
 
   storeMats.forEach((mat) => {
-    const price = getMaterialInput('store', mat, 'shop-price');
-    const dailySlots = getMaterialInput('store', mat, 'avg');
-    dailyPriceTotal += dailySlots * price;
+    const priceWan = getMaterialInput('store', mat, 'shop-price');
+    const dailyBuy = getMaterialInput('store', mat, 'daily');
+    dailyPriceTotal += dailyBuy * priceWan * 10000;
   });
 
   const dailyPriceEl = document.getElementById('store-price-daily-total');
@@ -1988,7 +1955,6 @@ function updateStoreEstimateSummary() {
 
 
 function updateStoreSummaries() {
-  updateStoreRolaCost();
   updateStoreEstimateSummary();
 }
 
