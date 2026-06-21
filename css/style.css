@@ -453,6 +453,23 @@ body.app-loading .app-loading-overlay {
   min-height: 2.5rem;
 }
 
+.material-source-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  color: #0f766e;
+  font-weight: 700;
+}
+
+.material-source-toggle input {
+  width: 1rem;
+  min-width: 1rem;
+  height: 1rem;
+  min-height: 1rem;
+  accent-color: #0f766e;
+}
+
 .material-source-total,
 .material-source-derived {
   display: inline-block;

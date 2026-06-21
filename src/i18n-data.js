@@ -472,8 +472,8 @@ export const I18N_DICTIONARIES = {
     "zh-Hans": "每日格数"
   },
   "store_calculation_rule": {
-    "zh-Hant": "商店售價僅用於推算售價合計；大礦後總量套用大礦機率 {bonus}%。",
-    "zh-Hans": "商店售价仅用于推算售价合计；大矿后总量套用大矿概率 {bonus}%。"
+    "zh-Hant": "商店售價僅用於推算售價合計。",
+    "zh-Hans": "商店售价仅用于推算售价合计。"
   },
   "store_resource_price_header": {
     "zh-Hant": "商店售價",
@@ -742,5 +742,13 @@ export const I18N_DICTIONARIES = {
   "loading_app_data": {
     "zh-Hant": "資料讀取中，請稍候...",
     "zh-Hans": "资料读取中，请稍候..."
+  },
+  "include_big_mine_gain": {
+    "zh-Hant": "計算大礦收益",
+    "zh-Hans": "计算大矿收益"
+  },
+  "explore_big_mine_rule": {
+    "zh-Hant": "開啟後，探索收益會套用大礦期望收益；一個大礦等於 2 倍每次平均，額外收益依大礦率 {bonus}% 推估。",
+    "zh-Hans": "开启后，探索收益会套用大矿期望收益；一个大矿等于 2 倍每次平均，额外收益依大矿率 {bonus}% 推估。"
   }
 };

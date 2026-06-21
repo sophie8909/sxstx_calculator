@@ -511,7 +511,7 @@ function renderMaterialSourceTable(source, title, materialList, dailyDefaults, a
   const headerCols = showAvg
     ? `<th>${t('material_header')}</th><th>${t('daily_runs_header')}</th><th>${t('avg_gain_header')}</th><th>${t('total_gain_header')}</th>`
     : isStore
-      ? `<th>${t('material_header')}</th><th>${t('daily_purchase_header')}</th><th>${t('rola_cost_header')}</th><th>${t('total_gain_header')}</th><th>${t('store_resource_price_header')}</th><th>${t('big_mine_total_gain_header')}</th>`
+      ? `<th>${t('material_header')}</th><th>${t('daily_purchase_header')}</th><th>${t('rola_cost_header')}</th><th>${t('total_gain_header')}</th><th>${t('store_resource_price_header')}</th>`
       : `<th>${t('material_header')}</th><th>${t('daily_purchase_header')}</th><th>${t('rola_cost_header')}</th><th>${t('total_gain_header')}</th>`;
 
   const storeSummary =
@@ -526,12 +526,29 @@ function renderMaterialSourceTable(source, title, materialList, dailyDefaults, a
           <div>${t('total_rola_cost')} <span id="store-rola-total-cost">0</span></div>
         </div>
         <div class="mt-3 p-2 bg-gray-50 rounded border text-sm space-y-1">
-          <div class="text-slate-600">${t('store_calculation_rule', {
-            bonus: (STAMINA_BIG_MINE_RATE * 100).toFixed(2),
-          })}</div>
+          <div class="text-slate-600">${t('store_calculation_rule')}</div>
           <div class="text-right">${t('daily_store_price_total')} <span id="store-price-daily-total">0</span></div>
           <div class="text-right">${t('total_store_price')} <span id="store-price-period-total">0</span></div>
         </div>
+      `
+      : '';
+  const exploreSummary =
+    source === 'explore'
+      ? `
+        <label class="material-source-toggle mt-3 p-2 bg-gray-50 rounded border text-sm">
+          <input
+            id="explore-big-mine-enabled"
+            type="checkbox"
+            class="material-source-input"
+            data-source="explore"
+            data-material="bigMine"
+            data-role="enabled"
+          />
+          <span>${t('include_big_mine_gain')}</span>
+        </label>
+        <div class="mt-2 text-xs text-slate-600">${t('explore_big_mine_rule', {
+          bonus: (STAMINA_BIG_MINE_RATE * 100).toFixed(2),
+        })}</div>
       `
       : '';
 
@@ -598,9 +615,6 @@ function renderMaterialSourceTable(source, title, materialList, dailyDefaults, a
                 data-source="${source}" data-material="${mat}" data-role="shop-price"
                 value="${powerCost}" />
             </td>
-            <td class="py-1 text-right">
-              <span id="${inputIdPrefix}-big-mine-total" class="material-source-derived" data-source="${source}" data-material="${mat}" data-role="big-mine-total">0</span>
-            </td>
           </tr>
         `;
       }
@@ -643,6 +657,7 @@ function renderMaterialSourceTable(source, title, materialList, dailyDefaults, a
           </tbody>
         </table>
       </div>
+      ${exploreSummary}
       ${storeSummary}
     </section>
   `;

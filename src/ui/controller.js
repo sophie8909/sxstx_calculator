@@ -1880,17 +1880,16 @@ function updateDaysRemainingFromTarget() {
   daysInput.value = days;
 }
 
-function updateStoreMaterialDerived(material) {
-  const dailySlots = getMaterialInput('store', material, 'avg');
-  const days = parseInt(document.getElementById('days-remaining')?.value || '0', 10) || 0;
-  const bigMineTotalEl = document.getElementById(`material-source-store-${material}-big-mine-total`);
-
-  if (bigMineTotalEl) {
-    bigMineTotalEl.textContent = formatMaterialSourceNumber(dailySlots * days * STAMINA_BIG_MINE_EXPECTED_MULTIPLIER, 2);
-  }
+function shouldIncludeExploreBigMineGain() {
+  return !!document.getElementById('explore-big-mine-enabled')?.checked;
 }
 
 function updateMaterialSourceRow(source, material) {
+  if (source === 'explore' && material === 'bigMine') {
+    ['stone', 'essence', 'sand', 'rola'].forEach((mat) => updateMaterialSourceRow('explore', mat));
+    return;
+  }
+
   const days = parseInt(
     document.getElementById('days-remaining')?.value || '0',
     10
@@ -1906,11 +1905,13 @@ function updateMaterialSourceRow(source, material) {
   if (source === 'store') { // TODO: 靽格迤靘??迂??'store'嚗? view.js ??data-source 銝??
     const dailySlots = getMaterialInput(source, material, 'avg');
     total = dailySlots * days;
-    updateStoreMaterialDerived(material);
   } else {
     const daily = getMaterialInput(source, material, 'daily');
     const avg = getMaterialInput(source, material, 'avg');
     total = daily * avg * days; // TODO: 蝘?/?Ｙ揣蝝?脣? = 瘥甈⊥ ? 撟喳?瘥活 ? ?拚?憭拇
+    if (source === 'explore' && shouldIncludeExploreBigMineGain()) {
+      total *= STAMINA_BIG_MINE_EXPECTED_MULTIPLIER;
+    }
   }
 
   totalSpan.textContent = formatMaterialSourceNumber(total, 2);
@@ -1976,7 +1977,6 @@ function updateStoreEstimateSummary() {
     const price = getMaterialInput('store', mat, 'shop-price');
     const dailySlots = getMaterialInput('store', mat, 'avg');
     dailyPriceTotal += dailySlots * price;
-    updateStoreMaterialDerived(mat);
   });
 
   const dailyPriceEl = document.getElementById('store-price-daily-total');
@@ -2304,6 +2304,7 @@ async function init() {
   // ???亙像?潦??怎???皞?UI
   await loadMaterialAvgDefaults();       // TODO: ?啣?嚗??model.js 銝剔??身撟喳??潸??伐??桀??箏???no-op嚗?
   renderMaterialSource(containers);
+  loadAllInputs(['season-select']);
   bindTooltipLayers();
   updateDaysRemainingFromTarget();
   updateAllMaterialSources();
@@ -2329,6 +2330,7 @@ async function init() {
     updateFragmentCalculator();
     updateTargetTimeFormDefaults();
     renderMaterialSource(containers);
+    loadAllInputs(['season-select']);
     bindTooltipLayers();
     updateDaysRemainingFromTarget();
     updateAllMaterialSources();
