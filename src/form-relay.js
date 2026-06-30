@@ -1,5 +1,6 @@
 import './ads.js';
 import { initLanguage, applyStaticTranslations, t } from './i18n-inline.js';
+import { fetchTextWithCache } from './services/dataCache.js';
 
 const SEASON_START_CATEGORY = '【賽季開始】';
 const SEASON_START_DESCRIPTION =
@@ -119,9 +120,7 @@ function mergeServerOptions(serverNames) {
 async function fetchServerOptionsFromSheet() {
   const url = `https://docs.google.com/spreadsheets/d/${TIME_PRESETS_SHEET.id}/export?format=csv&gid=${TIME_PRESETS_SHEET.gid}`;
   try {
-    const response = await fetch(url, { cache: 'no-store' });
-    if (!response.ok) throw new Error(`fetch failed: ${response.status}`);
-    const text = await response.text();
+    const text = await fetchTextWithCache('google-sheet:time-presets', url);
     const lines = text.trim().split('\n');
     const headers = lines[0].split(',').map((value) => value.trim().toLowerCase());
     const serverIndex = headers.indexOf('server_name');
@@ -145,9 +144,7 @@ async function fetchDungeonNameRows() {
 
   const url = `https://docs.google.com/spreadsheets/d/${DUNGEON_POWER_SHEET.id}/export?format=csv&gid=${DUNGEON_POWER_SHEET.gid}`;
   try {
-    const response = await fetch(url, { cache: 'no-store' });
-    if (!response.ok) throw new Error(`fetch failed: ${response.status}`);
-    const rows = parseCsvRows(await response.text());
+    const rows = parseCsvRows(await fetchTextWithCache('google-sheet:dungeon-power', url));
     const headers = (rows.shift() || []).map(normalizeHeader);
 
     dungeonNameRowsCache = rows

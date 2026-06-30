@@ -718,9 +718,18 @@ export function updateRelicTotal() {
   }
 }
 
-export function renderResults(containers, payload, missingFiles = []) {
+export function renderResults(containers, payload, missingFiles = [], options = {}) {
   const root = containers.results;
   root.innerHTML = '';
+
+  if (options.cacheFallback) {
+    root.insertAdjacentHTML(
+      'afterbegin',
+      `<div class="bg-yellow-900/50 border-l-4 border-yellow-400 text-yellow-300 p-3 rounded-lg mb-3 text-sm">
+        <p>目前使用上次暫存資料</p>
+       </div>`
+    );
+  }
 
   if (missingFiles.length > 0) {
     root.insertAdjacentHTML(

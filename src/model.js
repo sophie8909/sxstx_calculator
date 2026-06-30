@@ -1,7 +1,8 @@
 ﻿// model.js
 // ??鞈?撅歹?撣豢???SV 頛??????蝞?頛胯摮?????
 
-import { getGoogleSheetCsvUrl, loadUpgradeCostTablesForSeason } from './services/dataService.js';
+import { getGoogleSheetCsvUrl, loadUpgradeCostTablesForSeason, clearDataServiceMemoryCache } from './services/dataService.js';
+import { fetchTextWithCache } from './services/dataCache.js';
 import {
   buildCumulativeCostData,
   getCharacterCumulativeExpFromTable,
@@ -205,6 +206,7 @@ export const state = {
   resource: {},          // 鞈?銵剁?靘?type ??嚗?
   cumulativeCostData: {}, // 蝝舐??銵?
   missingFiles: [],       // 頛憭望?皜
+  cacheFallback: false,
   materialAvgDefaults: {             // TODO: ?啣?嚗策蝝?靘?隡啁?雿輻?像??
     dungeon: {},
     explore: {},
@@ -229,9 +231,7 @@ const normalizeKey = (k) => k ? k.replace(/^\uFEFF/, '').trim() : k;
 
 // 撘琿???CSV 閫??嚗???BOM?R/LF?????征??
 export async function fetchAndParseCsv(url) {
-  const res = await fetch(url, { cache: 'no-store' }); // ?翰???踹? GH Pages ??
-  if (!res.ok) throw new Error(`?⊥?頛 CSV: ${url}`);
-  const text = await res.text();
+  const text = await fetchTextWithCache(`csv:${url}`, url);
   // 蝯曹???LF嚗??\r 敶梢 split
   const lines = text.replace(/\r\n?/g, '\n').trim().split('\n');
   if (lines.length === 0) return [];
@@ -274,6 +274,11 @@ export async function fetchAndParseCsv(url) {
 // 撠??祈????箝敞蝛”????摰寥隞颱?憭批?撖?/ BOM ??雿?
 export function preprocessCostData() {
   state.cumulativeCostData = buildCumulativeCostData(state.gameData);
+}
+
+export function clearRemoteDataMemoryCaches() {
+  remoteDataRowsCache.clear();
+  clearDataServiceMemoryCache();
 }
 
 /** ?寞? gid ?芸??澆 CSV URL */

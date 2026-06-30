@@ -6,6 +6,7 @@ import {
   STORAGE_KEY,
   seasonOptions,
   loadDataForSeason,
+  clearRemoteDataMemoryCaches,
   preprocessCostData,
   saveAllInputs,
   loadAllInputs,
@@ -32,6 +33,7 @@ import {
 } from './view.js';
 import { applyStaticTranslations, getCurrentLanguage, initLanguage, t } from '../i18n-inline.js';
 import { loadServers } from '../services/dataService.js';
+import { CACHE_FALLBACK_EVENT, CACHE_UPDATED_EVENT, fetchTextWithCache } from '../services/dataCache.js';
 
 /* ============================================================
  * Google 閰衣?銵剁?Published CSV嚗身摰????賊? / 隡箸??其?皞?
@@ -142,6 +144,9 @@ let fragmentRowsCache = null;
 let dungeonFragmentYieldRowsCache = null;
 let serverRowsCache = null;
 const ACTIVE_PAGE_STORAGE_KEY = 'sxstxCalculatorActivePage';
+const CACHE_REFRESH_DEBOUNCE_MS = 250;
+let cacheRefreshTimer = null;
+let appContainers = null;
 
 const liveOwnedExpState = {
   signature: '',
@@ -503,9 +508,7 @@ async function fetchDungeonPowerRows() {
 
   const url = `https://docs.google.com/spreadsheets/d/${DUNGEON_POWER_SHEET.id}/export?format=csv&gid=${DUNGEON_POWER_SHEET.gid}`;
   try {
-    const res = await fetch(url, { cache: 'no-store' });
-    if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
-    const rows = parseCsvRows(await res.text());
+    const rows = parseCsvRows(await fetchTextWithCache('google-sheet:dungeon-power', url));
     const headers = (rows.shift() || []).map(normalizeHeader);
 
     dungeonPowerRowsCache = rows
@@ -652,9 +655,9 @@ async function fetchFragmentRows() {
 
   const url = getGoogleSheetCsvUrl(DUNGEON_POWER_SHEET);
   try {
-    const res = await fetch(url, { cache: 'no-store' });
-    if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
-    fragmentRowsCache = parseFragmentRowsFromCsvRows(parseCsvRows(await res.text()));
+    fragmentRowsCache = parseFragmentRowsFromCsvRows(
+      parseCsvRows(await fetchTextWithCache('google-sheet:dungeon-power', url))
+    );
   } catch (err) {
     console.warn('[fragment calculator] fetch failed', err);
     fragmentRowsCache = [];
@@ -711,9 +714,9 @@ async function fetchDungeonFragmentYieldRows() {
 
   const url = getGoogleSheetCsvUrl(DUNGEON_POWER_SHEET);
   try {
-    const res = await fetch(url, { cache: 'no-store' });
-    if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
-    dungeonFragmentYieldRowsCache = parseDungeonFragmentYieldRows(parseCsvRows(await res.text()));
+    dungeonFragmentYieldRowsCache = parseDungeonFragmentYieldRows(
+      parseCsvRows(await fetchTextWithCache('google-sheet:dungeon-power', url))
+    );
   } catch (err) {
     console.warn('[fragment dungeon yield] fetch failed', err);
     dungeonFragmentYieldRowsCache = [];
@@ -727,9 +730,7 @@ async function fetchPrimordialRecommendationRows() {
 
   const url = getGoogleSheetCsvUrl(PRIMORDIAL_RECOMMENDATION_SHEET);
   try {
-    const res = await fetch(url, { cache: 'no-store' });
-    if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
-    const rows = parseCsvRows(await res.text());
+    const rows = parseCsvRows(await fetchTextWithCache('google-sheet:primordial-recommendations', url));
     const headers = (rows.shift() || []).map(normalizeHeader);
 
     primordialRecommendationRowsCache = rows
@@ -950,8 +951,34 @@ function refreshBedProgressSummary() {
 function triggerRecalculate(containers) {
   refreshBedProgressSummary();
   const payload = computeAll(containers);
-  renderResults(containers, payload, state.missingFiles);
+  renderResults(containers, payload, state.missingFiles, { cacheFallback: state.cacheFallback });
   saveAllInputs();
+}
+
+function clearControllerRemoteRowsCaches() {
+  dungeonPowerRowsCache = null;
+  primordialRecommendationRowsCache = null;
+  fragmentRowsCache = null;
+  dungeonFragmentYieldRowsCache = null;
+  serverRowsCache = null;
+}
+
+function bindDataCacheHandlers(containers) {
+  window.addEventListener(CACHE_FALLBACK_EVENT, () => {
+    state.cacheFallback = true;
+    if (containers?.results) triggerRecalculate(containers);
+  });
+
+  window.addEventListener(CACHE_UPDATED_EVENT, () => {
+    clearControllerRemoteRowsCaches();
+    clearRemoteDataMemoryCaches();
+
+    if (!appContainers) return;
+    clearTimeout(cacheRefreshTimer);
+    cacheRefreshTimer = setTimeout(() => {
+      handleSeasonChange(appContainers);
+    }, CACHE_REFRESH_DEBOUNCE_MS);
+  });
 }
 
 // 霈????皞? input嚗??交活??/ 撟喳???/ ??瘥鞈潸眺嚗?
@@ -1047,9 +1074,7 @@ async function fetchServerRows() {
 async function fetchTimePresetsFromSheet(dungeonPowerRows = []) {
   const url = getGoogleSheetCsvUrl(TIME_PRESETS_SHEET);
   try {
-    const res = await fetch(url, { cache: 'no-store' });
-    if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
-    const rows = parseCsvRows(await res.text());
+    const rows = parseCsvRows(await fetchTextWithCache('google-sheet:time-presets', url));
     const headers = (rows.shift() || []).map(normalizeHeader);
 
     const out = [];
@@ -2091,6 +2116,7 @@ async function handleSeasonChange(containers) {
   const seasonSelector = document.getElementById('season-select');
   // ??selector 摮撠曹誑?恍?箸?嚗?窒??state ?桀???
   state.seasonId = seasonSelector?.value || state.seasonId || 's2';
+  state.cacheFallback = false;
   setAppLoading(true);
 
   containers.results.innerHTML =
@@ -2237,12 +2263,14 @@ async function enableTargetLevelCalendar() {
 async function init() {
   await initLanguage();
   const containers = getContainers();
+  appContainers = containers;
   applyMobileSectionOrder();
   renderAll(containers);
   setAppLoading(true);
   enhanceStaticFieldTooltips();
   bindTooltipLayers();
   bindGlobalHandlers(containers);
+  bindDataCacheHandlers(containers);
   bindTargetTimeFormToggle();
 
   const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');

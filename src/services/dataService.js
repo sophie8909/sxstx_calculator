@@ -1,3 +1,5 @@
+import { fetchJsonWithCache, fetchTextWithCache } from './dataCache.js';
+
 let generatedDataPromise = null;
 
 const GENERATED_DATA_PATH = 'data/generated/upgrade-costs.json';
@@ -83,11 +85,8 @@ function rowsToObjects(rows) {
 
 async function fetchSheetRows(gid) {
   if (!sheetRowsCache.has(gid)) {
-    const response = await fetch(getGoogleSheetCsvUrl(gid), { cache: 'no-store' });
-    if (!response.ok) {
-      throw new Error(`Failed to load Google Sheet CSV: ${response.status}`);
-    }
-    sheetRowsCache.set(gid, rowsToObjects(parseCsvRows(await response.text())));
+    const text = await fetchTextWithCache(`google-sheet:${gid}`, getGoogleSheetCsvUrl(gid));
+    sheetRowsCache.set(gid, rowsToObjects(parseCsvRows(text)));
   }
   return sheetRowsCache.get(gid);
 }
@@ -107,14 +106,14 @@ function getGeneratedDataUrl() {
 
 async function loadGeneratedData() {
   if (!generatedDataPromise) {
-    generatedDataPromise = fetch(getGeneratedDataUrl()).then(async (response) => {
-      if (!response.ok) {
-        throw new Error(`Failed to load generated data: ${response.status}`);
-      }
-      return response.json();
-    });
+    generatedDataPromise = fetchJsonWithCache('generated:upgrade-costs', getGeneratedDataUrl());
   }
   return generatedDataPromise;
+}
+
+export function clearDataServiceMemoryCache() {
+  generatedDataPromise = null;
+  sheetRowsCache.clear();
 }
 
 export async function loadAllUpgradeCosts() {
