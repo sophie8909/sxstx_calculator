@@ -857,6 +857,14 @@ main a[data-i18n='relay_open_google_form'] {
     max-width: none;
   }
 
+  .app-layout.is-focused-page {
+    display: block;
+  }
+
+  .app-layout.is-focused-page .app-shell {
+    max-width: min(100%, 80rem);
+  }
+
   .section-side-nav {
     position: sticky;
     top: 1rem;

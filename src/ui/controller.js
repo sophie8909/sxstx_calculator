@@ -1229,6 +1229,7 @@ function bindTargetTimeFormToggle() {
   const fragmentCalculatorPanel = document.getElementById('fragment-calculator-panel');
   const targetTimeFormPanel = document.getElementById('target-time-form-panel');
   const sectionSideNav = document.getElementById('section-side-nav');
+  const appLayout = document.querySelector('.app-layout');
 
   if (!navButtons.length || !calculatorPageContent || !fragmentCalculatorPanel || !targetTimeFormPanel) return;
 
@@ -1263,6 +1264,7 @@ function bindTargetTimeFormToggle() {
       sectionSideNav.classList.toggle('is-hidden', !showSectionNav);
       sectionSideNav.setAttribute('aria-hidden', showSectionNav ? 'false' : 'true');
     }
+    appLayout?.classList.toggle('is-focused-page', targetPage !== 'primordial');
 
     localStorage.setItem(ACTIVE_PAGE_STORAGE_KEY, targetPage);
     if (shouldScroll) scrollToToggle();
