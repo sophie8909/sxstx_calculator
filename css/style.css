@@ -333,8 +333,22 @@ body.app-loading .app-loading-overlay {
 
 .selector-bar > div,
 .app-toolbar .input-field,
+.app-toolbar a,
 .calculator-nav-btn {
   width: 100%;
+}
+
+.app-toolbar {
+  align-items: stretch;
+}
+
+.app-toolbar a,
+.calculator-nav-btn {
+  justify-content: center;
+  white-space: normal;
+  word-break: keep-all;
+  overflow-wrap: normal;
+  text-align: center;
 }
 
 #calculator-page-content,
@@ -759,6 +773,7 @@ main a[data-i18n='relay_open_google_form'] {
 
   .app-toolbar .input-field,
   .selector-bar > div,
+  .app-toolbar a,
   .calculator-nav-btn,
   #notify-time-select,
   #enable-levelup-notify-btn,
@@ -768,6 +783,10 @@ main a[data-i18n='relay_open_google_form'] {
   #target-time-form-panel a[data-i18n='relay_open_google_form'],
   main a[data-i18n='relay_open_google_form'] {
     width: auto;
+  }
+
+  .app-toolbar {
+    align-items: center;
   }
 
   .result-summary-row {
