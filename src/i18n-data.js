@@ -359,6 +359,10 @@ export const I18N_DICTIONARIES = {
     "zh-Hant": "S4 哈帕迪",
     "zh-Hans": "S4 哈帕迪"
   },
+  "season_name_s5": {
+    "zh-Hant": "S5 伊格尼斯",
+    "zh-Hans": "S5 伊格尼斯"
+  },
   "season_name_total": {
     "zh-Hant": "累計",
     "zh-Hans": "累计"

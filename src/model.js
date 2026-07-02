@@ -52,6 +52,7 @@ export const seasonOptions = [
   { id: 's2', name: 'S2', readonly: false, season: 2 },
   { id: 's3', name: 'S3', readonly: false, season: 3 },
   { id: 's4', name: 'S4', readonly: false, season: 4 },
+  { id: 's5', name: 'S5', readonly: false, season: 5 },
   { id: 'total', name: '??', readonly: true },
 ];
 
