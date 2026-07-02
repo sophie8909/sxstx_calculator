@@ -43,6 +43,7 @@ function getTooltipText(id, labelText = '') {
     'target-time-custom': 'target_time_custom_tooltip',
     'notify-time-select': 'notify_tooltip',
     'days-remaining': 'tooltip_days_remaining',
+    'next-season-exp-hoard-enabled': 'tooltip_next_season_exp_hoard',
     'free-speedup-used-today': 'tooltip_free_speedup_used',
     'speedup-stone-count': 'tooltip_speedup_stone_count',
   };
@@ -400,6 +401,18 @@ export function renderCharBed(container) {
   container.appendChild(row({ id: 'owned-exp-wan', label: t('owned_exp_wan'), placeholder: getOwnedExpUnitPlaceholder(), min: 0, step: 0.01 }));
   container.appendChild(row({ id: 'owned-exp', label: t('actual_exp'), placeholder: t('auto_convert_readonly'), readOnly: true }));
   container.appendChild(row({ id: 'bed-exp-hourly', label: t('exp_hourly'), placeholder: t('zero_placeholder'), min: 0, step: 1 }));
+
+  const hoardRow = el('label', ['flex', 'items-center', 'justify-between', 'gap-3', 'rounded-lg', 'border', 'border-red-200', 'bg-red-50', 'px-3', 'py-2', 'text-sm', 'text-red-800']);
+  hoardRow.htmlFor = 'next-season-exp-hoard-enabled';
+  const hoardText = el('span', ['font-semibold']);
+  hoardText.textContent = t('next_season_exp_hoard');
+  appendTooltip(hoardText, getTooltipText('next-season-exp-hoard-enabled', t('next_season_exp_hoard')));
+  const hoardCheckbox = el('input');
+  hoardCheckbox.type = 'checkbox';
+  hoardCheckbox.id = 'next-season-exp-hoard-enabled';
+  hoardCheckbox.classList.add('h-4', 'w-4');
+  hoardRow.append(hoardText, hoardCheckbox);
+  container.appendChild(hoardRow);
 
   const speedupBox = el('div', ['mt-3', 'rounded-lg', 'border', 'border-slate-200', 'bg-slate-50', 'p-3', 'space-y-3']);
   const speedupTitle = el('div', ['text-sm', 'font-semibold', 'text-slate-700']);

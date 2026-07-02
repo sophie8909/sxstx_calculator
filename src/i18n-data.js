@@ -19,6 +19,18 @@ export const I18N_DICTIONARIES = {
     "zh-Hant": "目前無法推算升級時間，請先確認角色等級、持有經驗與床位時產。",
     "zh-Hans": "目前无法推算升级时间，请先确认角色等级、持有经验与床位时产。"
   },
+  "calendar_hoard_event_details": {
+    "zh-Hant": "賽季結束時間：{seasonEndTime}。此提醒設定在賽季結束前 {hours} 小時，用來囤經驗到下一個賽季。",
+    "zh-Hans": "赛季结束时间：{seasonEndTime}。此提醒设定在赛季结束前 {hours} 小时，用来囤经验到下一个赛季。"
+  },
+  "calendar_hoard_event_title": {
+    "zh-Hant": "囤 36 小時經驗提醒",
+    "zh-Hans": "囤 36 小时经验提醒"
+  },
+  "calendar_hoard_unavailable": {
+    "zh-Hant": "請先在目標時間選擇【賽季結束】。",
+    "zh-Hans": "请先在目标时间选择【赛季结束】。"
+  },
   "calendar_target_event_details": {
     "zh-Hant": "此事件依你目前的計算結果建立。預計達到目標等級 Lv.{level} 的時間：{upgradeTime}。提前提醒：{notifyMinutes} 分鐘。",
     "zh-Hans": "此事件依你目前的计算结果建立。预计达到目标等级 Lv.{level} 的时间：{upgradeTime}。提前提醒：{notifyMinutes} 分钟。"
@@ -159,6 +171,10 @@ export const I18N_DICTIONARIES = {
     "zh-Hant": "匯入目標等級日曆",
     "zh-Hans": "导入目标等级日历"
   },
+  "enable_hoard_exp_notify": {
+    "zh-Hant": "匯入進下賽季囤經驗提醒(36小時前)",
+    "zh-Hans": "导入进下赛季囤经验提醒(36小时前)"
+  },
   "exp_hourly": {
     "zh-Hant": "床位每小時經驗",
     "zh-Hans": "床位每小时经验"
@@ -286,6 +302,10 @@ export const I18N_DICTIONARIES = {
   "notify_tooltip": {
     "zh-Hant": "設定升級通知要提前多久提醒你。",
     "zh-Hans": "设置升级通知要提前多久提醒你。"
+  },
+  "next_season_exp_hoard": {
+    "zh-Hant": "囤 36 小時經驗",
+    "zh-Hans": "囤 36 小时经验"
   },
   "owned_exp_unit_large": {
     "zh-Hant": "以億為單位",
@@ -587,6 +607,10 @@ export const I18N_DICTIONARIES = {
     "zh-Hant": "填入每小時可額外取得的{label}，會和其他來源一起計算。",
     "zh-Hans": "填入每小时可额外取得的{label}，会和其他来源一起计算。"
   },
+  "tooltip_next_season_exp_hoard": {
+    "zh-Hant": "囤 36 小時經驗到下一個賽季",
+    "zh-Hans": "囤 36 小时经验到下一个赛季"
+  },
   "tooltip_owned_material": {
     "zh-Hant": "填入目前已持有的{label}數量。",
     "zh-Hans": "填入当前已持有的{label}数量。"
@@ -690,6 +714,10 @@ export const I18N_DICTIONARIES = {
   "relay_category_season_start": {
     "zh-Hant": "【賽季開始】",
     "zh-Hans": "【赛季开始】"
+  },
+  "relay_category_season_end": {
+    "zh-Hant": "【賽季結束】",
+    "zh-Hans": "【赛季结束】"
   },
   "relay_description_label": {
     "zh-Hant": "說明",

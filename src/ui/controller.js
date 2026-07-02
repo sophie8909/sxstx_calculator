@@ -109,10 +109,12 @@ const TIME_PRESETS_FALLBACK = [
 ];
 
 const SEASON_START_CATEGORY = '【賽季開始】';
+const SEASON_END_CATEGORY = '【賽季結束】';
 const DUNGEON_CATEGORY = '【副本開啟】';
 const DUNGEON_ANCHOR_LABEL = '淨心護甲';
 const DUNGEON_OPEN_INTERVAL_DAYS = 14;
 const CURRENT_SEASON_DUNGEON_COUNT = 12;
+const NEXT_SEASON_EXP_HOARD_HOURS = 36;
 const DUNGEON_POWER_SHEET = {
   id: '1boxKipNVI-tCaJEaX-AoOTijEgKcxKfilhbtxkLbX-E',
   gid: '2044399102',
@@ -188,6 +190,10 @@ function isBaselineTimeLabel(label) {
   );
 }
 
+function isSeasonEndTimeLabel(label) {
+  return String(label || '').includes('賽季結束');
+}
+
 function getBaselineKind(label) {
   const text = String(label || '');
   return text.includes('开服') || text.includes('開服') ? 'server_open' : 'season_start';
@@ -258,6 +264,35 @@ function withGeneratedDungeonOpenTimes(presets, dungeonRows = []) {
   });
 
   return generated.length > 0 ? presets.concat(generated) : presets;
+}
+
+function withDerivedSeasonEndTimes(presets) {
+  const derived = [];
+  const hasMatchingSeasonEnd = (candidate) => presets.some((preset) =>
+    normalizeSeasonId(preset.season_id) === normalizeSeasonId(candidate.season_id) &&
+    normalizeServerName(preset.server_name) === normalizeServerName(candidate.server_name) &&
+    String(preset.iso || '').slice(0, 10) === String(candidate.iso || '').slice(0, 10) &&
+    isSeasonEndTimeLabel(preset.label)
+  );
+
+  presets.forEach((preset) => {
+    if (!preset.iso || getBaselineKind(preset.label) !== 'season_start' || !isBaselineTimeLabel(preset.label)) return;
+
+    const previousSeasonId = getPreviousSeasonId(preset.season_id);
+    if (!previousSeasonId) return;
+
+    const candidate = {
+      key: `${preset.key}_season_end_${previousSeasonId}`,
+      season_id: previousSeasonId,
+      server_name: preset.server_name,
+      label: SEASON_END_CATEGORY,
+      iso: preset.iso,
+      generated_from: 'season_end',
+    };
+    if (!hasMatchingSeasonEnd(candidate)) derived.push(candidate);
+  });
+
+  return derived.length > 0 ? presets.concat(derived) : presets;
 }
 
 function appendStaticTooltip(target, text) {
@@ -896,6 +931,18 @@ function getTargetTimeHoursRemaining() {
   return Math.max(0, hours);
 }
 
+function isSelectedTargetTimeSeasonEnd() {
+  return document.getElementById('target-time')?.dataset.presetKind === 'season_end';
+}
+
+function getSeasonEndTargetTimestamp() {
+  if (!isSelectedTargetTimeSeasonEnd()) return NaN;
+
+  const value = document.getElementById('target-time')?.value || '';
+  const ts = new Date(value).getTime();
+  return Number.isFinite(ts) ? ts : NaN;
+}
+
 function getNextLevelSpeedupHours(currentLevel, ownedExp, bedHourly) {
   const { minutesNeeded } = computeEtaToNextLevel(currentLevel, ownedExp, bedHourly);
   if (!Number.isFinite(minutesNeeded) || minutesNeeded <= 0) return 0;
@@ -1121,10 +1168,10 @@ async function fetchTimePresetsFromSheet(dungeonPowerRows = []) {
         iso: isoTime,
       });
     });
-    return withGeneratedDungeonOpenTimes(out, dungeonPowerRows);
+    return withGeneratedDungeonOpenTimes(withDerivedSeasonEndTimes(out), dungeonPowerRows);
   } catch (err) {
     console.warn('[time presets] fetch failed, using fallback', err);
-    return withGeneratedDungeonOpenTimes(TIME_PRESETS_FALLBACK.slice(), dungeonPowerRows);
+    return withGeneratedDungeonOpenTimes(withDerivedSeasonEndTimes(TIME_PRESETS_FALLBACK.slice()), dungeonPowerRows);
   }
 }
 
@@ -1855,6 +1902,7 @@ async function initTargetTimeControls(containers) {
         customInput.value = localISO;
       }
       hiddenField.value = customInput.value || '';
+      hiddenField.dataset.presetKind = '';
     } else {
       customInput.classList.add('hidden');
       displayBox.classList.remove('hidden');
@@ -1863,6 +1911,7 @@ async function initTargetTimeControls(containers) {
       renderDungeonPowerPanel(found, dungeonPowerRows);
       const ts = found?.iso || '';
       hiddenField.value = ts;
+      hiddenField.dataset.presetKind = found?.generated_from || '';
 
       if (ts) {
         const d = new Date(ts);
@@ -2257,6 +2306,33 @@ async function enableTargetLevelCalendar() {
   });
 }
 
+async function enableNextSeasonExpHoardCalendar() {
+  const locale = getCurrentLanguage() === 'zh-Hans' ? 'zh-CN' : 'zh-TW';
+  const seasonEndTs = getSeasonEndTargetTimestamp();
+  if (!Number.isFinite(seasonEndTs)) {
+    alert(t('calendar_hoard_unavailable'));
+    return;
+  }
+
+  const eventTs = seasonEndTs - NEXT_SEASON_EXP_HOARD_HOURS * 60 * 60 * 1000;
+  const seasonEndText = new Date(seasonEndTs).toLocaleString(locale, {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  openGoogleCalendarEvent({
+    title: t('calendar_hoard_event_title'),
+    details: t('calendar_hoard_event_details', {
+      hours: NEXT_SEASON_EXP_HOARD_HOURS,
+      seasonEndTime: seasonEndText,
+    }),
+    eventTs,
+  });
+}
+
 /* -----------------------------
  * ????
  * ---------------------------*/
@@ -2286,6 +2362,8 @@ async function init() {
   levelUpNotifyBtn?.addEventListener('click', () => enableLevelUpNotifications());
   const targetNotifyBtn = document.getElementById('enable-target-notify-btn');
   targetNotifyBtn?.addEventListener('click', () => enableTargetLevelCalendar());
+  const hoardNotifyBtn = document.getElementById('enable-hoard-exp-notify-btn');
+  hoardNotifyBtn?.addEventListener('click', () => enableNextSeasonExpHoardCalendar());
 
   const clearLocalDataBtn = document.getElementById('clear-local-data-btn');
   clearLocalDataBtn?.addEventListener('click', () => {

@@ -509,6 +509,21 @@ export function getSpeedupHoursForHours(hours) {
   return getSpeedupHoursForHoursFromState(hours, getSpeedupState(), SPEEDUP_HOURS_PER_USE);
 }
 
+function getBedProgressTargetTime() {
+  const targetTimeInput = document.getElementById('target-time');
+  const targetTime = targetTimeInput?.value || '';
+  const shouldHoardExp = !!document.getElementById('next-season-exp-hoard-enabled')?.checked;
+
+  if (!shouldHoardExp || targetTimeInput?.dataset.presetKind !== 'season_end' || !targetTime) {
+    return targetTime;
+  }
+
+  const targetTs = new Date(targetTime).getTime();
+  if (!Number.isFinite(targetTs)) return targetTime;
+
+  return new Date(targetTs - 36 * 60 * 60 * 1000).toISOString();
+}
+
 export function computeReachableCharacterLevel(curLv, ownedExp, bedExpHourly, targetTimeStr) {
   return computeReachableCharacterLevelFromData({
     cumulativeCostData: state.cumulativeCostData,
@@ -571,7 +586,7 @@ export function computeAll(containers) {
         currentLevel: readInteger('character-current'),
         ownedExp: readInteger('owned-exp'),
         bedExpHourly: readFloat('bed-exp-hourly'),
-        targetTime: document.getElementById('target-time')?.value || '',
+        targetTime: getBedProgressTargetTime(),
       },
       primordial: {
         accumulated: readInteger('primordial-star-accumulated'),

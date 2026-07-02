@@ -27,6 +27,18 @@
     "zh-Hant": "每次平均",
     "zh-Hans": "单次平均"
   },
+  "calendar_hoard_event_details": {
+    "zh-Hant": "賽季結束時間：{seasonEndTime}。此提醒設定在賽季結束前 {hours} 小時，用來囤經驗到下一個賽季。",
+    "zh-Hans": "赛季结束时间：{seasonEndTime}。此提醒设定在赛季结束前 {hours} 小时，用来囤经验到下一个赛季。"
+  },
+  "calendar_hoard_event_title": {
+    "zh-Hant": "囤 36 小時經驗提醒",
+    "zh-Hans": "囤 36 小时经验提醒"
+  },
+  "calendar_hoard_unavailable": {
+    "zh-Hant": "請先在目標時間選擇【賽季結束】。",
+    "zh-Hans": "请先在目标时间选择【赛季结束】。"
+  },
   "category_character": {
     "zh-Hant": "角色等級",
     "zh-Hans": "角色等级"
@@ -142,6 +154,14 @@
   "enable_notify": {
     "zh-Hant": "啟用升級通知",
     "zh-Hans": "启用升级通知"
+  },
+  "enable_target_notify": {
+    "zh-Hant": "匯入目標等級日曆",
+    "zh-Hans": "导入目标等级日历"
+  },
+  "enable_hoard_exp_notify": {
+    "zh-Hant": "匯入進下賽季囤經驗提醒(36小時前)",
+    "zh-Hans": "导入进下赛季囤经验提醒(36小时前)"
   },
   "exp_hourly": {
     "zh-Hant": "床位每小時經驗",
@@ -270,6 +290,10 @@
   "notify_tooltip": {
     "zh-Hant": "設定升級通知要提前多久提醒你。",
     "zh-Hans": "设置升级通知要提前多久提醒你。"
+  },
+  "next_season_exp_hoard": {
+    "zh-Hant": "囤 36 小時經驗",
+    "zh-Hans": "囤 36 小时经验"
   },
   "owned_exp_unit_large": {
     "zh-Hant": "以億為單位",
@@ -566,6 +590,10 @@
   "tooltip_manual_hourly": {
     "zh-Hant": "填入每小時可額外取得的{label}，會和其他來源一起計算。",
     "zh-Hans": "填入每小时可额外取得的{label}，会和其他来源一起计算。"
+  },
+  "tooltip_next_season_exp_hoard": {
+    "zh-Hant": "囤 36 小時經驗到下一個賽季",
+    "zh-Hans": "囤 36 小时经验到下一个赛季"
   },
   "tooltip_owned_material": {
     "zh-Hant": "填入目前已持有的{label}數量。",

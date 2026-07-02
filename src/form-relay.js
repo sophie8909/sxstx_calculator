@@ -3,8 +3,11 @@ import { initLanguage, applyStaticTranslations, t } from './i18n-inline.js';
 import { fetchTextWithCache } from './services/dataCache.js';
 
 const SEASON_START_CATEGORY = '【賽季開始】';
+const SEASON_END_CATEGORY = '【賽季結束】';
 const SEASON_START_DESCRIPTION =
   '此日期將作為計算機自動推算當前賽季副本時間點的基準';
+const SEASON_END_DESCRIPTION =
+  '此日期將作為計算機自動推算賽季結束時間點的基準';
 
 const TIME_PRESETS_SHEET = {
   id: '1boxKipNVI-tCaJEaX-AoOTijEgKcxKfilhbtxkLbX-E',
@@ -317,10 +320,12 @@ function applyCategoryDescriptionLock() {
   const dungeonSelect = document.getElementById('relay-dungeon-name');
   if (!categorySelect || !descriptionInput) return;
 
-  if (categorySelect.value === SEASON_START_CATEGORY) {
+  if (categorySelect.value === SEASON_START_CATEGORY || categorySelect.value === SEASON_END_CATEGORY) {
     if (dungeonSelect) dungeonSelect.classList.add('hidden');
     descriptionInput.classList.remove('hidden');
-    descriptionInput.value = SEASON_START_DESCRIPTION;
+    descriptionInput.value = categorySelect.value === SEASON_START_CATEGORY
+      ? SEASON_START_DESCRIPTION
+      : SEASON_END_DESCRIPTION;
     descriptionInput.disabled = true;
     descriptionInput.setAttribute('aria-readonly', 'true');
     return;
@@ -343,7 +348,10 @@ function applyCategoryDescriptionLock() {
     dungeonSelect.required = false;
   }
   descriptionInput.classList.remove('hidden');
-  if (descriptionInput.disabled && descriptionInput.value === SEASON_START_DESCRIPTION) {
+  if (descriptionInput.disabled && (
+    descriptionInput.value === SEASON_START_DESCRIPTION ||
+    descriptionInput.value === SEASON_END_DESCRIPTION
+  )) {
     descriptionInput.value = '';
   }
   descriptionInput.disabled = false;
@@ -353,6 +361,7 @@ function applyCategoryDescriptionLock() {
 
 function buildSubmittedDescription(category, body) {
   if (category === SEASON_START_CATEGORY) return SEASON_START_CATEGORY;
+  if (category === SEASON_END_CATEGORY) return SEASON_END_CATEGORY;
   if (category === DUNGEON_CATEGORY) {
     const dungeonName = document.getElementById('relay-dungeon-name')?.value || '';
     return dungeonName ? `${DUNGEON_CATEGORY}${dungeonName}` : '';
