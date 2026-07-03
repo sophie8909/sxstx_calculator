@@ -178,6 +178,66 @@ function getPresetDungeonName(preset) {
   return String(preset?.dungeon_name || stripDungeonCategory(preset?.label)).trim();
 }
 
+function getPresetTitleKey(preset) {
+  return String(preset?.label || '').trim();
+}
+
+function getPresetTimeKey(preset) {
+  const iso = String(preset?.iso || '').trim();
+  if (!iso) return '';
+
+  const timestamp = new Date(iso).getTime();
+  return Number.isFinite(timestamp) ? String(timestamp) : iso;
+}
+
+function formatPresetOptionTime(iso) {
+  const date = new Date(iso);
+  if (!Number.isFinite(date.getTime())) return String(iso || '').trim();
+
+  return date.toLocaleString('zh-TW', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+}
+
+function normalizeTargetTimePresetOptions(presets) {
+  const uniquePresets = [];
+  const seen = new Set();
+
+  presets.forEach((preset) => {
+    const titleKey = getPresetTitleKey(preset);
+    const timeKey = getPresetTimeKey(preset);
+    const uniqueKey = `${titleKey}\u0000${timeKey}`;
+    if (seen.has(uniqueKey)) return;
+
+    seen.add(uniqueKey);
+    uniquePresets.push(preset);
+  });
+
+  const titleTimes = new Map();
+  uniquePresets.forEach((preset) => {
+    const titleKey = getPresetTitleKey(preset);
+    const timeKey = getPresetTimeKey(preset);
+    if (!titleTimes.has(titleKey)) titleTimes.set(titleKey, new Set());
+    titleTimes.get(titleKey).add(timeKey);
+  });
+
+  return uniquePresets.map((preset) => {
+    const titleKey = getPresetTitleKey(preset);
+    const needsTimeSuffix = (titleTimes.get(titleKey)?.size || 0) > 1;
+    return {
+      ...preset,
+      displayLabel: needsTimeSuffix
+        ? `${preset.label} (${formatPresetOptionTime(preset.iso)})`
+        : preset.label,
+    };
+  });
+}
+
 function isBaselineTimeLabel(label) {
   const text = String(label || '');
   return (
@@ -1852,7 +1912,7 @@ async function initTargetTimeControls(containers) {
     )
   );
 
-  matchingPresets.forEach(p => {
+  const visiblePresets = normalizeTargetTimePresetOptions(matchingPresets.filter((p) => {
     if (hasServerDungeonBaseline && p.generated_from === 'global_dungeon_anchor') return;
     if (p.generated_from === 'season_start') {
       const generatedDungeon = getPresetDungeonName(p);
@@ -1864,9 +1924,13 @@ async function initTargetTimeControls(containers) {
       );
       if (hasManualSameDungeon) return;
     }
+    return true;
+  }));
+
+  visiblePresets.forEach(p => {
     const opt = document.createElement('option');
     opt.value = p.key;
-    opt.textContent = p.label;
+    opt.textContent = p.displayLabel || p.label;
     presetSel.appendChild(opt);
   });
 
@@ -1907,7 +1971,7 @@ async function initTargetTimeControls(containers) {
       customInput.classList.add('hidden');
       displayBox.classList.remove('hidden');
 
-      const found = allPresets.find(p => p.key === v);
+      const found = visiblePresets.find(p => p.key === v) || allPresets.find(p => p.key === v);
       renderDungeonPowerPanel(found, dungeonPowerRows);
       const ts = found?.iso || '';
       hiddenField.value = ts;
