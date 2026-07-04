@@ -134,6 +134,18 @@ const FRAGMENT_FEE_RATES = {
   discount: [5, 12, 20, 40, 60],
 };
 const FRAGMENT_GROUP_SIZE = 10;
+const FRAGMENT_DECOMPOSE_STONES = {
+  miracle: 2,
+  mythic: 3,
+  abyss: 10,
+};
+const DUNGEON_FRAGMENT_REWARDS = {
+  normal: { pieces: 8, tier: '奇蹟', stonePerPiece: FRAGMENT_DECOMPOSE_STONES.miracle },
+  hard: { pieces: 10, tier: '奇蹟', stonePerPiece: FRAGMENT_DECOMPOSE_STONES.miracle },
+  nightmare: { pieces: 8, tier: '神話', stonePerPiece: FRAGMENT_DECOMPOSE_STONES.mythic },
+  hell: { pieces: 10, tier: '神話', stonePerPiece: FRAGMENT_DECOMPOSE_STONES.mythic },
+  abyss: { pieces: 3, tier: '深淵', stonePerPiece: FRAGMENT_DECOMPOSE_STONES.abyss },
+};
 const TARGET_RECOMMENDATION_FIELDS = {
   equipment_level: 'target-equipment_resonance',
   skill_level: 'target-skill_resonance',
@@ -652,33 +664,38 @@ function parseFragmentRowsFromCsvRows(rows) {
   const headers = (rows.shift() || []).map((header) => String(header || '').trim());
   const findHeaderIndex = (names) => headers.findIndex((header) => names.some((name) => header === name));
   const fragmentIndex = findHeaderIndex(['裝備碎片']);
-  const infernoIndex = findHeaderIndex(['煉獄裝', '神裝']);
-  const infernoStoneIndex = findHeaderIndex(['煉獄分解神鑄石', '神級分解神鑄石']);
-  const mythicStoneIndex = findHeaderIndex(['神話分解神鑄石', '傳說分解神鑄石']);
-  const miracleStoneIndex = findHeaderIndex(['奇蹟分解神鑄石']);
+  const abyssFragmentIndex = findHeaderIndex(['深淵裝', '深淵碎片', '煉獄裝', '神裝']);
   const fragmentColumns = [];
 
   if (fragmentIndex >= 0) {
     const stoneColumns = [
-      { stoneIndex: mythicStoneIndex, stoneHeader: headers[mythicStoneIndex] || '神話分解神鑄石', displayTier: '紅' },
-      { stoneIndex: miracleStoneIndex, stoneHeader: headers[miracleStoneIndex] || '奇蹟分解神鑄石', displayTier: '金' },
-    ].filter((column) => column.stoneIndex >= 0);
-    if (stoneColumns.length > 0) fragmentColumns.push({
+      {
+        stoneHeader: '奇蹟分解神鑄石',
+        displayTier: DUNGEON_FRAGMENT_REWARDS.normal.tier,
+        stoneAmount: FRAGMENT_DECOMPOSE_STONES.miracle,
+      },
+      {
+        stoneHeader: '神話分解神鑄石',
+        displayTier: DUNGEON_FRAGMENT_REWARDS.nightmare.tier,
+        stoneAmount: FRAGMENT_DECOMPOSE_STONES.mythic,
+      },
+    ];
+    fragmentColumns.push({
       fragmentIndex,
       stoneColumns,
       header: headers[fragmentIndex],
     });
   }
 
-  if (infernoIndex >= 0 && infernoStoneIndex >= 0) {
+  if (abyssFragmentIndex >= 0) {
     fragmentColumns.push({
-      fragmentIndex: infernoIndex,
+      fragmentIndex: abyssFragmentIndex,
       stoneColumns: [{
-        stoneIndex: infernoStoneIndex,
-        stoneHeader: headers[infernoStoneIndex] || '煉獄分解神鑄石',
-        displayTier: '煉獄',
+        stoneHeader: '深淵分解神鑄石',
+        displayTier: DUNGEON_FRAGMENT_REWARDS.abyss.tier,
+        stoneAmount: FRAGMENT_DECOMPOSE_STONES.abyss,
       }],
-      header: headers[infernoIndex],
+      header: headers[abyssFragmentIndex],
     });
   }
 
@@ -713,15 +730,14 @@ function parseFragmentRowsFromCsvRows(rows) {
       const fragmentName = String(row[fragmentIndex] || '').trim();
       if (!fragmentName) return;
 
-      stoneColumns.forEach(({ stoneIndex, stoneHeader, displayTier }) => {
-        const rawStoneAmount = String(row[stoneIndex] ?? '').trim();
-        let stoneAmount = parseNumberValue(rawStoneAmount);
-        let hasStoneValue = rawStoneAmount !== '';
-        if (!hasStoneValue && displayTier === '紅') {
-          stoneAmount = 3;
+      stoneColumns.forEach(({ stoneIndex, stoneHeader, displayTier, stoneAmount: fixedStoneAmount }) => {
+        const hasSheetColumn = Number.isInteger(stoneIndex) && stoneIndex >= 0;
+        let stoneAmount = hasSheetColumn ? parseNumberValue(row[stoneIndex]) : 0;
+        let hasStoneValue = hasSheetColumn && String(row[stoneIndex] ?? '').trim() !== '';
+        if (Number.isFinite(stoneAmount) && stoneAmount > 0) {
           hasStoneValue = true;
-        } else if (!hasStoneValue && displayTier === '金') {
-          stoneAmount = 2;
+        } else if (Number.isFinite(fixedStoneAmount)) {
+          stoneAmount = fixedStoneAmount;
           hasStoneValue = true;
         }
 
@@ -773,35 +789,30 @@ function parseDungeonFragmentYieldRows(csvRows) {
     seasonDay: getHeaderIndex(headers, ['開國天數', '開国天數', 'season_day']),
     dungeon: getHeaderIndex(headers, ['副本', 'dungeon']),
     equipmentFragment: getHeaderIndex(headers, ['裝備碎片']),
-    infernoGear: getHeaderIndex(headers, ['煉獄裝', '神裝']),
-    normalPieces: getHeaderIndex(headers, ['普通碎片量']),
-    hardPieces: getHeaderIndex(headers, ['困難碎片量']),
-    nightmarePieces: getHeaderIndex(headers, ['惡夢碎片量', '噩夢碎片量']),
-    hellPieces: getHeaderIndex(headers, ['煉獄碎片量']),
-    abyssPieces: getHeaderIndex(headers, ['深淵碎片量']),
-    infernoStone: getHeaderIndex(headers, ['煉獄分解神鑄石', '神級分解神鑄石']),
-    mythicStone: getHeaderIndex(headers, ['神話分解神鑄石', '傳說分解神鑄石']),
-    miracleStone: getHeaderIndex(headers, ['奇蹟分解神鑄石']),
+    abyssFragment: getHeaderIndex(headers, ['深淵裝', '深淵碎片', '煉獄裝', '神裝']),
   };
 
   return csvRows
-    .map((row) => ({
-      season_id: normalizeSeasonId(row[index.season]),
-      server_day: Number(row[index.serverDay]) || 0,
-      season_day: Number(row[index.seasonDay]) || 0,
-      dungeon_name: String(row[index.dungeon] || '').trim(),
-      equipment_fragment: String(row[index.equipmentFragment] || '').trim(),
-      inferno_gear: String(row[index.infernoGear] || '').trim(),
-      normal_pieces: parseNumberValue(row[index.normalPieces]) || 8,
-      hard_pieces: parseNumberValue(row[index.hardPieces]) || 10,
-      nightmare_pieces: parseNumberValue(row[index.nightmarePieces]) || 8,
-      hell_pieces: parseNumberValue(row[index.hellPieces]) || 10,
-      abyss_pieces: parseNumberValue(row[index.abyssPieces]) || 3,
-      inferno_stone: parseNumberValue(row[index.infernoStone]),
-      mythic_stone: parseNumberValue(row[index.mythicStone]),
-      miracle_stone: parseNumberValue(row[index.miracleStone]),
-    }))
-    .filter((row) => row.dungeon_name && (row.equipment_fragment || row.inferno_gear));
+    .map((row) => {
+      const abyssFragment = String(row[index.abyssFragment] || '').trim();
+      return {
+        season_id: normalizeSeasonId(row[index.season]),
+        server_day: Number(row[index.serverDay]) || 0,
+        season_day: Number(row[index.seasonDay]) || 0,
+        dungeon_name: String(row[index.dungeon] || '').trim(),
+        equipment_fragment: String(row[index.equipmentFragment] || '').trim(),
+        abyss_fragment: abyssFragment,
+        normal_pieces: DUNGEON_FRAGMENT_REWARDS.normal.pieces,
+        hard_pieces: DUNGEON_FRAGMENT_REWARDS.hard.pieces,
+        nightmare_pieces: DUNGEON_FRAGMENT_REWARDS.nightmare.pieces,
+        hell_pieces: DUNGEON_FRAGMENT_REWARDS.hell.pieces,
+        abyss_pieces: DUNGEON_FRAGMENT_REWARDS.abyss.pieces,
+        miracle_stone: FRAGMENT_DECOMPOSE_STONES.miracle,
+        mythic_stone: FRAGMENT_DECOMPOSE_STONES.mythic,
+        abyss_stone: FRAGMENT_DECOMPOSE_STONES.abyss,
+      };
+    })
+    .filter((row) => row.dungeon_name && (row.equipment_fragment || row.abyss_fragment));
 }
 
 async function fetchDungeonFragmentYieldRows() {
@@ -1576,37 +1587,37 @@ function getDungeonYieldDisplayRows(row) {
     {
       name: '普通',
       fragment: row.equipment_fragment,
-      tier: '金',
+      tier: DUNGEON_FRAGMENT_REWARDS.normal.tier,
       pieces: row.normal_pieces,
       stonePerPiece: row.miracle_stone,
     },
     {
       name: '困難',
       fragment: row.equipment_fragment,
-      tier: '金',
+      tier: DUNGEON_FRAGMENT_REWARDS.hard.tier,
       pieces: row.hard_pieces,
       stonePerPiece: row.miracle_stone,
     },
     {
       name: '惡夢',
       fragment: row.equipment_fragment,
-      tier: '紅',
+      tier: DUNGEON_FRAGMENT_REWARDS.nightmare.tier,
       pieces: row.nightmare_pieces,
       stonePerPiece: row.mythic_stone,
     },
     {
       name: '煉獄',
       fragment: row.equipment_fragment,
-      tier: '紅',
+      tier: DUNGEON_FRAGMENT_REWARDS.hell.tier,
       pieces: row.hell_pieces,
       stonePerPiece: row.mythic_stone,
     },
     {
       name: '深淵',
-      fragment: row.inferno_gear,
-      tier: '煉獄',
+      fragment: row.abyss_fragment,
+      tier: DUNGEON_FRAGMENT_REWARDS.abyss.tier,
       pieces: row.abyss_pieces,
-      stonePerPiece: row.inferno_stone,
+      stonePerPiece: row.abyss_stone,
     },
   ];
 }
@@ -1666,13 +1677,13 @@ function updateDungeonFragmentYield() {
   const rows = getDungeonYieldDisplayRows(row);
   const previousRow = getPreviousSeasonFinalDungeon(dungeonFragmentYieldRowsCache || [], row);
   if (previousRow) {
-    const hasPreviousAbyss = previousRow.inferno_gear && previousRow.inferno_stone > 0;
+    const hasPreviousAbyss = previousRow.abyss_fragment && previousRow.abyss_stone > 0;
     rows.push({
       name: `上季最後副本 ${previousRow.dungeon_name} ${hasPreviousAbyss ? '深淵' : '煉獄'}`,
-      fragment: hasPreviousAbyss ? previousRow.inferno_gear : previousRow.equipment_fragment,
-      tier: hasPreviousAbyss ? '煉獄' : '紅',
+      fragment: hasPreviousAbyss ? previousRow.abyss_fragment : previousRow.equipment_fragment,
+      tier: hasPreviousAbyss ? DUNGEON_FRAGMENT_REWARDS.abyss.tier : DUNGEON_FRAGMENT_REWARDS.hell.tier,
       pieces: hasPreviousAbyss ? previousRow.abyss_pieces : previousRow.hell_pieces,
-      stonePerPiece: hasPreviousAbyss ? previousRow.inferno_stone : previousRow.mythic_stone,
+      stonePerPiece: hasPreviousAbyss ? previousRow.abyss_stone : previousRow.mythic_stone,
     });
   }
 
