@@ -21,13 +21,9 @@ const DUNGEON_POWER_SHEET = {
 const DUNGEON_CATEGORY = '【副本開啟】';
 
 const FALLBACK_SERVERS = ['台港澳'];
-const EXP_REQUIRED_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSflkOzgCVmrxeO04PTYCdNln6N36sKrLM9ROI5k933E-Aiiyg/viewform?usp=header';
-const EXP_REQUIRED_FORM_ENTRIES = {
-  season: 'entry.2132686072',
-  level: 'entry.1215174401',
-  requiredExp: 'entry.1205059282',
-};
+const EXP_REQUIRED_SUBMIT_TIMEOUT_MS = 15000;
 let dungeonNameRowsCache = null;
+let expRequiredSubmitTimer = null;
 
 function getInitialContext() {
   const params = new URLSearchParams(window.location.search);
@@ -215,11 +211,35 @@ function showExpRequiredFeedback(message, type = 'info') {
   feedback.textContent = message;
   feedback.className = 'mt-4 rounded-lg border px-4 py-3 text-sm';
 
-  if (type === 'error') {
+  if (type === 'success') {
+    feedback.classList.add('border-emerald-200', 'bg-emerald-50', 'text-emerald-700');
+  } else if (type === 'error') {
     feedback.classList.add('border-red-200', 'bg-red-50', 'text-red-700');
   } else {
     feedback.classList.add('border-slate-200', 'bg-slate-50', 'text-slate-700');
   }
+}
+
+function setExpRequiredSubmitting(isSubmitting) {
+  const submitButton = document.getElementById('exp-required-submit-btn');
+  if (!submitButton) return;
+
+  submitButton.disabled = isSubmitting;
+  submitButton.classList.toggle('opacity-60', isSubmitting);
+  submitButton.classList.toggle('cursor-not-allowed', isSubmitting);
+  submitButton.textContent = isSubmitting ? t('exp_required_submitting') : t('exp_required_submit');
+}
+
+function resetExpRequiredForm() {
+  const levelInput = document.getElementById('exp-required-level');
+  const valueInput = document.getElementById('exp-required-value');
+  if (levelInput) levelInput.value = '';
+  if (valueInput) valueInput.value = '';
+}
+
+function collapseExpRequiredForm() {
+  document.getElementById('exp-required-inline-card')?.classList.add('hidden');
+  document.getElementById('exp-required-feedback')?.classList.add('hidden');
 }
 
 function getRelayFormState() {
@@ -474,6 +494,7 @@ function submitRelayForm() {
 }
 
 function applyExpRequiredPrefill(detail = {}) {
+  const card = document.getElementById('exp-required-inline-card');
   const seasonSelect = document.getElementById('exp-required-season');
   const levelInput = document.getElementById('exp-required-level');
   const valueInput = document.getElementById('exp-required-value');
@@ -487,38 +508,61 @@ function applyExpRequiredPrefill(detail = {}) {
   if (levelInput && detail.level !== undefined) levelInput.value = detail.level;
   if (valueInput && detail.requiredExp !== undefined) valueInput.value = detail.requiredExp;
   document.getElementById('exp-required-feedback')?.classList.add('hidden');
+  card?.classList.remove('hidden');
+  card?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-function buildExpRequiredPrefillUrl() {
+function getExpRequiredSubmissionState() {
   const season = document.getElementById('exp-required-season')?.value || '';
   const level = document.getElementById('exp-required-level')?.value || '';
   const requiredExp = document.getElementById('exp-required-value')?.value || '';
 
   if (!season || !level || requiredExp === '') {
     showExpRequiredFeedback(t('relay_validation_required'), 'error');
-    return '';
+    return null;
   }
 
   const numericLevel = Number(level);
   const numericRequiredExp = Number(requiredExp);
   if (!Number.isFinite(numericLevel) || numericLevel < 0 || !Number.isFinite(numericRequiredExp) || numericRequiredExp < 0) {
     showExpRequiredFeedback(t('relay_validation_required'), 'error');
-    return '';
+    return null;
   }
 
-  const url = new URL(EXP_REQUIRED_FORM_URL);
-  url.searchParams.set(EXP_REQUIRED_FORM_ENTRIES.season, season);
-  url.searchParams.set(EXP_REQUIRED_FORM_ENTRIES.level, level);
-  url.searchParams.set(EXP_REQUIRED_FORM_ENTRIES.requiredExp, requiredExp);
-  return url.toString();
+  return { season, level, requiredExp };
 }
 
 function submitExpRequiredForm() {
-  const url = buildExpRequiredPrefillUrl();
-  if (!url) return;
+  const form = document.getElementById('exp-required-google-form');
+  if (window.__expRequiredSubmitting || !form) return;
 
-  window.open(url, '_blank', 'noopener,noreferrer');
-  showExpRequiredFeedback(t('exp_required_opened'), 'info');
+  const state = getExpRequiredSubmissionState();
+  if (!state) return;
+
+  document.getElementById('field-exp-required-season').value = state.season;
+  document.getElementById('field-exp-required-level').value = state.level;
+  document.getElementById('field-exp-required-value').value = state.requiredExp;
+
+  window.__expRequiredSubmitting = true;
+  setExpRequiredSubmitting(true);
+  showExpRequiredFeedback(t('relay_submit_pending'), 'info');
+
+  clearTimeout(expRequiredSubmitTimer);
+  expRequiredSubmitTimer = setTimeout(() => {
+    if (!window.__expRequiredSubmitting) return;
+    window.__expRequiredSubmitting = false;
+    setExpRequiredSubmitting(false);
+    showExpRequiredFeedback(t('exp_required_submit_failed'), 'error');
+  }, EXP_REQUIRED_SUBMIT_TIMEOUT_MS);
+
+  try {
+    form.submit();
+  } catch (error) {
+    clearTimeout(expRequiredSubmitTimer);
+    window.__expRequiredSubmitting = false;
+    setExpRequiredSubmitting(false);
+    showExpRequiredFeedback(t('exp_required_submit_failed'), 'error');
+  }
 }
 
 async function init() {
@@ -528,6 +572,7 @@ async function init() {
   const dateInput = document.getElementById('relay-date');
   const submitButton = document.getElementById('relay-submit-btn');
   const iframe = document.querySelector('iframe[name="google-form-relay-target"]');
+  const expRequiredIframe = document.querySelector('iframe[name="exp-required-form-target"]');
 
   if (dateInput) {
     dateInput.value = getTodayDateString();
@@ -563,6 +608,17 @@ async function init() {
     document.getElementById('relay-description').value = '';
     applyCategoryDescriptionLock();
     window.__relaySubmitted = false;
+  });
+
+  expRequiredIframe?.addEventListener('load', () => {
+    if (!window.__expRequiredSubmitting) return;
+
+    clearTimeout(expRequiredSubmitTimer);
+    window.__expRequiredSubmitting = false;
+    setExpRequiredSubmitting(false);
+    showExpRequiredFeedback(t('exp_required_submit_success'), 'success');
+    resetExpRequiredForm();
+    setTimeout(collapseExpRequiredForm, 1800);
   });
 
   window.addEventListener('languagechange', () => {

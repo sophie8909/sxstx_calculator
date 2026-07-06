@@ -291,6 +291,43 @@
         </div>
       </div>
 
+      <div id="exp-required-inline-card" class="card rounded-lg p-4 shadow-lg w-full page-section hidden">
+        <h3 class="text-xl font-bold text-center mb-4" data-i18n="exp_required_form_title">升級所需經驗填寫</h3>
+        <p class="text-sm text-slate-600 leading-relaxed mb-4" data-i18n="exp_required_form_intro">
+          先在這裡確認資料，送出後會在背景送到 Google 表單。
+        </p>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label for="exp-required-season" class="block font-semibold mb-2" data-i18n="exp_required_season_label">賽季</label>
+            <select id="exp-required-season" class="input-field rounded p-3 w-full" required>
+              <option value="S1">S1</option>
+              <option value="S2">S2</option>
+              <option value="S3">S3</option>
+              <option value="S4">S4</option>
+              <option value="S5">S5</option>
+            </select>
+          </div>
+          <div>
+            <label for="exp-required-level" class="block font-semibold mb-2" data-i18n="exp_required_level_label">目前角色等級</label>
+            <input id="exp-required-level" type="number" min="0" step="1" class="input-field rounded p-3 w-full text-right" required />
+          </div>
+          <div>
+            <label for="exp-required-value" class="block font-semibold mb-2" data-i18n="exp_required_value_label">升下一級所需經驗</label>
+            <input id="exp-required-value" type="number" min="0" step="0.01" class="input-field rounded p-3 w-full text-right" required />
+            <p class="text-xs text-slate-500 mt-2" data-i18n="exp_required_value_hint">單位與角色經驗區塊的「目前持有經驗」相同。</p>
+          </div>
+        </div>
+
+        <div class="flex flex-col md:flex-row gap-3 justify-center md:justify-center items-center mt-4">
+          <button id="exp-required-submit-btn" type="button" class="btn-primary rounded-lg px-4 py-3 font-semibold w-full md:w-auto" data-i18n="exp_required_submit">
+            送出
+          </button>
+        </div>
+
+        <div id="exp-required-feedback" class="hidden rounded-lg border px-4 py-3 text-sm mt-4"></div>
+      </div>
+
       <!-- ?箇?? -->
       <div id="relic-card" class="card rounded-lg p-4 shadow-lg mb-6 w-full page-section relative">
         <h3 class="text-xl font-bold text-center mb-4">
@@ -551,49 +588,6 @@
     </div>
   </div>
 
-  <div id="exp-required-form-panel" class="hidden">
-    <div class="card rounded-xl p-0 shadow-lg mb-6 w-full">
-      <div class="border-b sticky top-0 z-10 px-4 py-2 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
-        <h2 class="text-2xl font-bold" data-i18n="exp_required_form_title">升級所需經驗填寫</h2>
-      </div>
-      <div class="p-4 space-y-4">
-        <p class="text-sm text-slate-600 leading-relaxed" data-i18n="exp_required_form_intro">
-          先在這裡確認資料，送出後會開啟已預填的 Google 表單。
-        </p>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label for="exp-required-season" class="block font-semibold mb-2" data-i18n="exp_required_season_label">賽季</label>
-            <select id="exp-required-season" class="input-field rounded p-3 w-full" required>
-              <option value="S1">S1</option>
-              <option value="S2">S2</option>
-              <option value="S3">S3</option>
-              <option value="S4">S4</option>
-              <option value="S5">S5</option>
-            </select>
-          </div>
-          <div>
-            <label for="exp-required-level" class="block font-semibold mb-2" data-i18n="exp_required_level_label">目前角色等級</label>
-            <input id="exp-required-level" type="number" min="0" step="1" class="input-field rounded p-3 w-full text-right" required />
-          </div>
-          <div>
-            <label for="exp-required-value" class="block font-semibold mb-2" data-i18n="exp_required_value_label">升下一級所需經驗</label>
-            <input id="exp-required-value" type="number" min="0" step="0.01" class="input-field rounded p-3 w-full text-right" required />
-            <p class="text-xs text-slate-500 mt-2" data-i18n="exp_required_value_hint">單位與角色經驗區塊的「目前持有經驗」相同。</p>
-          </div>
-        </div>
-
-        <div class="flex flex-col md:flex-row gap-3 justify-center md:justify-center items-center">
-          <button id="exp-required-submit-btn" type="button" class="btn-primary rounded-lg px-4 py-3 font-semibold w-full md:w-auto" data-i18n="exp_required_submit">
-            開啟已預填 Google 表單
-          </button>
-        </div>
-
-        <div id="exp-required-feedback" class="hidden rounded-lg border px-4 py-3 text-sm"></div>
-      </div>
-    </div>
-  </div>
-
   <iframe name="google-form-relay-target" class="hidden" title="Google Form Relay Target"></iframe>
   <form
     id="google-form-relay"
@@ -609,6 +603,20 @@
     <input type="hidden" name="entry.2132984809_month" id="field-time-month" />
     <input type="hidden" name="entry.2132984809_day" id="field-time-day" />
     <input type="hidden" name="entry.2132984809_year" id="field-time-year" />
+    <input type="hidden" name="fvv" value="1" />
+    <input type="hidden" name="pageHistory" value="0" />
+  </form>
+  <iframe name="exp-required-form-target" class="hidden" title="Upgrade Required Experience Form Target"></iframe>
+  <form
+    id="exp-required-google-form"
+    action="https://docs.google.com/forms/d/e/1FAIpQLSflkOzgCVmrxeO04PTYCdNln6N36sKrLM9ROI5k933E-Aiiyg/formResponse"
+    method="POST"
+    target="exp-required-form-target"
+    class="hidden"
+  >
+    <input type="hidden" name="entry.2132686072" id="field-exp-required-season" />
+    <input type="hidden" name="entry.1215174401" id="field-exp-required-level" />
+    <input type="hidden" name="entry.1205059282" id="field-exp-required-value" />
     <input type="hidden" name="fvv" value="1" />
     <input type="hidden" name="pageHistory" value="0" />
   </form>

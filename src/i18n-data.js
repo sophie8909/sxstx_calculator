@@ -756,8 +756,8 @@ export const I18N_DICTIONARIES = {
     "zh-Hans": "升级所需经验填写"
   },
   "exp_required_form_intro": {
-    "zh-Hant": "先在這裡確認資料，送出後會開啟已預填的 Google 表單。",
-    "zh-Hans": "先在这里确认资料，送出后会开启已预填的 Google 表单。"
+    "zh-Hant": "先在這裡確認資料，送出後會在背景送到 Google 表單。",
+    "zh-Hans": "先在这里确认资料，送出后会在后台送到 Google 表单。"
   },
   "exp_required_season_label": {
     "zh-Hant": "賽季",
@@ -776,12 +776,20 @@ export const I18N_DICTIONARIES = {
     "zh-Hans": "单位与角色经验区块的「目前持有经验」相同。"
   },
   "exp_required_submit": {
-    "zh-Hant": "開啟已預填 Google 表單",
-    "zh-Hans": "开启已预填 Google 表单"
+    "zh-Hant": "送出",
+    "zh-Hans": "送出"
   },
-  "exp_required_opened": {
-    "zh-Hant": "已開啟預填表單，請在 Google 表單確認後送出。",
-    "zh-Hans": "已开启预填表单，请在 Google 表单确认后送出。"
+  "exp_required_submitting": {
+    "zh-Hant": "送出中...",
+    "zh-Hans": "送出中..."
+  },
+  "exp_required_submit_success": {
+    "zh-Hant": "已送出，表單將自動收合。",
+    "zh-Hans": "已送出，表单将自动收合。"
+  },
+  "exp_required_submit_failed": {
+    "zh-Hant": "送出失敗，請稍後再試。",
+    "zh-Hans": "送出失败，请稍后再试。"
   },
   "zero_placeholder": {
     "zh-Hant": "0",

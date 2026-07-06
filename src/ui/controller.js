@@ -1174,9 +1174,6 @@ function openExpRequiredFormInterface(event) {
   window.dispatchEvent(new CustomEvent('expRequiredFormPrefill', {
     detail: getExpRequiredFormDefaults(),
   }));
-  window.dispatchEvent(new CustomEvent('calculator:show-page', {
-    detail: { page: 'exp-required-form' },
-  }));
 }
 
 /* -----------------------------
@@ -1409,11 +1406,10 @@ function bindTargetTimeFormToggle() {
   const calculatorPageContent = document.getElementById('calculator-page-content');
   const fragmentCalculatorPanel = document.getElementById('fragment-calculator-panel');
   const targetTimeFormPanel = document.getElementById('target-time-form-panel');
-  const expRequiredFormPanel = document.getElementById('exp-required-form-panel');
   const sectionSideNav = document.getElementById('section-side-nav');
   const appLayout = document.querySelector('.app-layout');
 
-  if (!navButtons.length || !calculatorPageContent || !fragmentCalculatorPanel || !targetTimeFormPanel || !expRequiredFormPanel) return;
+  if (!navButtons.length || !calculatorPageContent || !fragmentCalculatorPanel || !targetTimeFormPanel) return;
 
   const scrollToToggle = () => {
     const firstButton = navButtons[0];
@@ -1425,7 +1421,6 @@ function bindTargetTimeFormToggle() {
     primordial: calculatorPageContent,
     fragment: fragmentCalculatorPanel,
     'target-time-form': targetTimeFormPanel,
-    'exp-required-form': expRequiredFormPanel,
   };
 
   const showPage = (page, shouldScroll = true) => {
@@ -1455,10 +1450,6 @@ function bindTargetTimeFormToggle() {
 
   navButtons.forEach((button) => {
     button.addEventListener('click', () => showPage(button.dataset.page || 'primordial'));
-  });
-
-  window.addEventListener('calculator:show-page', (event) => {
-    showPage(event.detail?.page || 'primordial');
   });
 
   showPage(localStorage.getItem(ACTIVE_PAGE_STORAGE_KEY) || 'primordial', false);

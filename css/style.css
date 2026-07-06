@@ -353,8 +353,7 @@ body.app-loading .app-loading-overlay {
 
 #calculator-page-content,
 #fragment-calculator-panel,
-#target-time-form-panel,
-#exp-required-form-panel {
+#target-time-form-panel {
   min-width: 0;
 }
 
@@ -363,6 +362,7 @@ body.app-loading .app-loading-overlay {
 #target-levels-card,
 #relic-card,
 #character-exp-card,
+#exp-required-inline-card,
 #skill-card,
 #equipment-card,
 #pet-card,
