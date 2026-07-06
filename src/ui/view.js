@@ -446,11 +446,7 @@ export function renderCharBed(container) {
   stoneInput.placeholder = t('zero_placeholder');
   stoneRow.append(stoneLabel, stoneInput);
 
-  speedupBox.append(speedupTitle, freeRow, stoneRow);
-
-  const checkboxRow = el('div', ['grid', 'grid-cols-1', 'md:grid-cols-2', 'gap-3']);
-  checkboxRow.append(hoardRow, speedupBox);
-  container.appendChild(checkboxRow);
+  speedupBox.append(speedupTitle, hoardRow, freeRow, stoneRow);
 
   const infoBox = el('div', ['grid', 'grid-cols-1', 'md:grid-cols-2', 'xl:grid-cols-3', 'gap-x-4', 'gap-y-1', 'text-sm', 'text-gray-500']);
   const needNext = el('div');
@@ -473,7 +469,10 @@ export function renderCharBed(container) {
   boostTarget.textContent = t('speedup_target_time', { hours: 0 });
 
   infoBox.append(needNext, etaNext, boostNext, needTarget, etaTarget, boostTarget);
-  container.appendChild(infoBox);
+
+  const lowerRow = el('div', ['grid', 'grid-cols-1', 'md:grid-cols-2', 'gap-3']);
+  lowerRow.append(speedupBox, infoBox);
+  container.appendChild(lowerRow);
 }
 
 export function renderMaterialSource(containers) {
