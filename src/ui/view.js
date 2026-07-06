@@ -397,14 +397,14 @@ export function renderCharBed(container) {
     return wrap;
   };
 
-  const topGrid = el('div', ['grid', 'grid-cols-1', 'md:grid-cols-2', 'xl:grid-cols-4', 'gap-3']);
-  const levelBox = el('div', ['space-y-3']);
+  const topGrid = el('div', ['grid', 'grid-cols-1', 'md:grid-cols-2', 'xl:grid-cols-4', 'auto-rows-fr', 'items-stretch', 'gap-3']);
+  const levelBox = el('div', ['grid', 'grid-rows-2', 'gap-3', 'h-full']);
   levelBox.append(
     row({ id: 'character-current', label: t('role_level'), placeholder: t('current_placeholder'), min: 0, step: 1 }),
     row({ id: 'owned-exp-wan', label: t('owned_exp_wan'), placeholder: getOwnedExpUnitPlaceholder(), min: 0, step: 0.01 })
   );
 
-  const expBox = el('div', ['space-y-3']);
+  const expBox = el('div', ['grid', 'grid-rows-2', 'gap-3', 'h-full']);
   expBox.append(
     row({ id: 'owned-exp', label: t('actual_exp'), placeholder: t('auto_convert_readonly'), readOnly: true }),
     row({ id: 'bed-exp-hourly', label: t('exp_hourly'), placeholder: t('zero_placeholder'), min: 0, step: 1 })
@@ -421,9 +421,9 @@ export function renderCharBed(container) {
   hoardCheckbox.classList.add('h-4', 'w-4');
   hoardRow.append(hoardText, hoardCheckbox);
 
-  const speedupBox = el('div', ['space-y-3']);
+  const speedupBox = el('div', ['grid', 'grid-rows-3', 'gap-3', 'h-full']);
 
-  const freeRow = el('label', ['flex', 'items-center', 'justify-between', 'gap-3', 'text-sm', 'text-slate-700']);
+  const freeRow = el('label', ['flex', 'items-center', 'justify-between', 'gap-3', 'rounded-lg', 'border', 'border-slate-200', 'bg-slate-50', 'px-3', 'py-2', 'text-sm', 'text-slate-700']);
   freeRow.htmlFor = 'free-speedup-used-today';
   const freeText = el('span');
   freeText.textContent = t('free_speedup_used');
@@ -434,7 +434,7 @@ export function renderCharBed(container) {
   freeCheckbox.classList.add('h-4', 'w-4');
   freeRow.append(freeText, freeCheckbox);
 
-  const stoneRow = el('div', ['flex', 'items-center', 'justify-between', 'gap-3']);
+  const stoneRow = el('div', ['flex', 'items-center', 'justify-between', 'gap-3', 'rounded-lg', 'border', 'border-slate-200', 'bg-slate-50', 'px-3', 'py-2']);
   const stoneLabel = el('label', ['text-sm', 'font-semibold', 'text-slate-700']);
   stoneLabel.htmlFor = 'speedup-stone-count';
   stoneLabel.textContent = t('speedup_stone_count');
@@ -449,23 +449,24 @@ export function renderCharBed(container) {
 
   speedupBox.append(freeRow, stoneRow, hoardRow);
 
-  const infoBox = el('div', ['space-y-1', 'text-sm', 'text-black']);
-  const needNext = el('div');
+  const infoBox = el('div', ['grid', 'grid-cols-3', 'grid-rows-2', 'items-center', 'gap-x-4', 'gap-y-3', 'h-full']);
+  const infoTextClasses = ['text-sm', 'font-semibold', 'text-black'];
+  const needNext = el('div', infoTextClasses);
   needNext.id = 'bed-levelup-exp';
   needNext.textContent = t('next_level_exp_empty');
-  const etaNext = el('div');
+  const etaNext = el('div', infoTextClasses);
   etaNext.id = 'bed-levelup-time';
   etaNext.textContent = t('levelup_eta_empty');
-  const boostNext = el('div');
+  const boostNext = el('div', infoTextClasses);
   boostNext.id = 'bed-levelup-speedup';
   boostNext.textContent = t('speedup_next_level', { hours: 0 });
-  const needTarget = el('div');
+  const needTarget = el('div', infoTextClasses);
   needTarget.id = 'bed-target-exp';
   needTarget.textContent = t('target_level_exp_empty');
-  const etaTarget = el('div');
+  const etaTarget = el('div', infoTextClasses);
   etaTarget.id = 'bed-target-eta';
   etaTarget.textContent = t('target_eta_empty');
-  const boostTarget = el('div');
+  const boostTarget = el('div', infoTextClasses);
   boostTarget.id = 'bed-target-speedup';
   boostTarget.textContent = t('speedup_target_time', { hours: 0 });
 
