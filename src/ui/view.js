@@ -422,9 +422,6 @@ export function renderCharBed(container) {
   hoardRow.append(hoardText, hoardCheckbox);
 
   const speedupBox = el('div', ['space-y-3']);
-  const speedupTitle = el('div', ['text-sm', 'font-semibold', 'text-slate-700']);
-  speedupTitle.textContent = t('speedup_settings');
-  appendTooltip(speedupTitle, t('speedup_settings_tooltip'));
 
   const freeRow = el('label', ['flex', 'items-center', 'justify-between', 'gap-3', 'text-sm', 'text-slate-700']);
   freeRow.htmlFor = 'free-speedup-used-today';
@@ -450,7 +447,7 @@ export function renderCharBed(container) {
   stoneInput.placeholder = t('zero_placeholder');
   stoneRow.append(stoneLabel, stoneInput);
 
-  speedupBox.append(speedupTitle, freeRow, stoneRow, hoardRow);
+  speedupBox.append(freeRow, stoneRow, hoardRow);
 
   const infoBox = el('div', ['space-y-1', 'text-sm', 'text-black']);
   const needNext = el('div');
