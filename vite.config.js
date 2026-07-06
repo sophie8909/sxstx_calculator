@@ -3,7 +3,7 @@ import { cpSync, existsSync } from 'node:fs';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  base: '/sxstx_calculator/',
+  base: '/',
   plugins: [
     {
       name: 'copy-generated-data',
