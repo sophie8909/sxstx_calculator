@@ -404,9 +404,11 @@ export function renderCharBed(container) {
     row({ id: 'owned-exp-wan', label: t('owned_exp_wan'), placeholder: getOwnedExpUnitPlaceholder(), min: 0, step: 0.01 })
   );
 
-  const expBox = el('div', ['character-exp-panel']);
-  expBox.append(
-    row({ id: 'owned-exp', label: t('actual_exp'), placeholder: t('auto_convert_readonly'), readOnly: true }),
+  const ownedExpHidden = el('input');
+  ownedExpHidden.type = 'hidden';
+  ownedExpHidden.id = 'owned-exp';
+  levelBox.append(
+    ownedExpHidden,
     row({ id: 'bed-exp-hourly', label: t('exp_hourly'), placeholder: t('zero_placeholder'), min: 0, step: 1 })
   );
 
@@ -457,22 +459,45 @@ export function renderCharBed(container) {
   speedupBox.append(freeRow, stoneRow, boostNext, boostTarget);
 
   const infoBox = el('div', ['character-exp-panel', 'character-exp-summary']);
-  const infoTextClasses = ['text-sm', 'font-semibold', 'text-black'];
-  const needNext = el('div', infoTextClasses);
-  needNext.id = 'bed-levelup-exp';
-  needNext.textContent = t('next_level_exp_empty');
-  const etaNext = el('div', infoTextClasses);
-  etaNext.id = 'bed-levelup-time';
-  etaNext.textContent = t('levelup_eta_empty');
-  const needTarget = el('div', infoTextClasses);
-  needTarget.id = 'bed-target-exp';
-  needTarget.textContent = t('target_level_exp_empty');
-  const etaTarget = el('div', infoTextClasses);
-  etaTarget.id = 'bed-target-eta';
-  etaTarget.textContent = t('target_eta_empty');
-  infoBox.append(needNext, etaNext, needTarget, etaTarget);
+  const makeSummaryBlock = ({ titleId, defaultTitle, expId, timeId }) => {
+    const block = el('section', ['character-exp-summary-block']);
+    const title = el('h3', ['character-exp-summary-title']);
+    title.id = titleId;
+    title.textContent = defaultTitle;
 
-  topGrid.append(levelBox, expBox, speedupBox, infoBox);
+    const table = el('dl', ['character-exp-summary-table']);
+    const expLabel = el('dt');
+    expLabel.textContent = '所需經驗';
+    const expValue = el('dd');
+    expValue.id = expId;
+    expValue.textContent = '--';
+    const timeLabel = el('dt');
+    timeLabel.textContent = '時間';
+    const timeValue = el('dd');
+    timeValue.id = timeId;
+    timeValue.textContent = '--';
+
+    table.append(expLabel, expValue, timeLabel, timeValue);
+    block.append(title, table);
+    return block;
+  };
+
+  infoBox.append(
+    makeSummaryBlock({
+      titleId: 'bed-levelup-summary-title',
+      defaultTitle: '升至下一級（Lv. --）',
+      expId: 'bed-levelup-exp',
+      timeId: 'bed-levelup-time',
+    }),
+    makeSummaryBlock({
+      titleId: 'bed-target-summary-title',
+      defaultTitle: '升至目標等級（Lv. --）',
+      expId: 'bed-target-exp',
+      timeId: 'bed-target-eta',
+    })
+  );
+
+  topGrid.append(levelBox, speedupBox, infoBox);
 
   const actionsPanel = el('div', ['character-exp-actions']);
   const notifyLabel = el('label', ['font-semibold']);
@@ -512,7 +537,7 @@ export function renderCharBed(container) {
   hoardButton.id = 'enable-hoard-exp-notify-btn';
   hoardButton.textContent = t('enable_hoard_exp_notify');
 
-  const expRequiredButton = el('button', ['inline-flex', 'items-center', 'justify-center', 'rounded-lg', 'border', 'border-[#b6d7da]', 'bg-white', 'px-4', 'py-3', 'text-teal-700', 'hover:bg-teal-50', 'w-full', 'md:w-auto']);
+  const expRequiredButton = el('button', ['inline-flex', 'items-center', 'justify-center', 'rounded-lg', 'border', 'border-[#b6d7da]', 'bg-white', 'px-4', 'py-2', 'text-teal-700', 'hover:bg-teal-50', 'w-full', 'md:w-auto']);
   expRequiredButton.type = 'button';
   expRequiredButton.id = 'open-exp-required-form-btn';
   expRequiredButton.textContent = '填寫升級所需經驗';
@@ -865,12 +890,12 @@ export function renderLevelupTimeText(minutesNeeded, levelupTs) {
   if (!display) return;
 
   if (!Number.isFinite(levelupTs)) {
-    display.textContent = t('levelup_eta_empty');
+    display.textContent = '--';
     return;
   }
 
   if (minutesNeeded <= 0) {
-    display.textContent = t('levelup_eta_ready');
+    display.textContent = '已可升級';
     return;
   }
 
@@ -881,7 +906,7 @@ export function renderLevelupTimeText(minutesNeeded, levelupTs) {
     hour: '2-digit',
     minute: '2-digit',
   });
-  display.textContent = t('levelup_eta_value', { minutes: fmt(minutesNeeded), time: timeText });
+  display.textContent = `${fmt(minutesNeeded)} 分鐘，約 ${timeText}`;
 }
 
 export function renderTargetEtaText(minutesNeeded, etaTs) {
@@ -889,12 +914,12 @@ export function renderTargetEtaText(minutesNeeded, etaTs) {
   if (!display) return;
 
   if (!Number.isFinite(etaTs)) {
-    display.textContent = t('target_eta_empty');
+    display.textContent = '--';
     return;
   }
 
   if (minutesNeeded <= 0) {
-    display.textContent = t('target_eta_ready');
+    display.textContent = '已達成';
     return;
   }
 
@@ -905,17 +930,17 @@ export function renderTargetEtaText(minutesNeeded, etaTs) {
     hour: '2-digit',
     minute: '2-digit',
   });
-  display.textContent = t('target_eta_value', { minutes: fmt(minutesNeeded), time: timeText });
+  display.textContent = `${fmt(minutesNeeded)} 分鐘，約 ${timeText}`;
 }
 
 export function renderLevelupExpText(expNeeded) {
   const display = document.getElementById('bed-levelup-exp');
   if (!display) return;
-  display.textContent = Number.isFinite(expNeeded) ? t('next_level_exp', { value: fmt(expNeeded) }) : t('next_level_exp_empty');
+  display.textContent = Number.isFinite(expNeeded) ? fmt(expNeeded) : '--';
 }
 
 export function renderTargetExpText(needExp) {
   const display = document.getElementById('bed-target-exp');
   if (!display) return;
-  display.textContent = Number.isFinite(needExp) ? t('target_level_exp', { value: fmt(needExp) }) : t('target_level_exp_empty');
+  display.textContent = Number.isFinite(needExp) ? fmt(needExp) : '--';
 }

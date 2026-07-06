@@ -1035,6 +1035,11 @@ function updateSpeedupHints(nextLevelHours, targetHours) {
 
 function refreshBedProgressSummary() {
   const { currentLevel, ownedExp, bedHourly, targetLevel } = readBedProgressState();
+  const nextLevelTitle = document.getElementById('bed-levelup-summary-title');
+  const targetLevelTitle = document.getElementById('bed-target-summary-title');
+  if (nextLevelTitle) nextLevelTitle.textContent = `升至下一級（Lv. ${currentLevel + 1}）`;
+  if (targetLevelTitle) targetLevelTitle.textContent = `升至目標等級（Lv. ${targetLevel}）`;
+
   const nextLevelBonusHours = getNextLevelSpeedupHours(currentLevel, ownedExp, bedHourly);
   const { levelupTs, minutesNeeded } = computeEtaToNextLevel(
     currentLevel,
@@ -1134,8 +1139,8 @@ function updateExpRequirements(curLv, ownedExp, targetChar) {
 
   const elNext = document.getElementById('bed-levelup-exp');
   const elTarget = document.getElementById('bed-target-exp');
-  if (elNext) elNext.textContent = t('next_level_exp', { value: needNextExp.toLocaleString() });
-  if (elTarget) elTarget.textContent = t('target_level_exp', { value: needTargetExp.toLocaleString() });
+  if (elNext) elNext.textContent = needNextExp.toLocaleString();
+  if (elTarget) elTarget.textContent = needTargetExp.toLocaleString();
 }
 
 function getNextLevelRequiredExpValue(currentLevel, ownedExp) {
