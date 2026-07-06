@@ -469,28 +469,8 @@ body.app-loading .app-loading-overlay {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: .75rem;
-}
-
-.character-exp-actions {
   justify-content: center;
-}
-
-.character-exp-reminder {
-  justify-content: flex-start;
-  gap: .75rem 1rem;
-}
-
-.character-exp-reminder-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: .5rem;
-  margin: 0;
-  font-weight: 600;
-}
-
-.character-exp-reminder button {
-  flex: 0 0 auto;
+  gap: .75rem;
 }
 
 .calculator-section-card > h2 {

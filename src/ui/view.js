@@ -410,7 +410,7 @@ export function renderCharBed(container) {
     row({ id: 'bed-exp-hourly', label: t('exp_hourly'), placeholder: t('zero_placeholder'), min: 0, step: 1 })
   );
 
-  const hoardRow = el('label', ['character-exp-reminder-toggle', 'text-sm', 'text-red-800']);
+  const hoardRow = el('label', ['flex', 'items-center', 'justify-between', 'gap-3', 'text-sm', 'text-red-800']);
   hoardRow.htmlFor = 'next-season-exp-hoard-enabled';
   const hoardText = el('span', ['font-semibold']);
   hoardText.textContent = t('next_season_exp_hoard');
@@ -512,7 +512,7 @@ export function renderCharBed(container) {
   hoardButton.id = 'enable-hoard-exp-notify-btn';
   hoardButton.textContent = t('enable_hoard_exp_notify');
 
-  const expRequiredButton = el('button', ['inline-flex', 'items-center', 'justify-center', 'rounded-lg', 'border', 'border-[#b6d7da]', 'bg-white', 'px-4', 'py-3', 'text-teal-700', 'hover:bg-teal-50']);
+  const expRequiredButton = el('button', ['inline-flex', 'items-center', 'justify-center', 'rounded-lg', 'border', 'border-[#b6d7da]', 'bg-white', 'px-4', 'py-3', 'text-teal-700', 'hover:bg-teal-50', 'w-full', 'md:w-auto']);
   expRequiredButton.type = 'button';
   expRequiredButton.id = 'open-exp-required-form-btn';
   expRequiredButton.textContent = '填寫升級所需經驗';
