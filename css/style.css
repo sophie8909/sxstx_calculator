@@ -442,7 +442,6 @@ body.app-loading .app-loading-overlay {
   align-items: stretch;
 }
 
-.character-exp-panel,
 .character-exp-actions,
 .character-exp-reminder {
   min-width: 0;
@@ -453,6 +452,7 @@ body.app-loading .app-loading-overlay {
 }
 
 .character-exp-panel {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: .75rem;
