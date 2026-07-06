@@ -368,14 +368,14 @@ export function renderCharBed(container) {
 
   const row = ({ id, type = 'number', label, placeholder = '', readOnly = false, min, step }) => {
     const wrap = el('div', ['w-full']);
-    const line = el('div', ['flex', 'flex-col', 'md:flex-row', 'md:items-center', 'md:justify-between', 'gap-2']);
+    const line = el('div', ['flex', 'flex-col', 'items-start', 'gap-2']);
     const left = el('div', ['flex', 'items-center', 'gap-2', 'min-w-0']);
     const text = el('span', ['text-sm', 'font-semibold']);
     text.textContent = label;
     left.appendChild(text);
     appendTooltip(text, getTooltipText(id, label));
 
-    const right = el('div', ['flex', 'items-center', 'justify-end', 'w-full', 'md:w-1/2']);
+    const right = el('div', ['flex', 'items-center', 'justify-end', 'w-full']);
     const input = el('input', ['input-field', 'rounded', 'p-2', inputHeight, 'w-full']);
     input.id = id;
     input.placeholder = placeholder;
@@ -397,19 +397,13 @@ export function renderCharBed(container) {
     return wrap;
   };
 
-  const levelRow = el('div', ['grid', 'grid-cols-1', 'md:grid-cols-2', 'gap-3']);
-  levelRow.append(
+  const controlsGrid = el('div', ['grid', 'grid-cols-1', 'md:grid-cols-2', 'lg:grid-cols-3', 'xl:grid-cols-6', 'gap-3']);
+  controlsGrid.append(
     row({ id: 'character-current', label: t('role_level'), placeholder: t('current_placeholder'), min: 0, step: 1 }),
-    row({ id: 'owned-exp-wan', label: t('owned_exp_wan'), placeholder: getOwnedExpUnitPlaceholder(), min: 0, step: 0.01 })
-  );
-  container.appendChild(levelRow);
-
-  const expRow = el('div', ['grid', 'grid-cols-1', 'md:grid-cols-2', 'gap-3']);
-  expRow.append(
+    row({ id: 'owned-exp-wan', label: t('owned_exp_wan'), placeholder: getOwnedExpUnitPlaceholder(), min: 0, step: 0.01 }),
     row({ id: 'owned-exp', label: t('actual_exp'), placeholder: t('auto_convert_readonly'), readOnly: true }),
     row({ id: 'bed-exp-hourly', label: t('exp_hourly'), placeholder: t('zero_placeholder'), min: 0, step: 1 })
   );
-  container.appendChild(expRow);
 
   const hoardRow = el('label', ['flex', 'items-center', 'justify-between', 'gap-3', 'rounded-lg', 'border', 'border-red-200', 'bg-red-50', 'px-3', 'py-2', 'text-sm', 'text-red-800']);
   hoardRow.htmlFor = 'next-season-exp-hoard-enabled';
@@ -453,9 +447,8 @@ export function renderCharBed(container) {
 
   speedupBox.append(speedupTitle, freeRow, stoneRow);
 
-  const checkboxRow = el('div', ['grid', 'grid-cols-1', 'md:grid-cols-2', 'gap-3']);
-  checkboxRow.append(hoardRow, speedupBox);
-  container.appendChild(checkboxRow);
+  controlsGrid.append(hoardRow, speedupBox);
+  container.appendChild(controlsGrid);
 
   const infoBox = el('div', ['grid', 'grid-cols-1', 'md:grid-cols-2', 'xl:grid-cols-3', 'gap-x-4', 'gap-y-1', 'text-xs', 'text-gray-500']);
   const needNext = el('div');
