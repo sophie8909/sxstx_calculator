@@ -84,6 +84,8 @@ export const productionSources = {
 };
 
 export const SPEEDUP_HOURS_PER_USE = 2;
+export const NEXT_SEASON_EXP_HOARD_HOURS = 36;
+export const NEXT_SEASON_EXP_HOARD_REMINDER_HOURS = NEXT_SEASON_EXP_HOARD_HOURS - SPEEDUP_HOURS_PER_USE;
 export const RELIC_COUNT = 20;
 
 export function getAvailableRelicLevels() {
@@ -521,7 +523,7 @@ function getBedProgressTargetTime() {
   const targetTs = new Date(targetTime).getTime();
   if (!Number.isFinite(targetTs)) return targetTime;
 
-  return new Date(targetTs - 36 * 60 * 60 * 1000).toISOString();
+  return new Date(targetTs - NEXT_SEASON_EXP_HOARD_REMINDER_HOURS * 60 * 60 * 1000).toISOString();
 }
 
 export function computeReachableCharacterLevel(curLv, ownedExp, bedExpHourly, targetTimeStr) {

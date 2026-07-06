@@ -16,6 +16,8 @@ import {
   getCharacterCumulativeExp,
   getSpeedupHoursForDays,
   getSpeedupHoursForHours,
+  NEXT_SEASON_EXP_HOARD_HOURS,
+  NEXT_SEASON_EXP_HOARD_REMINDER_HOURS,
   loadMaterialAvgDefaults, 
   STAMINA_BIG_MINE_EXPECTED_MULTIPLIER,
 } from '../model.js';
@@ -114,7 +116,6 @@ const DUNGEON_CATEGORY = '【副本開啟】';
 const DUNGEON_ANCHOR_LABEL = '淨心護甲';
 const DUNGEON_OPEN_INTERVAL_DAYS = 14;
 const CURRENT_SEASON_DUNGEON_COUNT = 12;
-const NEXT_SEASON_EXP_HOARD_HOURS = 36;
 const DUNGEON_POWER_SHEET = {
   id: '1boxKipNVI-tCaJEaX-AoOTijEgKcxKfilhbtxkLbX-E',
   gid: '2044399102',
@@ -2389,7 +2390,7 @@ async function enableNextSeasonExpHoardCalendar() {
     return;
   }
 
-  const eventTs = seasonEndTs - NEXT_SEASON_EXP_HOARD_HOURS * 60 * 60 * 1000;
+  const eventTs = seasonEndTs - NEXT_SEASON_EXP_HOARD_REMINDER_HOURS * 60 * 60 * 1000;
   const seasonEndText = new Date(seasonEndTs).toLocaleString(locale, {
     year: 'numeric',
     month: '2-digit',
