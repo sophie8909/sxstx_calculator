@@ -448,7 +448,7 @@ export function renderCharBed(container) {
 
   speedupBox.append(speedupTitle, hoardRow, freeRow, stoneRow);
 
-  const infoBox = el('div', ['grid', 'grid-cols-1', 'md:grid-cols-2', 'xl:grid-cols-3', 'gap-x-4', 'gap-y-1', 'text-sm', 'text-gray-500']);
+  const infoBox = el('div', ['grid', 'grid-cols-1', 'gap-y-1', 'text-sm', 'text-gray-500']);
   const needNext = el('div');
   needNext.id = 'bed-levelup-exp';
   needNext.textContent = t('next_level_exp_empty');
