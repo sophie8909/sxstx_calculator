@@ -353,7 +353,8 @@ body.app-loading .app-loading-overlay {
 
 #calculator-page-content,
 #fragment-calculator-panel,
-#target-time-form-panel {
+#target-time-form-panel,
+#exp-required-form-panel {
   min-width: 0;
 }
 
@@ -788,6 +789,7 @@ body.compact #results .grid > div {
 #enable-target-notify-btn,
 #clear-local-data-btn,
 #relay-submit-btn,
+#exp-required-submit-btn,
 #target-time-form-panel a[data-i18n='relay_open_google_form'],
 main a[data-i18n='relay_open_google_form'] {
   width: 100%;
@@ -823,6 +825,7 @@ main a[data-i18n='relay_open_google_form'] {
   #enable-target-notify-btn,
   #clear-local-data-btn,
   #relay-submit-btn,
+  #exp-required-submit-btn,
   #target-time-form-panel a[data-i18n='relay_open_google_form'],
   main a[data-i18n='relay_open_google_form'] {
     width: auto;

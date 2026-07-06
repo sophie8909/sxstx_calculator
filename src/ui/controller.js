@@ -116,12 +116,6 @@ const DUNGEON_CATEGORY = '【副本開啟】';
 const DUNGEON_ANCHOR_LABEL = '淨心護甲';
 const DUNGEON_OPEN_INTERVAL_DAYS = 14;
 const CURRENT_SEASON_DUNGEON_COUNT = 12;
-const EXP_REQUIRED_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSflkOzgCVmrxeO04PTYCdNln6N36sKrLM9ROI5k933E-Aiiyg/viewform?usp=header';
-const EXP_REQUIRED_FORM_ENTRIES = {
-  season: 'entry.2132686072',
-  level: 'entry.1215174401',
-  nextExp: 'entry.1205059282',
-};
 const DUNGEON_POWER_SHEET = {
   id: '1boxKipNVI-tCaJEaX-AoOTijEgKcxKfilhbtxkLbX-E',
   gid: '2044399102',
@@ -1163,24 +1157,26 @@ function getNextLevelRequiredExpValue(currentLevel, ownedExp) {
   return Math.max(0, nextLevelExpBase - currentExpBase - ownedExp);
 }
 
-function buildExpRequiredFormUrl() {
+function getExpRequiredFormDefaults() {
   const { currentLevel, ownedExp } = readBedProgressState();
   const selectedSeason = getSelectedSeason();
   const nextExp = getNextLevelRequiredExpValue(currentLevel, ownedExp);
-  const url = new URL(EXP_REQUIRED_FORM_URL);
 
-  if (selectedSeason?.name) url.searchParams.set(EXP_REQUIRED_FORM_ENTRIES.season, selectedSeason.name);
-  if (currentLevel > 0) url.searchParams.set(EXP_REQUIRED_FORM_ENTRIES.level, String(currentLevel));
-  if (Number.isFinite(nextExp)) {
-    url.searchParams.set(EXP_REQUIRED_FORM_ENTRIES.nextExp, convertExpToOwnedInputUnit(nextExp));
-  }
-
-  return url.toString();
+  return {
+    season: selectedSeason?.name || selectedSeason?.id?.toUpperCase() || '',
+    level: currentLevel > 0 ? String(currentLevel) : '',
+    requiredExp: Number.isFinite(nextExp) ? convertExpToOwnedInputUnit(nextExp) : '',
+  };
 }
 
-function openExpRequiredForm(event) {
+function openExpRequiredFormInterface(event) {
   event?.preventDefault();
-  window.open(buildExpRequiredFormUrl(), '_blank', 'noopener,noreferrer');
+  window.dispatchEvent(new CustomEvent('expRequiredFormPrefill', {
+    detail: getExpRequiredFormDefaults(),
+  }));
+  window.dispatchEvent(new CustomEvent('calculator:show-page', {
+    detail: { page: 'exp-required-form' },
+  }));
 }
 
 /* -----------------------------
@@ -1413,10 +1409,11 @@ function bindTargetTimeFormToggle() {
   const calculatorPageContent = document.getElementById('calculator-page-content');
   const fragmentCalculatorPanel = document.getElementById('fragment-calculator-panel');
   const targetTimeFormPanel = document.getElementById('target-time-form-panel');
+  const expRequiredFormPanel = document.getElementById('exp-required-form-panel');
   const sectionSideNav = document.getElementById('section-side-nav');
   const appLayout = document.querySelector('.app-layout');
 
-  if (!navButtons.length || !calculatorPageContent || !fragmentCalculatorPanel || !targetTimeFormPanel) return;
+  if (!navButtons.length || !calculatorPageContent || !fragmentCalculatorPanel || !targetTimeFormPanel || !expRequiredFormPanel) return;
 
   const scrollToToggle = () => {
     const firstButton = navButtons[0];
@@ -1428,6 +1425,7 @@ function bindTargetTimeFormToggle() {
     primordial: calculatorPageContent,
     fragment: fragmentCalculatorPanel,
     'target-time-form': targetTimeFormPanel,
+    'exp-required-form': expRequiredFormPanel,
   };
 
   const showPage = (page, shouldScroll = true) => {
@@ -1457,6 +1455,10 @@ function bindTargetTimeFormToggle() {
 
   navButtons.forEach((button) => {
     button.addEventListener('click', () => showPage(button.dataset.page || 'primordial'));
+  });
+
+  window.addEventListener('calculator:show-page', (event) => {
+    showPage(event.detail?.page || 'primordial');
   });
 
   showPage(localStorage.getItem(ACTIVE_PAGE_STORAGE_KEY) || 'primordial', false);
@@ -2258,7 +2260,7 @@ function bindGlobalHandlers(containers) {
       if (characterExpAction.id === 'enable-levelup-notify-btn') enableLevelUpNotifications();
       if (characterExpAction.id === 'enable-target-notify-btn') enableTargetLevelCalendar();
       if (characterExpAction.id === 'enable-hoard-exp-notify-btn') enableNextSeasonExpHoardCalendar();
-      if (characterExpAction.id === 'open-exp-required-form-btn') openExpRequiredForm(e);
+      if (characterExpAction.id === 'open-exp-required-form-btn') openExpRequiredFormInterface(e);
       return;
     }
 

@@ -751,6 +751,38 @@ export const I18N_DICTIONARIES = {
     "zh-Hant": "目標日期格式不正確。",
     "zh-Hans": "目标日期格式不正确。"
   },
+  "exp_required_form_title": {
+    "zh-Hant": "升級所需經驗填寫",
+    "zh-Hans": "升级所需经验填写"
+  },
+  "exp_required_form_intro": {
+    "zh-Hant": "先在這裡確認資料，送出後會開啟已預填的 Google 表單。",
+    "zh-Hans": "先在这里确认资料，送出后会开启已预填的 Google 表单。"
+  },
+  "exp_required_season_label": {
+    "zh-Hant": "賽季",
+    "zh-Hans": "赛季"
+  },
+  "exp_required_level_label": {
+    "zh-Hant": "目前角色等級",
+    "zh-Hans": "当前角色等级"
+  },
+  "exp_required_value_label": {
+    "zh-Hant": "升下一級所需經驗",
+    "zh-Hans": "升下一级所需经验"
+  },
+  "exp_required_value_hint": {
+    "zh-Hant": "單位與角色經驗區塊的「目前持有經驗」相同。",
+    "zh-Hans": "单位与角色经验区块的「目前持有经验」相同。"
+  },
+  "exp_required_submit": {
+    "zh-Hant": "開啟已預填 Google 表單",
+    "zh-Hans": "开启已预填 Google 表单"
+  },
+  "exp_required_opened": {
+    "zh-Hant": "已開啟預填表單，請在 Google 表單確認後送出。",
+    "zh-Hans": "已开启预填表单，请在 Google 表单确认后送出。"
+  },
   "zero_placeholder": {
     "zh-Hant": "0",
     "zh-Hans": "0"

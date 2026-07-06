@@ -512,14 +512,12 @@ export function renderCharBed(container) {
   hoardButton.id = 'enable-hoard-exp-notify-btn';
   hoardButton.textContent = t('enable_hoard_exp_notify');
 
-  const expRequiredLink = el('a', ['inline-flex', 'items-center', 'justify-center', 'rounded-lg', 'border', 'border-[#b6d7da]', 'bg-white', 'px-4', 'py-3', 'text-teal-700', 'hover:bg-teal-50', 'w-full', 'md:w-auto']);
-  expRequiredLink.id = 'open-exp-required-form-btn';
-  expRequiredLink.href = 'https://docs.google.com/forms/d/e/1FAIpQLSflkOzgCVmrxeO04PTYCdNln6N36sKrLM9ROI5k933E-Aiiyg/viewform?usp=header';
-  expRequiredLink.target = '_blank';
-  expRequiredLink.rel = 'noopener noreferrer';
-  expRequiredLink.textContent = '填寫升級所需經驗';
+  const expRequiredButton = el('button', ['inline-flex', 'items-center', 'justify-center', 'rounded-lg', 'border', 'border-[#b6d7da]', 'bg-white', 'px-4', 'py-3', 'text-teal-700', 'hover:bg-teal-50', 'w-full', 'md:w-auto']);
+  expRequiredButton.type = 'button';
+  expRequiredButton.id = 'open-exp-required-form-btn';
+  expRequiredButton.textContent = '填寫升級所需經驗';
 
-  reminderPanel.append(hoardRow, hoardButton, expRequiredLink);
+  reminderPanel.append(hoardRow, hoardButton, expRequiredButton);
 
   container.append(topGrid, actionsPanel, reminderPanel);
 }

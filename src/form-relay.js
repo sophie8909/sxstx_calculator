@@ -21,6 +21,12 @@ const DUNGEON_POWER_SHEET = {
 const DUNGEON_CATEGORY = '【副本開啟】';
 
 const FALLBACK_SERVERS = ['台港澳'];
+const EXP_REQUIRED_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSflkOzgCVmrxeO04PTYCdNln6N36sKrLM9ROI5k933E-Aiiyg/viewform?usp=header';
+const EXP_REQUIRED_FORM_ENTRIES = {
+  season: 'entry.2132686072',
+  level: 'entry.1215174401',
+  requiredExp: 'entry.1205059282',
+};
 let dungeonNameRowsCache = null;
 
 function getInitialContext() {
@@ -196,6 +202,20 @@ function showFeedback(message, type = 'info') {
   if (type === 'success') {
     feedback.classList.add('border-emerald-200', 'bg-emerald-50', 'text-emerald-700');
   } else if (type === 'error') {
+    feedback.classList.add('border-red-200', 'bg-red-50', 'text-red-700');
+  } else {
+    feedback.classList.add('border-slate-200', 'bg-slate-50', 'text-slate-700');
+  }
+}
+
+function showExpRequiredFeedback(message, type = 'info') {
+  const feedback = document.getElementById('exp-required-feedback');
+  if (!feedback) return;
+
+  feedback.textContent = message;
+  feedback.className = 'mt-4 rounded-lg border px-4 py-3 text-sm';
+
+  if (type === 'error') {
     feedback.classList.add('border-red-200', 'bg-red-50', 'text-red-700');
   } else {
     feedback.classList.add('border-slate-200', 'bg-slate-50', 'text-slate-700');
@@ -453,6 +473,54 @@ function submitRelayForm() {
   showFeedback(t('relay_submit_pending'), 'info');
 }
 
+function applyExpRequiredPrefill(detail = {}) {
+  const seasonSelect = document.getElementById('exp-required-season');
+  const levelInput = document.getElementById('exp-required-level');
+  const valueInput = document.getElementById('exp-required-value');
+
+  if (seasonSelect && detail.season) {
+    const season = String(detail.season).toUpperCase();
+    if (Array.from(seasonSelect.options).some((option) => option.value === season)) {
+      seasonSelect.value = season;
+    }
+  }
+  if (levelInput && detail.level !== undefined) levelInput.value = detail.level;
+  if (valueInput && detail.requiredExp !== undefined) valueInput.value = detail.requiredExp;
+  document.getElementById('exp-required-feedback')?.classList.add('hidden');
+}
+
+function buildExpRequiredPrefillUrl() {
+  const season = document.getElementById('exp-required-season')?.value || '';
+  const level = document.getElementById('exp-required-level')?.value || '';
+  const requiredExp = document.getElementById('exp-required-value')?.value || '';
+
+  if (!season || !level || requiredExp === '') {
+    showExpRequiredFeedback(t('relay_validation_required'), 'error');
+    return '';
+  }
+
+  const numericLevel = Number(level);
+  const numericRequiredExp = Number(requiredExp);
+  if (!Number.isFinite(numericLevel) || numericLevel < 0 || !Number.isFinite(numericRequiredExp) || numericRequiredExp < 0) {
+    showExpRequiredFeedback(t('relay_validation_required'), 'error');
+    return '';
+  }
+
+  const url = new URL(EXP_REQUIRED_FORM_URL);
+  url.searchParams.set(EXP_REQUIRED_FORM_ENTRIES.season, season);
+  url.searchParams.set(EXP_REQUIRED_FORM_ENTRIES.level, level);
+  url.searchParams.set(EXP_REQUIRED_FORM_ENTRIES.requiredExp, requiredExp);
+  return url.toString();
+}
+
+function submitExpRequiredForm() {
+  const url = buildExpRequiredPrefillUrl();
+  if (!url) return;
+
+  window.open(url, '_blank', 'noopener,noreferrer');
+  showExpRequiredFeedback(t('exp_required_opened'), 'info');
+}
+
 async function init() {
   await initLanguage();
   applyRelayTranslations();
@@ -472,6 +540,10 @@ async function init() {
   applyCategoryDescriptionLock();
 
   submitButton?.addEventListener('click', submitRelayForm);
+  document.getElementById('exp-required-submit-btn')?.addEventListener('click', submitExpRequiredForm);
+  window.addEventListener('expRequiredFormPrefill', (event) => {
+    applyExpRequiredPrefill(event.detail || {});
+  });
   document.getElementById('relay-server-manual-toggle')?.addEventListener('click', syncManualServerVisibility);
   document.getElementById('relay-description-category')?.addEventListener('change', applyCategoryDescriptionLock);
   document.getElementById('relay-season')?.addEventListener('change', () => {
