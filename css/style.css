@@ -373,7 +373,7 @@ body.app-loading .app-loading-overlay {
 }
 
 #primary-content-grid {
-  align-items: start;
+  align-items: stretch;
 }
 
 #primary-content-grid > .main-grid-column {
