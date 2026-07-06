@@ -430,6 +430,48 @@ body.app-loading .app-loading-overlay {
   gap: 1rem;
 }
 
+.character-exp-card {
+  gap: 1rem;
+}
+
+.character-exp-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: .75rem;
+  align-items: stretch;
+}
+
+.character-exp-panel,
+.character-exp-actions,
+.character-exp-reminder {
+  min-width: 0;
+  border: 1px solid #cde5e8;
+  border-radius: .5rem;
+  background: #f7fbfc;
+  padding: .75rem;
+}
+
+.character-exp-panel {
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+}
+
+.character-exp-summary {
+  display: grid;
+  grid-template-columns: 1fr;
+  align-content: space-between;
+}
+
+.character-exp-actions,
+.character-exp-reminder {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: .75rem;
+}
+
 .calculator-section-card > h2 {
   position: static !important;
   z-index: auto !important;
@@ -786,6 +828,10 @@ main a[data-i18n='relay_open_google_form'] {
     width: auto;
   }
 
+  .character-exp-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .result-summary-row {
     flex-direction: row;
     align-items: center;
@@ -895,6 +941,10 @@ main a[data-i18n='relay_open_google_form'] {
 
   .tooltip-safe-scroll {
     overflow-y: visible !important;
+  }
+
+  .character-exp-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(12rem, .72fr);
   }
 }
 

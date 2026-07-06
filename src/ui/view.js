@@ -182,7 +182,7 @@ export function renderPrimordialStarCumulative(container) {
 }
 
 export function renderTargetLevels(container) {
-  container.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4';
+  container.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4';
   container.innerHTML = '';
 
   targetLevelConfig.forEach((target) => {
@@ -397,14 +397,14 @@ export function renderCharBed(container) {
     return wrap;
   };
 
-  const topGrid = el('div', ['grid', 'grid-cols-1', 'md:grid-cols-2', 'xl:grid-cols-4', 'auto-rows-fr', 'items-stretch', 'gap-3']);
-  const levelBox = el('div', ['grid', 'grid-rows-2', 'gap-3', 'h-full']);
+  const topGrid = el('div', ['character-exp-grid']);
+  const levelBox = el('div', ['character-exp-panel']);
   levelBox.append(
     row({ id: 'character-current', label: t('role_level'), placeholder: t('current_placeholder'), min: 0, step: 1 }),
     row({ id: 'owned-exp-wan', label: t('owned_exp_wan'), placeholder: getOwnedExpUnitPlaceholder(), min: 0, step: 0.01 })
   );
 
-  const expBox = el('div', ['grid', 'grid-rows-2', 'gap-3', 'h-full']);
+  const expBox = el('div', ['character-exp-panel']);
   expBox.append(
     row({ id: 'owned-exp', label: t('actual_exp'), placeholder: t('auto_convert_readonly'), readOnly: true }),
     row({ id: 'bed-exp-hourly', label: t('exp_hourly'), placeholder: t('zero_placeholder'), min: 0, step: 1 })
@@ -421,7 +421,7 @@ export function renderCharBed(container) {
   hoardCheckbox.classList.add('h-4', 'w-4');
   hoardRow.append(hoardText, hoardCheckbox);
 
-  const speedupBox = el('div', ['grid', 'grid-rows-3', 'gap-3', 'h-full']);
+  const speedupBox = el('div', ['character-exp-panel']);
 
   const freeRow = el('label', ['flex', 'items-center', 'justify-between', 'gap-3', 'rounded-lg', 'border', 'border-slate-200', 'bg-slate-50', 'px-3', 'py-2', 'text-sm', 'text-slate-700']);
   freeRow.htmlFor = 'free-speedup-used-today';
@@ -447,9 +447,16 @@ export function renderCharBed(container) {
   stoneInput.placeholder = t('zero_placeholder');
   stoneRow.append(stoneLabel, stoneInput);
 
-  speedupBox.append(freeRow, stoneRow, hoardRow);
+  const boostNext = el('div', ['text-sm', 'font-semibold', 'text-black']);
+  boostNext.id = 'bed-levelup-speedup';
+  boostNext.textContent = t('speedup_next_level', { hours: 0 });
+  const boostTarget = el('div', ['text-sm', 'font-semibold', 'text-black']);
+  boostTarget.id = 'bed-target-speedup';
+  boostTarget.textContent = t('speedup_target_time', { hours: 0 });
 
-  const infoBox = el('div', ['grid', 'grid-cols-3', 'grid-rows-2', 'items-center', 'gap-x-4', 'gap-y-3', 'h-full']);
+  speedupBox.append(freeRow, stoneRow, boostNext, boostTarget);
+
+  const infoBox = el('div', ['character-exp-panel', 'character-exp-summary']);
   const infoTextClasses = ['text-sm', 'font-semibold', 'text-black'];
   const needNext = el('div', infoTextClasses);
   needNext.id = 'bed-levelup-exp';
@@ -457,23 +464,64 @@ export function renderCharBed(container) {
   const etaNext = el('div', infoTextClasses);
   etaNext.id = 'bed-levelup-time';
   etaNext.textContent = t('levelup_eta_empty');
-  const boostNext = el('div', infoTextClasses);
-  boostNext.id = 'bed-levelup-speedup';
-  boostNext.textContent = t('speedup_next_level', { hours: 0 });
   const needTarget = el('div', infoTextClasses);
   needTarget.id = 'bed-target-exp';
   needTarget.textContent = t('target_level_exp_empty');
   const etaTarget = el('div', infoTextClasses);
   etaTarget.id = 'bed-target-eta';
   etaTarget.textContent = t('target_eta_empty');
-  const boostTarget = el('div', infoTextClasses);
-  boostTarget.id = 'bed-target-speedup';
-  boostTarget.textContent = t('speedup_target_time', { hours: 0 });
-
-  infoBox.append(needNext, etaNext, boostNext, needTarget, etaTarget, boostTarget);
+  infoBox.append(needNext, etaNext, needTarget, etaTarget);
 
   topGrid.append(levelBox, expBox, speedupBox, infoBox);
-  container.appendChild(topGrid);
+
+  const actionsPanel = el('div', ['character-exp-actions']);
+  const notifyLabel = el('label', ['font-semibold']);
+  notifyLabel.htmlFor = 'notify-time-select';
+  notifyLabel.textContent = t('notify_time_label');
+  const notifySelect = el('select', ['input-field', 'rounded', 'p-2']);
+  notifySelect.id = 'notify-time-select';
+  [
+    ['min0', t('notify_now')],
+    ['min1', t('notify_1min')],
+    ['min2', t('notify_2min')],
+    ['min3', t('notify_3min')],
+    ['min5', t('notify_5min')],
+  ].forEach(([value, label]) => {
+    const option = el('option');
+    option.value = value;
+    option.textContent = label;
+    if (value === 'min3') option.selected = true;
+    notifySelect.appendChild(option);
+  });
+
+  const levelUpButton = el('button', ['bg-gray-600', 'hover:bg-gray-500', 'text-white', 'font-bold', 'py-2', 'px-4', 'rounded-lg', 'text-xs']);
+  levelUpButton.type = 'button';
+  levelUpButton.id = 'enable-levelup-notify-btn';
+  levelUpButton.textContent = t('enable_notify');
+
+  const targetButton = el('button', ['bg-gray-600', 'hover:bg-gray-500', 'text-white', 'font-bold', 'py-2', 'px-4', 'rounded-lg', 'text-xs']);
+  targetButton.type = 'button';
+  targetButton.id = 'enable-target-notify-btn';
+  targetButton.textContent = t('enable_target_notify');
+
+  actionsPanel.append(notifyLabel, notifySelect, levelUpButton, targetButton);
+
+  const reminderPanel = el('div', ['character-exp-reminder']);
+  const hoardButton = el('button', ['bg-gray-600', 'hover:bg-gray-500', 'text-white', 'font-bold', 'py-2', 'px-4', 'rounded-lg', 'text-xs']);
+  hoardButton.type = 'button';
+  hoardButton.id = 'enable-hoard-exp-notify-btn';
+  hoardButton.textContent = t('enable_hoard_exp_notify');
+
+  const expRequiredLink = el('a', ['inline-flex', 'items-center', 'justify-center', 'rounded-lg', 'border', 'border-[#b6d7da]', 'bg-white', 'px-4', 'py-3', 'text-teal-700', 'hover:bg-teal-50', 'w-full', 'md:w-auto']);
+  expRequiredLink.id = 'open-exp-required-form-btn';
+  expRequiredLink.href = 'https://docs.google.com/forms/d/e/1FAIpQLSflkOzgCVmrxeO04PTYCdNln6N36sKrLM9ROI5k933E-Aiiyg/viewform?usp=header';
+  expRequiredLink.target = '_blank';
+  expRequiredLink.rel = 'noopener noreferrer';
+  expRequiredLink.textContent = '填寫升級所需經驗';
+
+  reminderPanel.append(hoardRow, hoardButton, expRequiredLink);
+
+  container.append(topGrid, actionsPanel, reminderPanel);
 }
 
 export function renderMaterialSource(containers) {

@@ -116,6 +116,12 @@ const DUNGEON_CATEGORY = '【副本開啟】';
 const DUNGEON_ANCHOR_LABEL = '淨心護甲';
 const DUNGEON_OPEN_INTERVAL_DAYS = 14;
 const CURRENT_SEASON_DUNGEON_COUNT = 12;
+const EXP_REQUIRED_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSflkOzgCVmrxeO04PTYCdNln6N36sKrLM9ROI5k933E-Aiiyg/viewform?usp=header';
+const EXP_REQUIRED_FORM_ENTRIES = {
+  season: 'entry.2132686072',
+  level: 'entry.1215174401',
+  nextExp: 'entry.1205059282',
+};
 const DUNGEON_POWER_SHEET = {
   id: '1boxKipNVI-tCaJEaX-AoOTijEgKcxKfilhbtxkLbX-E',
   gid: '2044399102',
@@ -935,6 +941,12 @@ function convertWanToOwnedExp(ownedWan) {
   return Math.floor(Math.max(0, ownedWan) * (usesLargeExpUnit() ? 100000000 : 10000));
 }
 
+function convertExpToOwnedInputUnit(expValue) {
+  const divisor = usesLargeExpUnit() ? 100000000 : 10000;
+  const value = Math.max(0, Number(expValue) || 0) / divisor;
+  return Number.isInteger(value) ? String(value) : String(Math.round(value * 100) / 100);
+}
+
 function syncOwnedExpInputFromWan(ownedWan) {
   const ownedExpInput = document.getElementById('owned-exp');
   if (!ownedExpInput) return 0;
@@ -1140,6 +1152,35 @@ function updateExpRequirements(curLv, ownedExp, targetChar) {
   const elTarget = document.getElementById('bed-target-exp');
   if (elNext) elNext.textContent = t('next_level_exp', { value: needNextExp.toLocaleString() });
   if (elTarget) elTarget.textContent = t('target_level_exp', { value: needTargetExp.toLocaleString() });
+}
+
+function getNextLevelRequiredExpValue(currentLevel, ownedExp) {
+  const table = state.cumulativeCostData['character'];
+  if (!table || !table.length) return NaN;
+
+  const currentExpBase = getCharacterCumulativeExp(currentLevel);
+  const nextLevelExpBase = getCharacterCumulativeExp(currentLevel + 1);
+  return Math.max(0, nextLevelExpBase - currentExpBase - ownedExp);
+}
+
+function buildExpRequiredFormUrl() {
+  const { currentLevel, ownedExp } = readBedProgressState();
+  const selectedSeason = getSelectedSeason();
+  const nextExp = getNextLevelRequiredExpValue(currentLevel, ownedExp);
+  const url = new URL(EXP_REQUIRED_FORM_URL);
+
+  if (selectedSeason?.name) url.searchParams.set(EXP_REQUIRED_FORM_ENTRIES.season, selectedSeason.name);
+  if (currentLevel > 0) url.searchParams.set(EXP_REQUIRED_FORM_ENTRIES.level, String(currentLevel));
+  if (Number.isFinite(nextExp)) {
+    url.searchParams.set(EXP_REQUIRED_FORM_ENTRIES.nextExp, convertExpToOwnedInputUnit(nextExp));
+  }
+
+  return url.toString();
+}
+
+function openExpRequiredForm(event) {
+  event?.preventDefault();
+  window.open(buildExpRequiredFormUrl(), '_blank', 'noopener,noreferrer');
 }
 
 /* -----------------------------
@@ -2209,6 +2250,18 @@ function bindGlobalHandlers(containers) {
       return;
     }
 
+    const characterExpAction = e.target.closest(
+      '#enable-levelup-notify-btn, #enable-target-notify-btn, #enable-hoard-exp-notify-btn, #open-exp-required-form-btn'
+    );
+    if (characterExpAction) {
+      e.preventDefault();
+      if (characterExpAction.id === 'enable-levelup-notify-btn') enableLevelUpNotifications();
+      if (characterExpAction.id === 'enable-target-notify-btn') enableTargetLevelCalendar();
+      if (characterExpAction.id === 'enable-hoard-exp-notify-btn') enableNextSeasonExpHoardCalendar();
+      if (characterExpAction.id === 'open-exp-required-form-btn') openExpRequiredForm(e);
+      return;
+    }
+
     const feeButton = e.target.closest('.fragment-fee-mode-btn');
     if (feeButton) {
       const checkbox = document.getElementById('fragment-discount-fee');
@@ -2432,14 +2485,6 @@ async function init() {
   // ??撱箇?鞈賢迤?詨 + 憟?脣???
   initSeasonSelector(containers, saved);
   setAppLoading(true);
-
-  // ?????
-  const levelUpNotifyBtn = document.getElementById('enable-levelup-notify-btn');
-  levelUpNotifyBtn?.addEventListener('click', () => enableLevelUpNotifications());
-  const targetNotifyBtn = document.getElementById('enable-target-notify-btn');
-  targetNotifyBtn?.addEventListener('click', () => enableTargetLevelCalendar());
-  const hoardNotifyBtn = document.getElementById('enable-hoard-exp-notify-btn');
-  hoardNotifyBtn?.addEventListener('click', () => enableNextSeasonExpHoardCalendar());
 
   const clearLocalDataBtn = document.getElementById('clear-local-data-btn');
   clearLocalDataBtn?.addEventListener('click', () => {
