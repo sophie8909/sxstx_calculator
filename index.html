@@ -93,8 +93,8 @@
       <a href="#target-time-card">時間</a>
       <a href="#primordial-star-card">原初</a>
       <a href="#target-levels-card">目標</a>
-      <a href="#relic-card">遺物</a>
       <a href="#character-exp-card">角色</a>
+      <a href="#relic-card">遺物</a>
       <a href="#skill-card">技能</a>
       <a href="#equipment-card">裝備</a>
       <a href="#pet-card">寵物</a>
@@ -277,24 +277,6 @@
       <div id="target-levels" class=""></div> <!-- class ??蝛綽?JS ?? -->
     </div>
     
-    <!-- ?箇?? -->
-    <div id="relic-card" class="card rounded-lg p-4 shadow-lg mb-6 w-full page-section relative">
-      <h3 class="text-xl font-bold text-center mb-4">
-        <span data-i18n="relic_distribution_title">遺物等級分布</span> <span id="relic-total-display" class="text-sm font-normal text-gray-400">(0/20)</span>
-      </h3>
-      <div class="absolute right-4 top-4">
-        <div class="inline-flex overflow-hidden rounded-full border border-[#9ed6d8] bg-[#eefafa] p-0.5 shadow-sm" role="group" aria-label="遺物輸入模式">
-          <button type="button" class="relic-mode-btn rounded-full px-3 py-1 text-sm font-semibold" data-mode="compact">新</button>
-          <button type="button" class="relic-mode-btn rounded-full px-3 py-1 text-sm font-semibold" data-mode="legacy">舊</button>
-        </div>
-        <select id="relic-ui-mode" class="hidden" aria-label="遺物輸入模式">
-          <option value="compact">快速輸入</option>
-          <option value="legacy">舊版分布</option>
-        </select>
-      </div>
-      <div id="relic-distribution-inputs" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 xl:grid-cols-12 gap-4"></div>
-    </div>
-    
     <!-- ===== 銝?銝餃摰?===== -->
     <div id="primary-content-grid" class="flex flex-col gap-4 page-section"><!-- gap-6 ??gap-4 -->
       <!-- Main character and skill column -->
@@ -329,6 +311,24 @@
             <span data-i18n="enable_hoard_exp_notify">匯入進下賽季囤經驗提醒(36小時前)</span>
           </button>
         </div>
+      </div>
+
+      <!-- ?箇?? -->
+      <div id="relic-card" class="card rounded-lg p-4 shadow-lg mb-6 w-full page-section relative">
+        <h3 class="text-xl font-bold text-center mb-4">
+          <span data-i18n="relic_distribution_title">遺物等級分布</span> <span id="relic-total-display" class="text-sm font-normal text-gray-400">(0/20)</span>
+        </h3>
+        <div class="absolute right-4 top-4">
+          <div class="inline-flex overflow-hidden rounded-full border border-[#9ed6d8] bg-[#eefafa] p-0.5 shadow-sm" role="group" aria-label="遺物輸入模式">
+            <button type="button" class="relic-mode-btn rounded-full px-3 py-1 text-sm font-semibold" data-mode="compact">新</button>
+            <button type="button" class="relic-mode-btn rounded-full px-3 py-1 text-sm font-semibold" data-mode="legacy">舊</button>
+          </div>
+          <select id="relic-ui-mode" class="hidden" aria-label="遺物輸入模式">
+            <option value="compact">快速輸入</option>
+            <option value="legacy">舊版分布</option>
+          </select>
+        </div>
+        <div id="relic-distribution-inputs" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 xl:grid-cols-12 gap-4"></div>
       </div>
 
       

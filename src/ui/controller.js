@@ -1349,8 +1349,8 @@ function bindTooltipLayers() {
 function applyMobileSectionOrder() {
   const main = document.getElementById('primary-content-grid');
   const targetTimeCard = document.getElementById('target-time-card');
-  const relicCard = document.getElementById('relic-card');
-  if (!main || !targetTimeCard || !relicCard) return;
+  const targetLevelsCard = document.getElementById('target-levels-card');
+  if (!main || !targetTimeCard || !targetLevelsCard) return;
 
   const parent = main.parentElement;
   if (!parent) return;
@@ -1362,8 +1362,8 @@ function applyMobileSectionOrder() {
     return;
   }
 
-  if (main.previousElementSibling !== relicCard) {
-    parent.insertBefore(main, relicCard.nextSibling);
+  if (main.previousElementSibling !== targetLevelsCard) {
+    parent.insertBefore(main, targetLevelsCard.nextSibling);
   }
 }
 
