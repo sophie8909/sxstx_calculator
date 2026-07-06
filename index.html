@@ -53,7 +53,7 @@
       }
     }
   </script>
-  
+
   <link rel="icon" type="image/png" href="./images/favicon_v1.png" />
   <!-- Tailwind CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -204,35 +204,35 @@
       </div>
     </section>
     <div id="calculator-page-content">
-    <!-- ===== 目標時間 / 現在時間 ===== -->
+    <!-- Current and target time -->
     <div id="target-time-card" class="card rounded-lg p-4 shadow-lg mb-6 w-full page-section">
-      <!-- 憭惜?拇?嚗遛??-->
+      <!-- Target time controls -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- 撌佗??格??? -->
+        <!-- Target time field -->
         <div>
           <h3 class="text-lg font-semibold mb-2" data-i18n="target_time_title">目標時間</h3>
 
-          <!-- 璈怠?皛輻?嚗elect ?箏?撖穿??喳 flex-1 -->
+
           <div class="flex flex-col lg:flex-row lg:items-center gap-3 w-full">
-            <!-- 銝?嚗摰祝 -->
+
             <select id="target-time-preset" class="input-field rounded p-2 w-full lg:w-auto"></select>
 
-            <!-- ?航???璇??遛?拚?撖砍漲 -->
+
             <div id="target-time-display"
                 class="flex-1 text-center bg-gray-900/50 p-2 rounded min-h-[42px] flex items-center justify-center text-[#e2e8f0] break-words">
               --
             </div>
 
-            <!-- ?芾?頛詨嚗?銝??璇?擃?撖穿??身?梯?嚗?-->
+
             <input type="datetime-local" id="target-time-custom"
                   class="input-field rounded p-2 min-h-[42px] flex-1 w-full hidden" />
 
-            <!-- 撖阡?????-->
+
             <input type="hidden" id="target-time" />
           </div>
         </div>
 
-        <!-- ?喉??曉??嚗遛?? -->
+        <!-- Current time display -->
         <div>
           <h3 class="text-lg font-semibold mb-2" data-i18n="current_time_title">現在時間</h3>
           <div id="current-time-display"
@@ -248,19 +248,19 @@
 
     </div>
 
-    <!-- ??銋? -->
+    <!-- Primordial star section -->
     <div id="primordial-star-card" class="card rounded-lg p-4 shadow-lg mb-4 w-full page-section">
       <h3 class="text-xl font-bold text-center mb-4" data-i18n="primordial_star_title">原初之星 (累計)</h3>
-      <div id="primordial-star-cumulative" class=""></div> <!-- class ??蝛綽?JS ?? -->
+      <div id="primordial-star-cumulative" class=""></div>
       <div id="primordial-recommendation-panel" class="mt-4 border-t border-[#cde5e8] pt-4">
         <h4 class="text-lg font-semibold text-center mb-3">累計原初推薦</h4>
         <div id="primordial-recommendation-fields" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
       </div>
     </div>
 
-    
-    
-    <!-- ?格?蝑?嚗曈湛? -->
+
+
+    <!-- Target level section -->
     <div id="target-levels-card" class="card rounded-lg p-4 shadow-lg mb-4 w-full page-section">
       <h3 class="text-xl font-bold text-center mb-4" data-i18n="target_levels_title">目標等級 (共鳴)</h3>
       <div class="flex justify-center mb-4">
@@ -274,13 +274,13 @@
           </select>
         </label>
       </div>
-      <div id="target-levels" class=""></div> <!-- class ??蝛綽?JS ?? -->
+      <div id="target-levels" class=""></div>
     </div>
-    
-    <!-- ===== 銝?銝餃摰?===== -->
-    <div id="primary-content-grid" class="flex flex-col gap-4 page-section"><!-- gap-6 ??gap-4 -->
+
+    <!-- Primary input grid -->
+    <div id="primary-content-grid" class="flex flex-col gap-4 page-section">
       <!-- Main character and skill column -->
-      <div class="main-grid-column"><!-- gap-6 ??gap-4 -->
+      <div class="main-grid-column">
       <!-- Character EXP section -->
       <div id="character-exp-card" class="card calculator-section-card character-exp-card rounded-lg p-4 shadow-lg flex flex-col min-h-0">
         <h2 class="text-2xl font-bold border-b sticky top-0 z-10 px-4 py-2 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
@@ -293,9 +293,7 @@
 
       <div id="exp-required-inline-card" class="card rounded-lg p-4 shadow-lg w-full page-section hidden">
         <h3 class="text-xl font-bold text-center mb-4" data-i18n="exp_required_form_title">升級所需經驗填寫</h3>
-        <p class="text-sm text-slate-600 leading-relaxed mb-4" data-i18n="exp_required_form_intro">
-          先在這裡確認資料，送出後會在背景送到 Google 表單。
-        </p>
+
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
@@ -328,7 +326,7 @@
         <div id="exp-required-feedback" class="hidden rounded-lg border px-4 py-3 text-sm mt-4"></div>
       </div>
 
-      <!-- ?箇?? -->
+      <!-- Relic section -->
       <div id="relic-card" class="card rounded-lg p-4 shadow-lg mb-6 w-full page-section relative">
         <h3 class="text-xl font-bold text-center mb-4">
           <span data-i18n="relic_distribution_title">遺物等級分布</span> <span id="relic-total-display" class="text-sm font-normal text-gray-400">(0/20)</span>
@@ -346,7 +344,7 @@
         <div id="relic-distribution-inputs" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 xl:grid-cols-12 gap-4"></div>
       </div>
 
-      
+
         <div id="skill-card" class="card calculator-section-card rounded-lg p-4 shadow-lg flex flex-col min-h-0">
           <h2 class="text-2xl font-bold border-b sticky top-0 z-10 px-4 py-2 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
             <span data-i18n="section_skill">技能等級</span>
@@ -356,19 +354,19 @@
           </div>
         </div>
       </div>
-    
-    <!-- 銝哨?閫 + 撟餌 + 撠頠?-->
+
+    <!-- Equipment, pet, and production column -->
     <div class="main-grid-column">
       <div id="equipment-card" class="card calculator-section-card rounded-lg p-4 shadow-lg flex flex-col min-h-0">
           <h2 class="text-2xl font-bold border-b sticky top-0 z-10 px-4 py-2 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
             <span data-i18n="section_equip">裝備等級</span>
           </h2>
-          <div class="overflow-y-auto custom-scrollbar min-h-0 responsive-scroll tooltip-safe-scroll"><!-- p-6 ??p-4 -->
-            <div id="equip-inputs" class="space-y-4"></div><!-- 靽? -->
+          <div class="overflow-y-auto custom-scrollbar min-h-0 responsive-scroll tooltip-safe-scroll">
+            <div id="equip-inputs" class="space-y-4"></div>
           </div>
         </div>
-    
-      <!-- 撟餌蝑?嚗葬?哨? -->
+
+      <!-- Pet section -->
       <div id="pet-card" class="card calculator-section-card rounded-lg p-4 shadow-lg flex flex-col min-h-0">
         <h2 class="text-2xl font-bold border-b sticky top-0 z-10 px-4 py-2 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
           <span data-i18n="section_pet">寵物等級</span>
@@ -377,8 +375,11 @@
           <div id="pet-inputs" class="space-y-3"></div>
         </div>
       </div>
-    
-      <!-- 撠頠?敺株矽嚗?-->
+
+      <div>
+
+      </div>
+      <!-- Production section -->
       <div id="production-card" class="card calculator-section-card rounded-lg p-4 shadow-lg flex flex-col min-h-0">
         <h2 class="text-2xl font-bold border-b sticky top-0 z-10 px-4 py-2 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
           <span data-i18n="section_cart">推車時產</span>
@@ -388,13 +389,10 @@
         </div>
       </div>
     </div>
-   
 
-    
-    
-    <!-- ?喉?蝝?鞈? + 閮?蝮質汗嚗?擃?朣? -->
+    <!-- Material sources and results column -->
     <div class="main-grid-column">
-      <!-- 蝝?鞈?嚗葬?哨? -->
+      <!-- Material sources section -->
       <div id="owned-materials-card" class="card calculator-section-card rounded-lg p-4 shadow-lg flex flex-col min-h-0">
         <h2 class="text-2xl font-bold border-b pb-3 sticky top-0 z-10 px-6 py-3 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
           <span data-i18n="section_owned_materials">目前持有素材</span>
@@ -403,8 +401,8 @@
           <div id="owned-materials" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-3"></div>
         </div>
       </div>
-    
-      <!-- 閮?蝮質汗嚗??瘀? -->
+
+      <!-- Results section -->
       <div id="results-card" class="card calculator-section-card rounded-lg p-4 shadow-lg flex flex-col min-h-0">
         <h2 class="text-2xl font-bold border-b pb-3 sticky top-0 z-10 px-6 py-3 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
           <span data-i18n="section_summary">結果總覽</span>
@@ -415,7 +413,7 @@
       </div>
     </div>
   </div>
-  <!-- 蝝?靘?隡啁?嚗 view.js ??皜脫??批捆嚗?-->
+  <!-- Material source template rendered by view.js -->
   <div id="material-source-card" class="card rounded-lg p-4 shadow-lg mt-4 mb-6 w-full page-section">
     <div id="material-source-container"></div>
   </div>
@@ -620,8 +618,8 @@
     <input type="hidden" name="fvv" value="1" />
     <input type="hidden" name="pageHistory" value="0" />
   </form>
-  
-  <!-- ===== 摨嚗??賣???===== -->
+
+  <!-- Footer -->
   <footer class="col-span-full w-full mt-10">
     <div class="max-w-7xl mx-auto px-4
                 flex flex-col items-center justify-center text-center text-gray-500 text-sm">
@@ -660,7 +658,7 @@
   </footer>
   </div>
   </div>
-  <!-- ?亙暺??批?剁? -->
+  <!-- App entrypoint -->
   <script type="module" src="./src/main.js"></script>
 </body>
 

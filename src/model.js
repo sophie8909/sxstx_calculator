@@ -1,5 +1,4 @@
 ﻿// model.js
-// ??鞈?撅歹?撣豢???SV 頛??????蝞?頛胯摮?????
 
 import { getGoogleSheetCsvUrl, loadUpgradeCostTablesForSeason, clearDataServiceMemoryCache } from './services/dataService.js';
 import { fetchTextWithCache } from './services/dataCache.js';
@@ -21,30 +20,28 @@ import {
 } from './core/calculator.js';
 import { t } from './i18n-inline.js';
 
-/** ?典?撣豢 */
 export const MAX_LEVEL = 200;
 export const STORAGE_KEY = 'sxstxCalculatorData';
 
-/** 撌行?憿嚗頛詨???蝝? */
 export const categories = [
-  { id: 'character', name: '????' },
-  { id: 'equipment_main_weapon', name: '???', group: '????' },
-  { id: 'equipment_off_weapon', name: '???', group: '????' },
-  { id: 'equipment_helmet', name: '??', group: '????' },
-  { id: 'equipment_armor', name: '??', group: '????' },
-  { id: 'equipment_boots', name: '??', group: '????' },
-  { id: 'skill_combat1', name: '???', group: '????' },
-  { id: 'skill_combat2', name: '???', group: '????' },
-  { id: 'skill_combat3', name: '???', group: '????' },
-  { id: 'skill_combat4', name: '???', group: '????' },
-  { id: 'skill_arcane1', name: '???', group: '????' },
-  { id: 'skill_arcane2', name: '???', group: '????' },
-  { id: 'skill_arcane3', name: '???', group: '????' },
-  { id: 'skill_arcane4', name: '???', group: '????' },
-  { id: 'pet1', name: '???', group: '????' },
-  { id: 'pet2', name: '???', group: '????' },
-  { id: 'pet3', name: '???', group: '????' },
-  { id: 'pet4', name: '???', group: '????' },
+  { id: 'character', name: 'Character' },
+  { id: 'equipment_main_weapon', name: 'Main Weapon', group: 'Equipment' },
+  { id: 'equipment_off_weapon', name: 'Off Weapon', group: 'Equipment' },
+  { id: 'equipment_helmet', name: 'Helmet', group: 'Equipment' },
+  { id: 'equipment_armor', name: 'Armor', group: 'Equipment' },
+  { id: 'equipment_boots', name: 'Boots', group: 'Equipment' },
+  { id: 'skill_combat1', name: 'Combat Skill 1', group: 'Skills' },
+  { id: 'skill_combat2', name: 'Combat Skill 2', group: 'Skills' },
+  { id: 'skill_combat3', name: 'Combat Skill 3', group: 'Skills' },
+  { id: 'skill_combat4', name: 'Combat Skill 4', group: 'Skills' },
+  { id: 'skill_arcane1', name: 'Arcane Skill 1', group: 'Skills' },
+  { id: 'skill_arcane2', name: 'Arcane Skill 2', group: 'Skills' },
+  { id: 'skill_arcane3', name: 'Arcane Skill 3', group: 'Skills' },
+  { id: 'skill_arcane4', name: 'Arcane Skill 4', group: 'Skills' },
+  { id: 'pet1', name: 'Pet 1', group: 'Pets' },
+  { id: 'pet2', name: 'Pet 2', group: 'Pets' },
+  { id: 'pet3', name: 'Pet 3', group: 'Pets' },
+  { id: 'pet4', name: 'Pet 4', group: 'Pets' },
 ];
 
 export const seasonOptions = [
@@ -53,26 +50,26 @@ export const seasonOptions = [
   { id: 's3', name: 'S3', readonly: false, season: 3 },
   { id: 's4', name: 'S4', readonly: false, season: 4 },
   { id: 's5', name: 'S5', readonly: false, season: 5 },
-  { id: 'total', name: '??', readonly: true },
+  { id: 'total', name: 'Total', readonly: true },
 ];
 
 export const targetLevelConfig = [
-  { id: 'character', name: '????' },
-  { id: 'equipment_resonance', name: '????' },
-  { id: 'skill_resonance', name: '????' },
-  { id: 'pet_resonance', name: '????' },
-  { id: 'relic_resonance', name: '????' },
-  { id: 'primordial_star', name: '????', readonly: true },
+  { id: 'character', name: 'Character' },
+  { id: 'equipment_resonance', name: 'Equipment Resonance' },
+  { id: 'skill_resonance', name: 'Skill Resonance' },
+  { id: 'pet_resonance', name: 'Pet Resonance' },
+  { id: 'relic_resonance', name: 'Relic Resonance' },
+  { id: 'primordial_star', name: 'Primordial Star', readonly: true },
 ];
 
 export const materials = {
-  exp: { name: '????', icon: 'EXP' },
-  rola: { name: '??', icon: 'R' },
-  essence: { name: '??', icon: 'E' },
-  sand: { name: '?', icon: 'S' },
-  stoneOre: { name: '??', icon: 'O' },
-  refiningStone: { name: '???', icon: 'RS' },
-  freezeDried: { name: '??', icon: 'FD' },
+  exp: { name: 'Experience', icon: 'EXP' },
+  rola: { name: 'Rola', icon: 'R' },
+  essence: { name: 'Essence', icon: 'E' },
+  sand: { name: 'Sand', icon: 'S' },
+  stoneOre: { name: 'Stone Ore', icon: 'O' },
+  refiningStone: { name: 'Refining Stone', icon: 'RS' },
+  freezeDried: { name: 'Freeze-Dried Food', icon: 'FD' },
 };
 
 export const productionSources = {
@@ -135,7 +132,7 @@ export function getDerivedRelicDistribution() {
   return distribution;
 }
 
-/** 璅⊥鞈?嚗SV 蝻箸??嚗?*/
+/** Fallback data used when generated tables cannot be loaded. */
 export const MOCK_GAME_DATA = {
   equipmentUpgradeCosts: [
     { level: 1, cost_stone_ore: 10, cost_rola: 100, cost_refining_stone: 0 },
@@ -163,7 +160,6 @@ export const MOCK_GAME_DATA = {
   })),
 };
 
-// 1) 鞈?隞??嚗??岫蝞”蝚砌?甈??湛?
 export const MATERIAL_TYPES = ['stone', 'essence', 'sand', 'rola', 'freeze_dried'];
 export const STAMINA_BIG_MINE_RATE = 0.0932;
 export const STAMINA_BIG_MINE_EXPECTED_MULTIPLIER = 1 + STAMINA_BIG_MINE_RATE;
@@ -176,7 +172,6 @@ export const MATERIAL_DISPLAY_NAMES = {
   freeze_dried: '凍乾',
 };
 
-// TODO: 瘥甈⊥??閮剖潘??桀???函策蝛箇隞塚??閬??‵
 const MATERIAL_DAILY_DEFAULTS = {
   dungeon: {},
   explore: {},
@@ -184,15 +179,15 @@ const MATERIAL_DAILY_DEFAULTS = {
 };
 
 
-/** ?魚摮???身摰??芯???gid */
+/** Google Sheet gid values for runtime data. */
 export const DATA_FILES_CONFIG = {
-  characterUpgradeCosts: 314585849,  // 閫蝑?
-  equipmentUpgradeCosts: 1205841685,  // 鋆?
-  skillUpgradeCosts:     682954597,  // ???
-  relicUpgradeCosts:     1548103854,  // ?箇
-  petUpgradeCosts:       1910677696,  // 撟餌
-  resource:              751788076,  // 鞈?
-  seasonScore:          1012321192,  // 鞈賢迤?
+  characterUpgradeCosts: 314585849,
+  equipmentUpgradeCosts: 1205841685,
+  skillUpgradeCosts:     682954597,
+  relicUpgradeCosts:     1548103854,
+  petUpgradeCosts:       1910677696,
+  resource:              751788076,
+  seasonScore:          1012321192,
 };
 const REMOTE_DATA_FILES_CONFIG = {
   resource: DATA_FILES_CONFIG.resource,
@@ -200,17 +195,16 @@ const REMOTE_DATA_FILES_CONFIG = {
 };
 const remoteDataRowsCache = new Map();
 
-/** ?折???*/
 export const state = {
-  seasonId: 's2',         // ?身鞈賢迤
-  serverName: '瘛典?霅瑞', // ?身隡箸???
-  gameData: {},           // ??銵?
-  seasonScore: {},      // 鞈賢迤?銵?
-  resource: {},          // 鞈?銵剁?靘?type ??嚗?
-  cumulativeCostData: {}, // 蝝舐??銵?
-  missingFiles: [],       // 頛憭望?皜
+  seasonId: 's2',
+  serverName: '\u53f0\u6e2f\u6fb3',
+  gameData: {},
+  seasonScore: {},
+  resource: {},
+  cumulativeCostData: {},
+  missingFiles: [],
   cacheFallback: false,
-  materialAvgDefaults: {             // TODO: ?啣?嚗策蝝?靘?隡啁?雿輻?像??
+  materialAvgDefaults: {
     dungeon: {},
     explore: {},
     store: {},
@@ -228,17 +222,13 @@ export const state = {
 };
 
 
-// --- ?曉 model.js ---
-// 撠極?瘀?甇????key嚗??BOM?rim嚗?
 const normalizeKey = (k) => k ? k.replace(/^\uFEFF/, '').trim() : k;
 
-// 撘琿???CSV 閫??嚗???BOM?R/LF?????征??
 export async function fetchAndParseCsv(url) {
   const text = await fetchTextWithCache(`csv:${url}`, url);
-  // 蝯曹???LF嚗??\r 敶梢 split
   const lines = text.replace(/\r\n?/g, '\n').trim().split('\n');
   if (lines.length === 0) return [];
-  // 璅?餅? BOM
+  // Find the real header row; published sheets can contain preamble rows.
   const knownHeaders = new Set([
     'level',
     'cost_exp',
@@ -258,14 +248,13 @@ export async function fetchAndParseCsv(url) {
   );
   const headerLineIndex = headerIndex === -1 ? 0 : headerIndex;
   const rawHeaders = lines[headerLineIndex].split(',').map(h => normalizeKey(h));
-  const headers = rawHeaders.map(h => h.toLowerCase()); // ?刻?撠神嚗?敺??渡撠神
+  const headers = rawHeaders.map(h => h.toLowerCase());
   const dataLines = lines.filter((_, index) => index !== headerLineIndex);
   const rows = dataLines.map(line => {
     const values = line.split(',').map(v => v.trim());
     const obj = {};
     headers.forEach((h, i) => {
       const raw = (values[i] ?? '').trim();
-      // ?餅???雿?敺?頧摮?蝛箏?銝脩策 0嚗?銝?撠曹???銝?
       const num = Number(raw.replace(/,/g, ''));
       obj[h] = Number.isFinite(num) ? num : (raw === '' ? 0 : raw);
     });
@@ -274,7 +263,6 @@ export async function fetchAndParseCsv(url) {
   return rows;
 }
 
-// 撠??祈????箝敞蝛”????摰寥隞颱?憭批?撖?/ BOM ??雿?
 export function preprocessCostData() {
   state.cumulativeCostData = buildCumulativeCostData(state.gameData);
 }
@@ -284,12 +272,10 @@ export function clearRemoteDataMemoryCaches() {
   clearDataServiceMemoryCache();
 }
 
-/** ?寞? gid ?芸??澆 CSV URL */
 function makeCsvUrl(gid) {
   return getGoogleSheetCsvUrl(gid);
 }
 
-/** 頛撠?鞈賢迤????*/
 export async function loadDataForSeason(seasonId) {
   const targetSeason = seasonId;         // 's1' / 's2' / 's3'
   let loaded;
@@ -319,16 +305,13 @@ export async function loadDataForSeason(seasonId) {
         remoteDataRowsCache.set(key, rows);
       }
 
-      // ??”?賢?鈭?season 甈???瘜?
       const filtered = rows.filter((row) => {
         const s = String(row.season || '').toLowerCase();
-        // ?仿?????season嚗?憒?剁?嚗停?刻魚摮?
         if (!s) return true;
         return s === targetSeason.toLowerCase();
       });
 
       if (key === 'resource') {
-        // 撠?resource ???神??state.resource
         state.resource = buildResourceDataForSeason(filtered, seasonId);
       } else if (key === 'seasonScore') {
         state.seasonScore = buildSeasonScoreData(filtered);
@@ -354,13 +337,12 @@ function buildSeasonScoreData(rows) {
   return result;
 }
 
-// ??resource CSV ??嚗? type嚗ungeon / explore / store嚗?蝯?
 function buildResourceDataForSeason(rows, seasonId) {
   const resourceData = {}; // TODO: { dungeon: { stone: row, ... }, explore: {...}, store: {...} }
 
   rows.forEach((r) => {
     const season = String(r.season || '').toLowerCase();
-    if (season && season !== seasonId.toLowerCase()) return; // ?芸??嗅?鞈賢迤???
+    if (season && season !== seasonId.toLowerCase()) return;
 
     const resKey = String(r.resource || '').trim();
     const typeKey = String(r.type || '').toLowerCase(); // dungeon / explore / store
@@ -372,12 +354,11 @@ function buildResourceDataForSeason(rows, seasonId) {
   console.log('[data load] built resource data for season:', seasonId, resourceData);
   return resourceData;
 }
-// TODO: 敺?resource 銵刻??乓像??甈～?閮剖潘?憛恍?state.materialAvgDefaults
 export async function loadMaterialAvgDefaults() {
   const avgDefaults = {
     dungeon: {},
     explore: {},
-    store: {},  // ?桀?銝蝙?剁?雿???瑽?
+    store: {},
   };
   const rolaCostDefaults = {
     dungeon: {},
@@ -433,10 +414,9 @@ export async function loadMaterialAvgDefaults() {
 }
 
 
-// 蝯?controller / view ?函?蝯曹?隞
 export function getMaterialSourceConfig() {
   const avgDefaults =
-    state.materialAvgDefaults || { dungeon: {}, explore: {}, store: {} }; // TODO: ??摰?身
+    state.materialAvgDefaults || { dungeon: {}, explore: {}, store: {} };
   const rolaCostDefaults =
     state.materialRolaCostDefaults || { dungeon: {}, explore: {}, store: {} };
   const powerCostDefaults =
@@ -451,13 +431,12 @@ export function getMaterialSourceConfig() {
     sourceMaterials: {
       dungeon: ['stone', 'essence', 'sand', 'rola'],
       explore: ['stone', 'essence', 'sand', 'rola'],
-      store: ['stone', 'essence', 'sand', 'freeze_dried'], // ??瘝? rola
+      store: ['stone', 'essence', 'sand', 'freeze_dried'],
     },
   };
 }
 
 
-/** ????蝑??敞蝛??穿??乩?摮??餈?蝑?嚗?*/
 export function getCumulative(costTable, level) {
   return getCumulativeFromTable(costTable, level);
 }
@@ -466,26 +445,14 @@ export function getCharacterCumulativeExp(level) {
   return getCharacterCumulativeExpFromTable(state.cumulativeCostData.character, level);
 }
 
-/** 鞈賢迤?閮? **/
 export function calculateSeasonScore(targets) {
   return calculateSeasonScoreFromData(targets, state.seasonScore, state.seasonId);
 }
 
-/** 鞈賢迤蝑?頧???銋? **/
 export function convertPrimordialStar(score) {
   return convertPrimordialStarFromData(score, state.seasonScore, state.seasonId);
 }
 
-/**
- * 閮???雿???脩?蝝?
- *
- * 摰儔嚗?
- * - cum(k-1) : ?菟? k 蝝???敞蝛?撽?
- * - ?嗅?蝑? L 嚗摰嗅歇蝬敞蝛 cum(L-1)嚗????L 蝝??瑼鳴???
- * - ownedExp嚗?????芰??蝬?鞈?嚗??急??撓?亥?摨?蝥敞????
- * - bedExpHourly嚗?瘥???箇?蝬?????
- * - targetTimeStr嚗璅???datetime-local 摮葡嚗??亦????0 撠???
- */
 function readNumberInput(id) {
   const node = document.getElementById(id);
   if (!node) return 0;
@@ -538,7 +505,6 @@ export function computeReachableCharacterLevel(curLv, ownedExp, bedExpHourly, ta
   });
 }
 
-/** 銝餉?蝞??瘙?/ ??嗥? / 蝻箏嚗葡? payload嚗?*/
 export function computeAll(containers) {
   const readInteger = (id) => parseInt(document.getElementById(id)?.value, 10) || 0;
   const readFloat = (id) => parseFloat(document.getElementById(id)?.value) || 0;
@@ -652,7 +618,6 @@ export function expCalculation(currentLevel, ownedExp, bedExpHourly, targetLevel
   });
 }
 
-/** 閮??圈?銝?蝝?ETA */
 export function computeEtaToNextLevel(currentLevel, ownedExp, bedExpHourly, bonusHours = 0) {
   const { levelupTs, minutesNeeded, expNeeded } = computeEtaToNextLevelFromData({
     cumulativeCostData: state.cumulativeCostData,
@@ -664,7 +629,6 @@ export function computeEtaToNextLevel(currentLevel, ownedExp, bedExpHourly, bonu
   return { levelupTs, minutesNeeded, expNeeded };
 }
 
-/** 閮??圈??璅??脩?蝝TA嚗誑?蜇??蝬?嚗?*/
 export function computeEtaToTargetLevel(currentLevel, ownedExp, bedExpHourly, targetLevel, bonusHours = 0) {
   return computeEtaToTargetLevelFromData({
     cumulativeCostData: state.cumulativeCostData,
@@ -678,7 +642,6 @@ export function computeEtaToTargetLevel(currentLevel, ownedExp, bedExpHourly, ta
   });
 }
 
-/** LocalStorage ?脣?/頛 */
 export function saveAllInputs() {
   const data = {};
   document.querySelectorAll('input[type=number], input[type=text], input[type=datetime-local], input[type=checkbox], select')
@@ -689,7 +652,6 @@ export function saveAllInputs() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
-/** 霈??localStorage嚗敹賜???菟????靘? season-select嚗?*/
 export function loadAllInputs(excludeKeys = []) {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw) return;

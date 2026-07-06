@@ -1,5 +1,4 @@
 ﻿// controller.js
-// ???批?典惜嚗?憪???隞嗥鼠蝯矽??Model ??View ??
 
 import {
   state,
@@ -38,8 +37,8 @@ import { loadServers } from '../services/dataService.js';
 import { CACHE_FALLBACK_EVENT, CACHE_UPDATED_EVENT, fetchTextWithCache } from '../services/dataCache.js';
 
 /* ============================================================
- * Google 閰衣?銵剁?Published CSV嚗身摰????賊? / 隡箸??其?皞?
- * 閰衣?銵冽?雿?server_name, description, time
+ * Google Sheet published CSV settings.
+ * Expected columns: server_name, description, time.
  * ============================================================ */
 const TIME_PRESETS_SHEET = {
   id: '1boxKipNVI-tCaJEaX-AoOTijEgKcxKfilhbtxkLbX-E',
@@ -92,7 +91,6 @@ function setAppLoading(loading) {
   });
 }
 
-// 霈銝閰衣?銵冽????渲?????撌脫??08:00嚗?
 const TIME_PRESETS_FALLBACK = [
   {
     key: 's1_end',
@@ -1070,9 +1068,6 @@ function refreshBedProgressSummary() {
   };
 }
 
-/* -----------------------------
- * 蝯曹???
- * ---------------------------*/
 function triggerRecalculate(containers) {
   refreshBedProgressSummary();
   const payload = computeAll(containers);
@@ -1106,8 +1101,6 @@ function bindDataCacheHandlers(containers) {
   });
 }
 
-// 霈????皞? input嚗??交活??/ 撟喳???/ ??瘥鞈潸眺嚗?
-// 瑼?: controller.js (甇文撘?霈?嚗?摰?脣? rolaCost ????
 
 function getMaterialInput(source, material, role) {
   const el = document.querySelector(
@@ -1128,9 +1121,6 @@ function formatMaterialSourceNumber(value, maximumFractionDigits = 2) {
 }
 
 
-/* -----------------------------
- * 憿舐內????蝬?
- * ---------------------------*/
 function updateExpRequirements(curLv, ownedExp, targetChar) {
   const table = state.cumulativeCostData['character'];
   if (!table || !table.length) return;
@@ -1176,20 +1166,12 @@ function openExpRequiredFormInterface(event) {
   }));
 }
 
-/* -----------------------------
- * 瘥??郊?湔蝬?
- * ---------------------------*/
 function setupAutoUpdate() {
   setInterval(() => {
     refreshBedProgressSummary();
   }, 1000);
 }
 
-/* -----------------------------
- * 敺?Google 閰衣?銵刻??撩??賊???
- * 銵券嚗erver_name, description, time
- * 憿舐內??嚗erver_name
- * ---------------------------*/
 async function fetchServerRows() {
   if (serverRowsCache) return serverRowsCache;
 
@@ -1218,12 +1200,6 @@ async function fetchServerRows() {
   }
 }
 
-/* -----------------------------
- * 敺?Google 閰衣?銵刻??????
- * 銵券嚗erver_name, description, time
- * 憿舐內??嚗description} ({server_name})
- * ??銝敺???閰脫??08:00嚗?08:00嚗?
- * ---------------------------*/
 async function fetchTimePresetsFromSheet(dungeonPowerRows = []) {
   const url = getGoogleSheetCsvUrl(TIME_PRESETS_SHEET);
   try {
@@ -1238,25 +1214,20 @@ async function fetchTimePresetsFromSheet(dungeonPowerRows = []) {
       const rawSeasonId = getCsvValue(cols, headers, ['season_id', '賽季', 'season']);
       if (!server && !desc && !time) return;
 
-      // ?芸??交?嚗敺???08:00:00+08:00
       let datePart = '';
 
       if (time.includes('T')) {
-        // 撌脩???ISO 敶Ｗ? ???芸??交?
         datePart = time.split('T')[0];
       } else {
-        // 靘???025/10/13????025-10-13??
         const m = time.match(/(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})/);
         if (m) {
           const [, y, mo, d] = m;
           datePart = `${y}-${mo.padStart(2, '0')}-${d.padStart(2, '0')}`;
         } else {
-          // ??銵停鈭斤策 Date 閰西? parse嚗?璅????
           const d2 = new Date(time);
           if (!Number.isNaN(d2.getTime())) {
             datePart = d2.toISOString().slice(0, 10);
           } else {
-            // 摰???停?仿??????
             return;
           }
         }
@@ -1281,25 +1252,19 @@ async function fetchTimePresetsFromSheet(dungeonPowerRows = []) {
   }
 }
 
-/* -----------------------------
- * ???魚摮?????#season-select
- * ??靘? model.js ??seasonOptions ?Ｙ??賊?
- * ---------------------------*/
 function initSeasonSelector(containers, saved = null) {
   const seasonSelector = document.getElementById('season-select');
   if (!seasonSelector) return;
 
-  // ??蝛綽??? seasonOptions 撱箇??賊?
   seasonSelector.innerHTML = '';
   seasonOptions.forEach((s) => {
-    if (s.readonly) return; // 頝喲??航?鞈賢迤
+    if (s.readonly) return;
     const opt = document.createElement('option');
     opt.value = s.id;
     opt.textContent = t(`season_name_${s.id}`);
     seasonSelector.appendChild(opt);
   });
 
-  // 憟?脣??魚摮???交?嚗?
   const data = saved ?? JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
   const savedSeason = data['season-select'];
   const defaultId = seasonOptions[0]?.id || 's2';
@@ -1312,7 +1277,6 @@ function initSeasonSelector(containers, saved = null) {
     state.seasonId = defaultId;
   }
 
-  // ??鞈賢迤霈嚗神??state + localStorage + ?頛鞈賢迤鞈?
   seasonSelector.addEventListener('change', async () => {
     state.seasonId = seasonSelector.value;
 
@@ -1819,10 +1783,6 @@ function renderDungeonPowerPanel(preset, dungeonPowerRows) {
   panel.classList.remove('hidden');
 }
 
-/* -----------------------------
- * ???撩?銝??詨 #server-select
- * 銝行??詨?蝯?摮 state.serverName
- * ---------------------------*/
 async function initServerSelector(containers) {
   const serverSel = document.getElementById('server-select');
   const playerInput = document.getElementById('player-code-input');
@@ -1839,7 +1799,6 @@ async function initServerSelector(containers) {
     serverSel.appendChild(opt);
   });
 
-  // ?Ｗ儔銋??賊??撩?
   const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
   const savedServer = saved['server-select'];
   const savedPlayerCode = saved['player-code-input'] || '';
@@ -1920,9 +1879,6 @@ async function initServerSelector(containers) {
   }
 }
 
-/* -----------------------------
- * ?格????批
- * ---------------------------*/
 async function initTargetTimeControls(containers) {
   const presetSel = document.getElementById('target-time-preset');
   const displayBox = document.getElementById('target-time-display');
@@ -1937,7 +1893,6 @@ async function initTargetTimeControls(containers) {
   const selectedServerRow = getSelectedServerRow();
   const selectedSeasonId = normalizeSeasonId(state.seasonId);
 
-  // 憛怠 select嚗?整?撩????賊?
   presetSel.innerHTML = '';
   const matchingPresets = allPresets.filter((p) => {
     if (normalizeSeasonId(p.season_id) !== selectedSeasonId) return false;
@@ -1980,13 +1935,11 @@ async function initTargetTimeControls(containers) {
     presetSel.appendChild(opt);
   });
 
-  // 餈賢??閮???
   const optCustom = document.createElement('option');
   optCustom.value = '__custom__';
   optCustom.textContent = t('custom_target_time');
   presetSel.appendChild(optCustom);
 
-  // ?Ｗ儔?詨?
   const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
   const savedKey = saved['target-time-preset'];
   if (savedKey && [...presetSel.options].some(o => o.value === savedKey)) {
@@ -2003,7 +1956,6 @@ async function initTargetTimeControls(containers) {
       displayBox.classList.add('hidden');
       renderDungeonPowerPanel(null, dungeonPowerRows);
 
-      // ?芾????亦蝛????葆?亦?冽???
       if (!customInput.value) {
         const now = new Date();
         const localISO = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
@@ -2056,9 +2008,8 @@ async function initTargetTimeControls(containers) {
   apply();
 }
 
-// ??#target-time ?函??拚?憭拇嚗璅???- ?曉??嚗?
 function updateDaysRemainingFromTarget() {
-  const hidden = document.getElementById('target-time');   // ?梯??格???
+  const hidden = document.getElementById('target-time');
   const daysInput = document.getElementById('days-remaining');
   if (!hidden || !daysInput || !hidden.value) return;
 
@@ -2069,7 +2020,7 @@ function updateDaysRemainingFromTarget() {
   let diffMs = target.getTime() - now.getTime();
   if (diffMs < 0) diffMs = 0;
 
-  const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));  // ???詨停敺銝???
+  const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
   daysInput.value = days;
 }
 
@@ -2095,14 +2046,14 @@ function updateMaterialSourceRow(source, material) {
 
   let total = 0;
 
-  if (source === 'store') { // TODO: 靽格迤靘??迂??'store'嚗? view.js ??data-source 銝??
+  if (source === 'store') {
     const dailyBuy = getMaterialInput(source, material, 'daily');
     const avg = getMaterialInput(source, material, 'avg');
     total = dailyBuy * avg * days;
   } else {
     const daily = getMaterialInput(source, material, 'daily');
     const avg = getMaterialInput(source, material, 'avg');
-    total = daily * avg * days; // TODO: 蝘?/?Ｙ揣蝝?脣? = 瘥甈⊥ ? 撟喳?瘥活 ? ?拚?憭拇
+    total = daily * avg * days;
     if (source === 'explore' && shouldIncludeExploreBigMineGain()) {
       total *= STAMINA_BIG_MINE_EXPECTED_MULTIPLIER;
     }
@@ -2129,7 +2080,6 @@ function updateStoreEstimateSummary() {
   const days =
     parseInt(document.getElementById('days-remaining')?.value || '0', 10) || 0;
 
-  // 蝝?皜???getMaterialSourceConfig().sourceMaterials.store 銝??
   const storeMats = ['stone', 'essence', 'sand', 'freeze_dried'];
   let dailyPriceTotal = 0;
 
@@ -2153,9 +2103,6 @@ function updateStoreSummaries() {
 
 
 
-/* -----------------------------
- * ?典?鈭辣嚗遙雿撓??/ ?豢?霈?賡?蝞?
- * ---------------------------*/
 function bindGlobalHandlers(containers) {
 
   document.addEventListener('input',
@@ -2175,7 +2122,6 @@ function bindGlobalHandlers(containers) {
 
         markTargetRecommendationCustom(t);
 
-        // 蝝?靘?隡啁?甈?
         if (t.classList.contains('material-source-input')) {
           const src = t.dataset.source;
           const mat = t.dataset.material;
@@ -2280,12 +2226,8 @@ function bindGlobalHandlers(containers) {
 }
 
 
-/* -----------------------------
- * 鞈賢迤??
- * ---------------------------*/
 async function handleSeasonChange(containers) {
   const seasonSelector = document.getElementById('season-select');
-  // ??selector 摮撠曹誑?恍?箸?嚗?窒??state ?桀???
   state.seasonId = seasonSelector?.value || state.seasonId || 's2';
   state.cacheFallback = false;
   setAppLoading(true);
@@ -2300,7 +2242,7 @@ async function handleSeasonChange(containers) {
     renderAll(containers);
     setAppLoading(true);
     bindTooltipLayers();
-    loadAllInputs(['season-select']); // 鞈賢迤?冽??撌梁??摩??
+    loadAllInputs(['season-select']);
     renderRelicDistribution(containers.relicDistributionInputs);
     setAppLoading(true);
     loadAllInputs(['season-select']);
@@ -2311,7 +2253,6 @@ async function handleSeasonChange(containers) {
     await renderPrimordialRecommendations();
     await applySelectedTargetRecommendationIfNeeded();
 
-    // ??憪?隡箸??券?殷???隡箸??刻??亦璅????
     await initServerSelector(containers);
     await initTargetTimeControls(containers);
 
@@ -2322,9 +2263,6 @@ async function handleSeasonChange(containers) {
   }
 }
 
-/* -----------------------------
- * ??賊?嚗????祈??綽?
- * ---------------------------*/
 function openGoogleCalendarEvent({ title, details, eventTs }) {
   const eventStart = new Date(eventTs);
   const eventEnd = new Date(eventTs + 30 * 60 * 1000);
@@ -2455,9 +2393,6 @@ async function enableNextSeasonExpHoardCalendar() {
   });
 }
 
-/* -----------------------------
- * ????
- * ---------------------------*/
 async function init() {
   await initLanguage();
   const containers = getContainers();
@@ -2475,7 +2410,6 @@ async function init() {
   await initFragmentCalculator(saved);
   await initDungeonFragmentYield(saved);
 
-  // ??撱箇?鞈賢迤?詨 + 憟?脣???
   initSeasonSelector(containers, saved);
   setAppLoading(true);
 
@@ -2488,7 +2422,6 @@ async function init() {
     }
   });
 
-  // ?寞??嗅?鞈賢迤頛撠?鞈?
   await handleSeasonChange(containers);
   updateTargetTimeFormDefaults();
   updateRelicModeButtons();
@@ -2496,15 +2429,13 @@ async function init() {
   updateFragmentFeeRates();
   updateFragmentCalculator();
 
-  // ???亙像?潦??怎???皞?UI
-  await loadMaterialAvgDefaults();       // TODO: ?啣?嚗??model.js 銝剔??身撟喳??潸??伐??桀??箏???no-op嚗?
+  await loadMaterialAvgDefaults();
   renderMaterialSource(containers);
   loadAllInputs(['season-select']);
   bindTooltipLayers();
   updateDaysRemainingFromTarget();
   updateAllMaterialSources();
 
-  // ?芸??湔蝬???冽???
   setupAutoUpdate();
   setInterval(() => updateCurrentTime(containers.currentTimeDisplay), 1000);
   updateCurrentTime(containers.currentTimeDisplay);
