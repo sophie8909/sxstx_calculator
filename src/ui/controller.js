@@ -1029,8 +1029,8 @@ function updateSpeedupHints(nextLevelHours, targetHours) {
   const nextLevelEl = document.getElementById('bed-levelup-speedup');
   const targetEl = document.getElementById('bed-target-speedup');
 
-  if (nextLevelEl) nextLevelEl.textContent = t('speedup_next_level', { hours: nextLevelHours });
-  if (targetEl) targetEl.textContent = t('speedup_target_time', { hours: targetHours });
+  if (nextLevelEl) nextLevelEl.textContent = `+${nextLevelHours} 小時`;
+  if (targetEl) targetEl.textContent = `+${targetHours} 小時`;
 }
 
 function refreshBedProgressSummary() {

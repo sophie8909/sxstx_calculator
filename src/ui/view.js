@@ -423,11 +423,11 @@ export function renderCharBed(container) {
   hoardCheckbox.classList.add('h-4', 'w-4');
   hoardRow.append(hoardText, hoardCheckbox);
 
-  const speedupBox = el('div', ['character-exp-panel']);
+  const speedupBox = el('div', ['character-exp-panel', 'character-exp-speedup']);
 
-  const freeRow = el('label', ['flex', 'items-center', 'justify-between', 'gap-3', 'rounded-lg', 'border', 'border-slate-200', 'bg-slate-50', 'px-3', 'py-2', 'text-sm', 'text-slate-700']);
+  const freeRow = el('label', ['character-exp-speedup-row']);
   freeRow.htmlFor = 'free-speedup-used-today';
-  const freeText = el('span');
+  const freeText = el('span', ['character-exp-speedup-label']);
   freeText.textContent = t('free_speedup_used');
   appendTooltip(freeText, getTooltipText('free-speedup-used-today', t('free_speedup_used')));
   const freeCheckbox = el('input');
@@ -436,12 +436,12 @@ export function renderCharBed(container) {
   freeCheckbox.classList.add('h-4', 'w-4');
   freeRow.append(freeText, freeCheckbox);
 
-  const stoneRow = el('div', ['flex', 'items-center', 'justify-between', 'gap-3', 'rounded-lg', 'border', 'border-slate-200', 'bg-slate-50', 'px-3', 'py-2']);
-  const stoneLabel = el('label', ['text-sm', 'font-semibold', 'text-slate-700']);
+  const stoneRow = el('div', ['character-exp-speedup-row']);
+  const stoneLabel = el('label', ['character-exp-speedup-label']);
   stoneLabel.htmlFor = 'speedup-stone-count';
   stoneLabel.textContent = t('speedup_stone_count');
   appendTooltip(stoneLabel, getTooltipText('speedup-stone-count', t('speedup_stone_count')));
-  const stoneInput = el('input', ['input-field', 'rounded', 'p-2', inputHeight, 'w-full', 'md:w-1/2', 'text-right']);
+  const stoneInput = el('input', ['input-field', 'rounded', 'px-2', 'py-1', inputHeight, 'character-exp-speedup-input', 'text-right']);
   stoneInput.type = 'number';
   stoneInput.id = 'speedup-stone-count';
   stoneInput.min = '0';
@@ -449,14 +449,26 @@ export function renderCharBed(container) {
   stoneInput.placeholder = t('zero_placeholder');
   stoneRow.append(stoneLabel, stoneInput);
 
-  const boostNext = el('div', ['text-sm', 'font-semibold', 'text-black']);
+  const boostArea = el('div', ['character-exp-speedup-results']);
+  const boostTitle = el('div', ['character-exp-speedup-results-title']);
+  boostTitle.textContent = '加速效果';
+  const boostNextRow = el('div', ['character-exp-speedup-result-row']);
+  const boostNextLabel = el('span');
+  boostNextLabel.textContent = '用於下一級';
+  const boostNext = el('span', ['character-exp-speedup-result-value']);
   boostNext.id = 'bed-levelup-speedup';
-  boostNext.textContent = t('speedup_next_level', { hours: 0 });
-  const boostTarget = el('div', ['text-sm', 'font-semibold', 'text-black']);
+  boostNext.textContent = '+0 小時';
+  boostNextRow.append(boostNextLabel, boostNext);
+  const boostTargetRow = el('div', ['character-exp-speedup-result-row']);
+  const boostTargetLabel = el('span');
+  boostTargetLabel.textContent = '用於目標時間';
+  const boostTarget = el('span', ['character-exp-speedup-result-value']);
   boostTarget.id = 'bed-target-speedup';
-  boostTarget.textContent = t('speedup_target_time', { hours: 0 });
+  boostTarget.textContent = '+0 小時';
+  boostTargetRow.append(boostTargetLabel, boostTarget);
+  boostArea.append(boostTitle, boostNextRow, boostTargetRow);
 
-  speedupBox.append(freeRow, stoneRow, boostNext, boostTarget);
+  speedupBox.append(freeRow, stoneRow, boostArea);
 
   const infoBox = el('div', ['character-exp-panel', 'character-exp-summary']);
   const makeSummaryBlock = ({ titleId, defaultTitle, expId, timeId }) => {
