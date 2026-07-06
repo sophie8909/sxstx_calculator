@@ -436,7 +436,7 @@ export function renderCharBed(container) {
   freeCheckbox.classList.add('h-4', 'w-4');
   freeRow.append(freeText, freeCheckbox);
 
-  const stoneRow = el('div', ['character-exp-speedup-row']);
+  const stoneRow = el('div', ['character-exp-speedup-stack']);
   const stoneLabel = el('label', ['character-exp-speedup-label']);
   stoneLabel.htmlFor = 'speedup-stone-count';
   stoneLabel.textContent = t('speedup_stone_count');
@@ -468,7 +468,7 @@ export function renderCharBed(container) {
   boostTargetRow.append(boostTargetLabel, boostTarget);
   boostArea.append(boostTitle, boostNextRow, boostTargetRow);
 
-  speedupBox.append(freeRow, stoneRow, boostArea);
+  speedupBox.append(stoneRow, freeRow, boostArea);
 
   const infoBox = el('div', ['character-exp-panel', 'character-exp-summary']);
   const makeSummaryBlock = ({ titleId, defaultTitle, expId, timeId }) => {

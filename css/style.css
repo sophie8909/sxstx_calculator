@@ -470,6 +470,11 @@ body.app-loading .app-loading-overlay {
   min-height: 2.25rem;
 }
 
+.character-exp-speedup-stack {
+  display: grid;
+  gap: .35rem;
+}
+
 .character-exp-speedup-label {
   display: inline-flex;
   align-items: center;
@@ -481,8 +486,8 @@ body.app-loading .app-loading-overlay {
 }
 
 .character-exp-speedup-input {
-  width: 6.5rem;
-  min-width: 5.5rem;
+  width: 100%;
+  min-width: 0;
 }
 
 .character-exp-speedup-results {
