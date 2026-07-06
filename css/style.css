@@ -376,6 +376,10 @@ body.app-loading .app-loading-overlay {
   align-items: start;
 }
 
+#primary-content-grid > .main-grid-column {
+  display: contents;
+}
+
 .main-grid-column {
   display: flex;
   min-width: 0;
