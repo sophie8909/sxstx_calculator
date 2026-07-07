@@ -44,8 +44,8 @@ export const I18N_DICTIONARIES = {
     "zh-Hans": "目前无法推算目标等级时间，请先确认持有经验、床位时产与目标等级。"
   },
   "app_title": {
-    "zh-Hant": "杖劍傳說 素材計算機",
-    "zh-Hans": "杖剑传说 素材计算机"
+    "zh-Hant": "杖劍傳說計算機",
+    "zh-Hans": "杖剑传说计算机"
   },
   "auto_convert_readonly": {
     "zh-Hant": "自動換算，不可編輯",
