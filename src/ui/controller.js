@@ -1659,6 +1659,10 @@ function makeEquipmentOptionValue({ slotId, sourceKey, rarity, scoreColumn }) {
   return [slotId, sourceKey, rarity, scoreColumn].map((part) => encodeURIComponent(part)).join('|');
 }
 
+function hasEquipmentScore(row, scoreColumn) {
+  return String(row?.scores?.[scoreColumn] ?? '').trim() !== '';
+}
+
 function getEquipmentOptionLabel(option) {
   const displayName = getEquipmentDisplayName(option.row, option.slotId, option.rarity);
   const baseName = getEquipmentBaseName(option.row, option.rarity);
@@ -1669,13 +1673,11 @@ function getEquipmentOptionLabel(option) {
 function getEquipmentOptionsForSlot(slotId) {
   const options = [];
   getCurrentSeasonEquipmentRows().forEach((row) => {
-    Object.entries(EQUIPMENT_SCORE_COLUMNS).forEach(([scoreColumn]) => {
-      const score = parseNumberValue(row?.scores?.[scoreColumn]);
-      if (!Number.isFinite(score) || String(row?.scores?.[scoreColumn] ?? '').trim() === '') return;
-
+    ['mythic', 'miracle', 'abyss'].forEach((scoreColumn) => {
       const sourceKey = getEquipmentBaseName(row, scoreColumn);
       if (!sourceKey) return;
 
+      const hasScore = hasEquipmentScore(row, scoreColumn);
       options.push({
         id: makeEquipmentOptionValue({ slotId, sourceKey, rarity: scoreColumn, scoreColumn }),
         row,
@@ -1683,7 +1685,8 @@ function getEquipmentOptionsForSlot(slotId) {
         sourceKey,
         rarity: scoreColumn,
         scoreColumn,
-        score,
+        score: hasScore ? parseNumberValue(row?.scores?.[scoreColumn]) : 0,
+        missingScore: !hasScore,
       });
     });
   });
@@ -1720,16 +1723,31 @@ function getSelectedEquipmentSeasonItems() {
   }).filter(Boolean);
 }
 
+function updateEquipmentSeasonScoreWarnings(selectedEquipment) {
+  const selectedBySlot = new Map(selectedEquipment.map((item) => [item.slotId, item]));
+  EQUIPMENT_SLOT_IDS.forEach((slotId) => {
+    const warning = document.getElementById(`equipment-season-${slotId}-warning`);
+    if (!warning) return;
+
+    const item = selectedBySlot.get(slotId);
+    warning.textContent = item?.missingScore
+      ? ` 缺少 ${item.sourceKey}（${EQUIPMENT_SCORE_COLUMNS[item.scoreColumn].label}）裝備分數`
+      : '';
+  });
+}
+
 function updateEquipmentSeasonScore() {
   const totalDisplay = document.getElementById('equipment-season-total');
   const ratingInput = document.getElementById('equipment-season-rating');
   if (!totalDisplay || !ratingInput) return;
 
-  const totalScore = calculateEquipmentSeasonScore(getSelectedEquipmentSeasonItems());
+  const selectedEquipment = getSelectedEquipmentSeasonItems();
+  const totalScore = calculateEquipmentSeasonScore(selectedEquipment);
   const rating = getEquipmentRating(totalScore, EQUIPMENT_RATING_THRESHOLDS[normalizeSeasonId(state.seasonId)]);
 
   totalDisplay.textContent = formatEquipmentScore(totalScore);
   ratingInput.value = rating === '未達 C' ? t('equipment_rating_below_c') : rating;
+  updateEquipmentSeasonScoreWarnings(selectedEquipment);
 }
 
 function initEquipmentSeasonScore(saved = {}) {
