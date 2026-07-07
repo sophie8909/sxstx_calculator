@@ -1094,8 +1094,8 @@ const EN_TRANSLATIONS = {
   fragment_tier_abyss: { 'zh-Hant': '深淵', 'zh-Hans': '深渊', en: 'Abyss' },
   primordial_recommendation_aria: { 'zh-Hant': '{label}累計原初推薦', 'zh-Hans': '{label}累计原初推荐', en: '{label} cumulative Primordial Star recommendation' },
 
-  nav_gift_calculator: { 'zh-Hant': '\u79ae\u7269\u6700\u4f73\u5316\u8a08\u7b97\u6a5f', 'zh-Hans': '\u793c\u7269\u6700\u4f18\u5316\u8ba1\u7b97\u673a', en: 'Gift Optimizer' },
-  gift_calculator_title: { 'zh-Hant': '\u79ae\u7269\u6700\u4f73\u5316\u8a08\u7b97\u6a5f', 'zh-Hans': '\u793c\u7269\u6700\u4f18\u5316\u8ba1\u7b97\u673a', en: 'Gift Optimizer' },
+  nav_gift_calculator: { 'zh-Hant': '\u79ae\u7269\u8a08\u7b97\u6a5f', 'zh-Hans': '\u793c\u7269\u8ba1\u7b97\u673a', en: 'Gift Calculator' },
+  gift_calculator_title: { 'zh-Hant': '\u79ae\u7269\u8a08\u7b97\u6a5f', 'zh-Hans': '\u793c\u7269\u8ba1\u7b97\u673a', en: 'Gift Calculator' },
   gift_loading: { 'zh-Hant': '\u6b63\u5728\u8f09\u5165\u79ae\u7269\u8cc7\u6599...', 'zh-Hans': '\u6b63\u5728\u8f7d\u5165\u793c\u7269\u8d44\u6599...', en: 'Loading gift data...' },
   gift_loaded_status: { 'zh-Hant': '\u5df2\u8f09\u5165 {levels} \u7b46\u597d\u611f\u7b49\u7d1a\u8207 {qualities} \u7b46\u79ae\u7269\u54c1\u8cea\u8cc7\u6599\u3002', 'zh-Hans': '\u5df2\u8f7d\u5165 {levels} \u7b14\u597d\u611f\u7b49\u7ea7\u4e0e {qualities} \u7b14\u793c\u7269\u54c1\u8d28\u8d44\u6599\u3002', en: 'Loaded {levels} favor levels and {qualities} gift qualities.' },
   gift_no_data: { 'zh-Hant': '\u76ee\u524d\u6c92\u6709\u53ef\u7528\u7684\u79ae\u7269\u8cc7\u6599\u3002', 'zh-Hans': '\u76ee\u524d\u6ca1\u6709\u53ef\u7528\u7684\u793c\u7269\u8d44\u6599\u3002', en: 'No gift data is available.' },
