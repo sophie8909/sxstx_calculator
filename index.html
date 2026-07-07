@@ -133,7 +133,7 @@
         data-page="fragment"
         data-i18n="nav_fragment_calculator"
       >
-        碎片計算機
+        裝備與碎片計算機
       </button>
       <button
         id="open-target-time-form-btn"
@@ -434,6 +434,39 @@
         <h2 class="text-2xl font-bold" data-i18n="fragment_calculator_title">碎片神鑄石計算機</h2>
       </div>
       <div class="p-4 space-y-4">
+        <div class="border-b border-[#cde5e8] pb-4 space-y-3">
+          <h3 class="text-xl font-bold" data-i18n="equipment_season_score_title">裝備賽季分數</h3>
+          <div id="equipment-season-score-fields" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <label class="block min-w-0">
+              <span class="block text-sm font-semibold mb-1" data-i18n="equipment_slot_main_weapon">主武器</span>
+              <select id="equipment-season-main_weapon" class="input-field rounded p-2 w-full"></select>
+            </label>
+            <label class="block min-w-0">
+              <span class="block text-sm font-semibold mb-1" data-i18n="equipment_slot_off_weapon">副武器</span>
+              <select id="equipment-season-off_weapon" class="input-field rounded p-2 w-full"></select>
+            </label>
+            <label class="block min-w-0">
+              <span class="block text-sm font-semibold mb-1" data-i18n="equipment_slot_helmet">頭盔</span>
+              <select id="equipment-season-helmet" class="input-field rounded p-2 w-full"></select>
+            </label>
+            <label class="block min-w-0">
+              <span class="block text-sm font-semibold mb-1" data-i18n="equipment_slot_armor">護甲</span>
+              <select id="equipment-season-armor" class="input-field rounded p-2 w-full"></select>
+            </label>
+            <label class="block min-w-0">
+              <span class="block text-sm font-semibold mb-1" data-i18n="equipment_slot_boots">鞋子</span>
+              <select id="equipment-season-boots" class="input-field rounded p-2 w-full"></select>
+            </label>
+            <label class="block min-w-0">
+              <span class="block text-sm font-semibold mb-1" data-i18n="equipment_rating_label">裝備評級</span>
+              <input id="equipment-season-rating" type="text" class="input-field rounded p-2 w-full text-right" value="未達 C" disabled />
+            </label>
+          </div>
+          <div class="text-sm font-semibold text-slate-700">
+            <span data-i18n="equipment_total_season_score_label">總賽季分數</span>
+            <span id="equipment-season-total">0</span>
+          </div>
+        </div>
         <div id="fragment-calculator-status" class="text-sm text-slate-600" data-i18n="fragment_loading">正在載入碎片資料...</div>
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           <label class="block min-w-0">

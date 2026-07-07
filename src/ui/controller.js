@@ -35,6 +35,12 @@ import {
 import { applyStaticTranslations, getCurrentLanguage, initLanguage, t } from '../i18n-inline.js';
 import { loadServers } from '../services/dataService.js';
 import { CACHE_FALLBACK_EVENT, CACHE_UPDATED_EVENT, fetchTextWithCache } from '../services/dataCache.js';
+import {
+  EQUIPMENT_RATING_THRESHOLDS,
+  EQUIPMENT_SEASON_SCORE_COLUMN_BY_SEASON,
+  EQUIPMENT_SEASON_SCORE_OPTIONS,
+  EQUIPMENT_SLOT_IDS,
+} from '../data/equipmentSeasonScores.js';
 
 /* ============================================================
  * Google Sheet published CSV settings.
@@ -1531,6 +1537,88 @@ function formatFragmentInputNumber(value, fractionDigits = 2) {
   return Number(number.toFixed(fractionDigits)).toString();
 }
 
+function formatEquipmentScore(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return '0';
+  return number.toLocaleString(getCurrentLanguage() === 'en' ? 'en-US' : getCurrentLanguage() === 'zh-Hans' ? 'zh-CN' : 'zh-TW', {
+    maximumFractionDigits: 0,
+  });
+}
+
+function getEquipmentSeasonScoreColumn(seasonId) {
+  return EQUIPMENT_SEASON_SCORE_COLUMN_BY_SEASON[normalizeSeasonId(seasonId)] || 'miracle';
+}
+
+function getCurrentSeasonEquipmentOptions() {
+  const currentSeason = normalizeSeasonId(state.seasonId);
+  return EQUIPMENT_SEASON_SCORE_OPTIONS.filter((item) => item.season === currentSeason);
+}
+
+export function calculateEquipmentSeasonScore(selectedEquipment, seasonScoreColumn) {
+  return selectedEquipment.reduce((total, item) => (
+    total + parseNumberValue(item?.scores?.[seasonScoreColumn])
+  ), 0);
+}
+
+export function getEquipmentRating(totalScore, ratingThresholds) {
+  const thresholds = ratingThresholds || {};
+  const levels = [
+    ['SSS', thresholds.sss],
+    ['SS', thresholds.ss],
+    ['S', thresholds.s],
+    ['A', thresholds.a],
+    ['B', thresholds.b],
+    ['C', thresholds.c],
+  ];
+
+  const match = levels.find(([, threshold]) => (
+    Number.isFinite(Number(threshold)) && totalScore >= Number(threshold)
+  ));
+  return match?.[0] || '未達 C';
+}
+
+function getSelectedEquipmentSeasonItems() {
+  return EQUIPMENT_SLOT_IDS
+    .map((slotId) => document.getElementById(`equipment-season-${slotId}`)?.value || '')
+    .map((selectedId) => EQUIPMENT_SEASON_SCORE_OPTIONS.find((item) => item.id === selectedId))
+    .filter(Boolean);
+}
+
+function updateEquipmentSeasonScore() {
+  const totalDisplay = document.getElementById('equipment-season-total');
+  const ratingInput = document.getElementById('equipment-season-rating');
+  if (!totalDisplay || !ratingInput) return;
+
+  const seasonScoreColumn = getEquipmentSeasonScoreColumn(state.seasonId);
+  const totalScore = calculateEquipmentSeasonScore(getSelectedEquipmentSeasonItems(), seasonScoreColumn);
+  const rating = getEquipmentRating(totalScore, EQUIPMENT_RATING_THRESHOLDS[normalizeSeasonId(state.seasonId)]);
+
+  totalDisplay.textContent = formatEquipmentScore(totalScore);
+  ratingInput.value = rating === '未達 C' ? t('equipment_rating_below_c') : rating;
+}
+
+function initEquipmentSeasonScore(saved = {}) {
+  const options = getCurrentSeasonEquipmentOptions();
+  const optionHtml = options
+    .map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`)
+    .join('');
+  const emptyOption = `<option value="">${t('equipment_no_current_season_options')}</option>`;
+
+  EQUIPMENT_SLOT_IDS.forEach((slotId) => {
+    const select = document.getElementById(`equipment-season-${slotId}`);
+    if (!select) return;
+
+    select.innerHTML = options.length > 0 ? optionHtml : emptyOption;
+    select.disabled = options.length === 0;
+
+    const savedValue = saved[`equipment-season-${slotId}`];
+    const hasSavedOption = Array.from(select.options).some((option) => option.value === savedValue);
+    if (hasSavedOption) select.value = savedValue;
+  });
+
+  updateEquipmentSeasonScore();
+}
+
 function getSelectedFragmentRow() {
   const select = document.getElementById('fragment-kind');
   const index = Number(select?.value);
@@ -2171,6 +2259,12 @@ function bindGlobalHandlers(containers) {
 
       const t = e.target;
       if (t.tagName === 'INPUT') {
+        if (t.id?.startsWith('equipment-season-')) {
+          updateEquipmentSeasonScore();
+          saveAllInputs();
+          return;
+        }
+
         if (t.id?.startsWith('fragment-')) {
           updateFragmentCalculator();
           saveAllInputs();
@@ -2199,6 +2293,12 @@ function bindGlobalHandlers(containers) {
 
     const t = e.target;
       if (t.tagName === 'INPUT' || t.tagName === 'SELECT') {
+      if (t.id?.startsWith('equipment-season-')) {
+        updateEquipmentSeasonScore();
+        saveAllInputs();
+        return;
+      }
+
       if (t.id?.startsWith('fragment-')) {
         if (t.id === 'fragment-discount-fee') updateFragmentFeeRates();
         if (t.id === 'fragment-dungeon-select') updateDungeonFragmentYield();
@@ -2305,6 +2405,7 @@ async function handleSeasonChange(containers) {
     loadAllInputs(['season-select']);
     updateRelicModeButtons();
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    initEquipmentSeasonScore(saved);
     await initFragmentCalculator(saved);
     await initDungeonFragmentYield(saved);
     await renderPrimordialRecommendations();
@@ -2464,6 +2565,7 @@ async function init() {
   bindTargetTimeFormToggle();
 
   const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+  initEquipmentSeasonScore(saved);
   await initFragmentCalculator(saved);
   await initDungeonFragmentYield(saved);
 
@@ -2511,6 +2613,7 @@ async function init() {
     applySelectedTargetRecommendationIfNeeded().then(() => triggerRecalculate(containers));
     updateFragmentFeeRates();
     updateFragmentCalculator();
+    initEquipmentSeasonScore(JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'));
     initFragmentCalculator(JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'));
     initDungeonFragmentYield(JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'));
     updateTargetTimeFormDefaults();
