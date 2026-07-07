@@ -35,13 +35,6 @@ import {
 import { applyStaticTranslations, getCurrentLanguage, initLanguage, t } from '../i18n-inline.js';
 import { loadServers } from '../services/dataService.js';
 import { CACHE_FALLBACK_EVENT, CACHE_UPDATED_EVENT, fetchTextWithCache } from '../services/dataCache.js';
-import {
-  EQUIPMENT_CLASS_DISPLAY_KEYS,
-  EQUIPMENT_RATING_THRESHOLDS,
-  EQUIPMENT_SCORE_COLUMNS,
-  EQUIPMENT_SEASON_SCORE_ROWS,
-  EQUIPMENT_SLOT_IDS,
-} from '../data/equipmentSeasonScores.js';
 
 /* ============================================================
  * Google Sheet published CSV settings.
@@ -125,6 +118,10 @@ const DUNGEON_POWER_SHEET = {
   id: '1boxKipNVI-tCaJEaX-AoOTijEgKcxKfilhbtxkLbX-E',
   gid: '2044399102',
 };
+const EQUIPMENT_RATING_SHEET = {
+  id: '1boxKipNVI-tCaJEaX-AoOTijEgKcxKfilhbtxkLbX-E',
+  gid: '1012321192',
+};
 const PRIMORDIAL_RECOMMENDATION_SHEET = {
   id: '1boxKipNVI-tCaJEaX-AoOTijEgKcxKfilhbtxkLbX-E',
   gid: '1955218134',
@@ -149,6 +146,50 @@ const FRAGMENT_DECOMPOSE_STONES = {
   mythic: 3,
   abyss: 10,
 };
+const EQUIPMENT_SLOT_IDS = [
+  'main_weapon',
+  'off_weapon',
+  'helmet',
+  'armor',
+  'boots',
+];
+const EQUIPMENT_CLASS_DISPLAY_KEYS = {
+  sage: { main_weapon: 'staff', off_weapon: 'orb' },
+  warlock: { main_weapon: 'staff', off_weapon: 'book' },
+  fighter: { main_weapon: 'sword', off_weapon: 'knuckle' },
+  knight: { main_weapon: 'sword', off_weapon: 'shield' },
+};
+const EQUIPMENT_SCORE_COLUMNS = {
+  abyss: { label: '深淵', scoreKey: 'abyss', sourceKey: 'abyssKey' },
+  mythic: { label: '神話', scoreKey: 'mythic', sourceKey: 'normalKey' },
+  miracle: { label: '奇蹟', scoreKey: 'miracle', sourceKey: 'normalKey' },
+};
+const EQUIPMENT_DISPLAY_COLUMNS = {
+  normal: {
+    main_weapon: { staff: '主武器（杖）', sword: '主武器（劍）' },
+    off_weapon: {
+      orb: '副武器（法球）',
+      book: '副武器（法書）',
+      knuckle: '副武器（拳套）',
+      shield: '副武器（盾牌）',
+    },
+    helmet: '頭盔',
+    armor: '護甲',
+    boots: '鞋子',
+  },
+  abyss: {
+    main_weapon: { staff: '深淵主武器（杖）', sword: '深淵主武器（劍）' },
+    off_weapon: {
+      orb: '深淵副武器（法球）',
+      book: '深淵副武器（法書）',
+      knuckle: '深淵副武器（拳套）',
+      shield: '深淵副武器（盾牌）',
+    },
+    helmet: '深淵頭盔',
+    armor: '深淵護甲',
+    boots: '深淵鞋子',
+  },
+};
 const DUNGEON_FRAGMENT_REWARDS = {
   normal: { pieces: 8, tier: '奇蹟', stonePerPiece: FRAGMENT_DECOMPOSE_STONES.miracle },
   hard: { pieces: 10, tier: '奇蹟', stonePerPiece: FRAGMENT_DECOMPOSE_STONES.miracle },
@@ -168,6 +209,9 @@ let fragmentRowsCache = null;
 let dungeonFragmentYieldRowsCache = null;
 let giftRowsCache = null;
 let serverRowsCache = null;
+let equipmentSeasonScoreRows = [];
+let equipmentRatingThresholds = {};
+let equipmentSeasonScoreDataPromise = null;
 const ACTIVE_PAGE_STORAGE_KEY = 'sxstxCalculatorActivePage';
 const CACHE_REFRESH_DEBOUNCE_MS = 250;
 let cacheRefreshTimer = null;
@@ -810,6 +854,97 @@ async function fetchFragmentRows() {
 
 function getHeaderIndex(headers, names) {
   return headers.findIndex((header) => names.some((name) => header === name));
+}
+
+async function fetchGoogleSheetCsvRows(sheet) {
+  const response = await fetch(getGoogleSheetCsvUrl(sheet), { cache: 'no-store' });
+  if (!response.ok) throw new Error(`fetch failed: ${response.status}`);
+  return parseCsvRows(await response.text());
+}
+
+function getEquipmentDisplayNamesFromSheetRow(row, headers, groupName, columnMap) {
+  const out = {};
+  Object.entries(columnMap).forEach(([slotId, config]) => {
+    if (typeof config === 'string') {
+      const value = getCsvValue(row, headers, [config]);
+      if (value) out[slotId] = value;
+      return;
+    }
+
+    const slotValues = {};
+    Object.entries(config).forEach(([displayKey, headerName]) => {
+      const value = getCsvValue(row, headers, [headerName]);
+      if (value) slotValues[displayKey] = value;
+    });
+    if (Object.keys(slotValues).length > 0) out[slotId] = slotValues;
+  });
+  return Object.keys(out).length > 0 ? { [groupName]: out } : {};
+}
+
+function parseEquipmentSeasonScoreRows(csvRows) {
+  const headers = (csvRows.shift() || []).map(normalizeHeader);
+
+  return csvRows
+    .map((row) => {
+      const normalKey = getCsvValue(row, headers, ['裝備碎片']);
+      const abyssKey = getCsvValue(row, headers, ['深淵裝', '深淵碎片', '煉獄裝', '神裝']);
+      const normalDisplayNames = getEquipmentDisplayNamesFromSheetRow(row, headers, 'normal', EQUIPMENT_DISPLAY_COLUMNS.normal);
+      const abyssDisplayNames = getEquipmentDisplayNamesFromSheetRow(row, headers, 'abyss', EQUIPMENT_DISPLAY_COLUMNS.abyss);
+
+      return {
+        season: normalizeSeasonId(getCsvValue(row, headers, ['賽季', 'season'])),
+        normalKey,
+        abyssKey,
+        scores: {
+          abyss: getCsvValue(row, headers, ['深淵賽季分數']),
+          mythic: getCsvValue(row, headers, ['神話賽季分數']),
+          miracle: getCsvValue(row, headers, ['奇蹟賽季分數']),
+        },
+        displayNames: {
+          ...normalDisplayNames,
+          ...abyssDisplayNames,
+        },
+      };
+    })
+    .filter((row) => row.season && (row.normalKey || row.abyssKey));
+}
+
+function parseEquipmentRatingThresholds(csvRows) {
+  const headers = (csvRows.shift() || []).map(normalizeHeader);
+  return csvRows.reduce((thresholds, row) => {
+    const season = normalizeSeasonId(getCsvValue(row, headers, ['season', '賽季']));
+    if (!season) return thresholds;
+
+    thresholds[season] = {
+      c: getCsvValue(row, headers, ['equipment_c']),
+      b: getCsvValue(row, headers, ['equipment_b']),
+      a: getCsvValue(row, headers, ['equipment_a']),
+      s: getCsvValue(row, headers, ['equipment_s']),
+      ss: getCsvValue(row, headers, ['equipment_ss']),
+      sss: getCsvValue(row, headers, ['equipment_sss']),
+    };
+    return thresholds;
+  }, {});
+}
+
+async function loadEquipmentSeasonScoreData() {
+  if (equipmentSeasonScoreDataPromise) return equipmentSeasonScoreDataPromise;
+
+  equipmentSeasonScoreDataPromise = Promise.all([
+    fetchGoogleSheetCsvRows(DUNGEON_POWER_SHEET),
+    fetchGoogleSheetCsvRows(EQUIPMENT_RATING_SHEET),
+  ])
+    .then(([scoreRows, ratingRows]) => {
+      equipmentSeasonScoreRows = parseEquipmentSeasonScoreRows(scoreRows);
+      equipmentRatingThresholds = parseEquipmentRatingThresholds(ratingRows);
+    })
+    .catch((error) => {
+      console.warn('[equipment season score] fetch failed', error);
+      equipmentSeasonScoreRows = [];
+      equipmentRatingThresholds = {};
+    });
+
+  return equipmentSeasonScoreDataPromise;
 }
 
 function parseDungeonFragmentYieldRows(csvRows) {
@@ -1629,7 +1764,7 @@ function formatEquipmentScore(value) {
 
 function getCurrentSeasonEquipmentRows() {
   const currentSeason = normalizeSeasonId(state.seasonId);
-  return EQUIPMENT_SEASON_SCORE_ROWS.filter((item) => item.season === currentSeason);
+  return equipmentSeasonScoreRows.filter((item) => item.season === currentSeason);
 }
 
 function getSelectedEquipmentClass() {
@@ -1743,14 +1878,15 @@ function updateEquipmentSeasonScore() {
 
   const selectedEquipment = getSelectedEquipmentSeasonItems();
   const totalScore = calculateEquipmentSeasonScore(selectedEquipment);
-  const rating = getEquipmentRating(totalScore, EQUIPMENT_RATING_THRESHOLDS[normalizeSeasonId(state.seasonId)]);
+  const rating = getEquipmentRating(totalScore, equipmentRatingThresholds[normalizeSeasonId(state.seasonId)]);
 
   totalDisplay.textContent = formatEquipmentScore(totalScore);
   ratingInput.value = rating === '未達 C' ? t('equipment_rating_below_c') : rating;
   updateEquipmentSeasonScoreWarnings(selectedEquipment);
 }
 
-function initEquipmentSeasonScore(saved = {}) {
+async function initEquipmentSeasonScore(saved = {}) {
+  await loadEquipmentSeasonScoreData();
   const emptyOption = `<option value="">${t('equipment_no_current_season_options')}</option>`;
 
   EQUIPMENT_SLOT_IDS.forEach((slotId) => {
@@ -2935,8 +3071,7 @@ function bindGlobalHandlers(containers) {
     const t = e.target;
       if (t.tagName === 'INPUT' || t.tagName === 'SELECT') {
       if (t.id === 'job-select') {
-        initEquipmentSeasonScore();
-        saveAllInputs();
+        initEquipmentSeasonScore().then(() => saveAllInputs());
         return;
       }
 
@@ -3058,7 +3193,7 @@ async function handleSeasonChange(containers) {
     loadAllInputs(['season-select']);
     updateRelicModeButtons();
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-    initEquipmentSeasonScore(saved);
+    await initEquipmentSeasonScore(saved);
     await initFragmentCalculator(saved);
     await initDungeonFragmentYield(saved);
     await renderGiftCalculator(saved);
@@ -3219,7 +3354,7 @@ async function init() {
   bindTargetTimeFormToggle();
 
   const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-  initEquipmentSeasonScore(saved);
+  await initEquipmentSeasonScore(saved);
   await initFragmentCalculator(saved);
   await initDungeonFragmentYield(saved);
   await renderGiftCalculator(saved);
@@ -3253,7 +3388,7 @@ async function init() {
   setupAutoUpdate();
   setInterval(() => updateCurrentTime(containers.currentTimeDisplay), 1000);
   updateCurrentTime(containers.currentTimeDisplay);
-  window.addEventListener('languagechange', () => {
+  window.addEventListener('languagechange', async () => {
     applyStaticTranslations();
     refreshSeasonSelectorLabels();
     applyMobileSectionOrder();
@@ -3268,7 +3403,7 @@ async function init() {
     applySelectedTargetRecommendationIfNeeded().then(() => triggerRecalculate(containers));
     updateFragmentFeeRates();
     updateFragmentCalculator();
-    initEquipmentSeasonScore(JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'));
+    await initEquipmentSeasonScore(JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'));
     initFragmentCalculator(JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'));
     initDungeonFragmentYield(JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'));
     renderGiftCalculator(JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'));
