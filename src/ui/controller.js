@@ -36,6 +36,7 @@ import { applyStaticTranslations, getCurrentLanguage, initLanguage, t } from '..
 import { loadServers } from '../services/dataService.js';
 import { CACHE_FALLBACK_EVENT, CACHE_UPDATED_EVENT, fetchTextWithCache } from '../services/dataCache.js';
 import {
+  EQUIPMENT_CLASS_DISPLAY_KEYS,
   EQUIPMENT_RATING_THRESHOLDS,
   EQUIPMENT_SEASON_SCORE_COLUMN_BY_SEASON,
   EQUIPMENT_SEASON_SCORE_OPTIONS,
@@ -1560,6 +1561,30 @@ function getCurrentSeasonEquipmentOptions() {
   return EQUIPMENT_SEASON_SCORE_OPTIONS.filter((item) => item.season === currentSeason);
 }
 
+function getSelectedEquipmentClass() {
+  return document.getElementById('job-select')?.value || 'sage';
+}
+
+function getEquipmentDisplayName(item, slotId) {
+  const classDisplayKeys = EQUIPMENT_CLASS_DISPLAY_KEYS[getSelectedEquipmentClass()] || EQUIPMENT_CLASS_DISPLAY_KEYS.sage;
+  const slotDisplayNames = item?.displayNames?.[slotId];
+  if (!slotDisplayNames) return '';
+  if (typeof slotDisplayNames === 'string') return slotDisplayNames.trim();
+
+  const displayKey = classDisplayKeys?.[slotId];
+  return String(slotDisplayNames[displayKey] || '').trim();
+}
+
+function getEquipmentBaseName(item) {
+  return String(item?.name || '').trim().replace(/碎片$/, '');
+}
+
+function getEquipmentOptionLabel(item, slotId) {
+  const baseName = getEquipmentBaseName(item);
+  const displayName = getEquipmentDisplayName(item, slotId);
+  return displayName ? `${displayName}（${baseName}）` : baseName;
+}
+
 export function calculateEquipmentSeasonScore(selectedEquipment, seasonScoreColumn) {
   return selectedEquipment.reduce((total, item) => (
     total + parseNumberValue(item?.scores?.[seasonScoreColumn])
@@ -1605,21 +1630,24 @@ function updateEquipmentSeasonScore() {
 
 function initEquipmentSeasonScore(saved = {}) {
   const options = getCurrentSeasonEquipmentOptions();
-  const optionHtml = options
-    .map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`)
-    .join('');
   const emptyOption = `<option value="">${t('equipment_no_current_season_options')}</option>`;
 
   EQUIPMENT_SLOT_IDS.forEach((slotId) => {
     const select = document.getElementById(`equipment-season-${slotId}`);
     if (!select) return;
 
+    const currentValue = select.value;
+    const optionHtml = options
+      .map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(getEquipmentOptionLabel(item, slotId))}</option>`)
+      .join('');
+
     select.innerHTML = options.length > 0 ? optionHtml : emptyOption;
     select.disabled = options.length === 0;
 
     const savedValue = saved[`equipment-season-${slotId}`];
-    const hasSavedOption = Array.from(select.options).some((option) => option.value === savedValue);
-    if (hasSavedOption) select.value = savedValue;
+    const desiredValue = savedValue || currentValue;
+    const hasDesiredOption = Array.from(select.options).some((option) => option.value === desiredValue);
+    if (hasDesiredOption) select.value = desiredValue;
   });
 
   updateEquipmentSeasonScore();
@@ -2299,6 +2327,12 @@ function bindGlobalHandlers(containers) {
 
     const t = e.target;
       if (t.tagName === 'INPUT' || t.tagName === 'SELECT') {
+      if (t.id === 'job-select') {
+        initEquipmentSeasonScore();
+        saveAllInputs();
+        return;
+      }
+
       if (t.id?.startsWith('equipment-season-')) {
         updateEquipmentSeasonScore();
         saveAllInputs();
