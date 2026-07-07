@@ -136,6 +136,14 @@
         裝備與碎片計算機
       </button>
       <button
+        type="button"
+        class="calculator-nav-btn bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg text-sm"
+        data-page="gift"
+        data-i18n="nav_gift_calculator"
+      >
+        禮物計算機
+      </button>
+      <button
         id="open-target-time-form-btn"
         type="button"
         class="calculator-nav-btn bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg text-sm"
@@ -531,6 +539,46 @@
             <select id="fragment-dungeon-select" class="input-field rounded p-2 w-full"></select>
           </label>
           <div id="fragment-dungeon-yield-result" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="gift-calculator-panel" class="hidden">
+    <div class="card rounded-xl p-0 shadow-lg mb-6 w-full">
+      <div class="border-b sticky top-0 z-10 px-4 py-2 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
+        <h2 class="text-2xl font-bold" data-i18n="gift_calculator_title">禮物計算機</h2>
+      </div>
+      <div class="p-4 space-y-4">
+        <div id="gift-calculator-status" class="text-sm text-slate-600" data-i18n="gift_loading">正在載入禮物資料...</div>
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
+          <label class="block min-w-0">
+            <span class="block text-sm font-semibold mb-1" data-i18n="gift_current_level_label">目前好感等級</span>
+            <select id="gift-current-level" class="input-field rounded p-2 w-full"></select>
+          </label>
+          <label class="block min-w-0">
+            <span class="block text-sm font-semibold mb-1" data-i18n="gift_current_favor_label">目前等級已累積好感</span>
+            <input id="gift-current-favor" type="number" min="0" step="1" class="input-field rounded p-2 w-full text-right" value="0" />
+          </label>
+          <label class="block min-w-0">
+            <span class="block text-sm font-semibold mb-1" data-i18n="gift_target_level_label">目標好感等級</span>
+            <select id="gift-target-level" class="input-field rounded p-2 w-full"></select>
+          </label>
+          <label class="block min-w-0">
+            <span class="block text-sm font-semibold mb-1" data-i18n="gift_quality_label">禮物品質</span>
+            <select id="gift-quality" class="input-field rounded p-2 w-full"></select>
+          </label>
+          <label class="block min-w-0">
+            <span class="block text-sm font-semibold mb-1" data-i18n="gift_category_label">禮物類別</span>
+            <select id="gift-category" class="input-field rounded p-2 w-full"></select>
+          </label>
+        </div>
+
+        <div id="gift-calculator-result" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"></div>
+
+        <div class="border-t border-[#cde5e8] pt-4 space-y-3">
+          <h3 class="text-xl font-bold" data-i18n="gift_comparison_title">各品質比較</h3>
+          <div id="gift-comparison-table"></div>
         </div>
       </div>
     </div>

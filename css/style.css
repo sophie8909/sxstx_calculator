@@ -353,6 +353,7 @@ body.app-loading .app-loading-overlay {
 
 #calculator-page-content,
 #fragment-calculator-panel,
+#gift-calculator-panel,
 #target-time-form-panel {
   min-width: 0;
 }

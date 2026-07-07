@@ -129,6 +129,10 @@ const PRIMORDIAL_RECOMMENDATION_SHEET = {
   id: '1boxKipNVI-tCaJEaX-AoOTijEgKcxKfilhbtxkLbX-E',
   gid: '1955218134',
 };
+const GIFT_CALCULATOR_SHEET = {
+  id: '1boxKipNVI-tCaJEaX-AoOTijEgKcxKfilhbtxkLbX-E',
+  gid: '547650001',
+};
 const DUNGEON_DIFFICULTIES = ['普通', '困難', '惡夢', '煉獄', '深淵'];
 const PRIMORDIAL_RECOMMENDATION_TIERS = [
   ['normal', 'recommendation_normal'],
@@ -162,6 +166,7 @@ let dungeonPowerRowsCache = null;
 let primordialRecommendationRowsCache = null;
 let fragmentRowsCache = null;
 let dungeonFragmentYieldRowsCache = null;
+let giftRowsCache = null;
 let serverRowsCache = null;
 const ACTIVE_PAGE_STORAGE_KEY = 'sxstxCalculatorActivePage';
 const CACHE_REFRESH_DEBOUNCE_MS = 250;
@@ -857,6 +862,73 @@ async function fetchDungeonFragmentYieldRows() {
   return dungeonFragmentYieldRowsCache;
 }
 
+function parseGiftCalculatorRows(csvRows) {
+  const headers = (csvRows.shift() || []).map((header) => String(header || '').trim());
+  const index = {
+    level: getHeaderIndex(headers, ['level']),
+    requiredFavor: getHeaderIndex(headers, ['所需好感']),
+    quality: getHeaderIndex(headers, ['禮物品質']),
+    favor: getHeaderIndex(headers, ['好感']),
+    price: getHeaderIndex(headers, ['價格']),
+    daily: getHeaderIndex(headers, ['日用品']),
+    flower: getHeaderIndex(headers, ['花']),
+    book: getHeaderIndex(headers, ['書']),
+    valuables: getHeaderIndex(headers, ['貴重品']),
+  };
+
+  return csvRows.map((row) => ({
+    level: String(row[index.level] || '').trim(),
+    required_favor: String(row[index.requiredFavor] || '').trim(),
+    quality: String(row[index.quality] || '').trim(),
+    favor: String(row[index.favor] || '').trim(),
+    price: String(row[index.price] || '').trim(),
+    categories: {
+      daily: String(row[index.daily] || '').trim(),
+      flower: String(row[index.flower] || '').trim(),
+      book: String(row[index.book] || '').trim(),
+      valuables: String(row[index.valuables] || '').trim(),
+    },
+  }));
+}
+
+function getGiftLevelRows(rows) {
+  return rows
+    .map((row) => ({
+      level: parseNumberValue(row.level),
+      requiredFavor: parseNumberValue(row.required_favor),
+    }))
+    .filter((row) => Number.isFinite(row.level) && row.level > 0 && row.requiredFavor > 0)
+    .sort((a, b) => a.level - b.level);
+}
+
+function getGiftQualityRows(rows) {
+  return rows
+    .map((row) => ({
+      quality: String(row.quality || '').trim(),
+      favor: parseNumberValue(row.favor),
+      price: parseNumberValue(row.price),
+      categories: row.categories || {},
+    }))
+    .filter((row) => row.quality && row.favor > 0)
+    .sort((a, b) => a.price - b.price || a.favor - b.favor || a.quality.localeCompare(b.quality));
+}
+
+async function fetchGiftCalculatorRows() {
+  if (giftRowsCache) return giftRowsCache;
+
+  const url = getGoogleSheetCsvUrl(GIFT_CALCULATOR_SHEET);
+  try {
+    giftRowsCache = parseGiftCalculatorRows(
+      parseCsvRows(await fetchTextWithCache('google-sheet:gift-calculator', url))
+    );
+  } catch (err) {
+    console.warn('[gift calculator] fetch failed', err);
+    giftRowsCache = [];
+  }
+
+  return giftRowsCache;
+}
+
 async function fetchPrimordialRecommendationRows() {
   if (primordialRecommendationRowsCache) return primordialRecommendationRowsCache;
 
@@ -1113,6 +1185,7 @@ function clearControllerRemoteRowsCaches() {
   primordialRecommendationRowsCache = null;
   fragmentRowsCache = null;
   dungeonFragmentYieldRowsCache = null;
+  giftRowsCache = null;
   serverRowsCache = null;
 }
 
@@ -1429,11 +1502,12 @@ function bindTargetTimeFormToggle() {
   const navButtons = Array.from(document.querySelectorAll('.calculator-nav-btn'));
   const calculatorPageContent = document.getElementById('calculator-page-content');
   const fragmentCalculatorPanel = document.getElementById('fragment-calculator-panel');
+  const giftCalculatorPanel = document.getElementById('gift-calculator-panel');
   const targetTimeFormPanel = document.getElementById('target-time-form-panel');
   const sectionSideNav = document.getElementById('section-side-nav');
   const appLayout = document.querySelector('.app-layout');
 
-  if (!navButtons.length || !calculatorPageContent || !fragmentCalculatorPanel || !targetTimeFormPanel) return;
+  if (!navButtons.length || !calculatorPageContent || !fragmentCalculatorPanel || !giftCalculatorPanel || !targetTimeFormPanel) return;
 
   const scrollToToggle = () => {
     const firstButton = navButtons[0];
@@ -1444,6 +1518,7 @@ function bindTargetTimeFormToggle() {
   const panels = {
     primordial: calculatorPageContent,
     fragment: fragmentCalculatorPanel,
+    gift: giftCalculatorPanel,
     'target-time-form': targetTimeFormPanel,
   };
 
@@ -1687,6 +1762,197 @@ function getSelectedFragmentRow() {
   const index = Number(select?.value);
   if (!Number.isInteger(index) || index < 0) return null;
   return fragmentRowsCache?.[index] || null;
+}
+
+function getGiftCategoryOptions() {
+  return [
+    ['daily', t('gift_category_daily')],
+    ['flower', t('gift_category_flower')],
+    ['book', t('gift_category_book')],
+    ['valuables', t('gift_category_valuables')],
+  ];
+}
+
+function getGiftRowsData() {
+  const rows = giftRowsCache || [];
+  return {
+    levelRows: getGiftLevelRows(rows),
+    qualityRows: getGiftQualityRows(rows),
+  };
+}
+
+function calculateGiftFavorNeeded(levelRows, currentLevel, currentFavor, targetLevel) {
+  if (!levelRows.length || targetLevel <= currentLevel) return 0;
+
+  const levelMap = new Map(levelRows.map((row) => [row.level, row.requiredFavor]));
+  let total = 0;
+  for (let level = currentLevel; level < targetLevel; level += 1) {
+    const required = levelMap.get(level) || 0;
+    if (level === currentLevel) {
+      total += Math.max(0, required - currentFavor);
+    } else {
+      total += required;
+    }
+  }
+  return total;
+}
+
+function getGiftAvailableKingdoms(row, category) {
+  const value = String(row?.categories?.[category] || '').trim();
+  return value || t('gift_no_available_kingdoms');
+}
+
+function calculateGiftQualityResult(row, totalNeeded, category) {
+  const favorPerGift = parseNumberValue(row?.favor);
+  const giftsNeeded = favorPerGift > 0 ? Math.ceil(totalNeeded / favorPerGift) : 0;
+  const totalCost = giftsNeeded * parseNumberValue(row?.price);
+  const overflowFavor = Math.max(0, giftsNeeded * favorPerGift - totalNeeded);
+  return {
+    quality: row?.quality || '',
+    favorPerGift,
+    price: parseNumberValue(row?.price),
+    giftsNeeded,
+    totalCost,
+    overflowFavor,
+    kingdoms: getGiftAvailableKingdoms(row, category),
+  };
+}
+
+function formatGiftNumber(value) {
+  return formatFragmentNumber(value, 2);
+}
+
+function renderGiftSummaryItem(labelKey, value) {
+  return `
+    <div class="info-item rounded-lg p-3">
+      <div class="text-xs font-semibold text-slate-500">${escapeHtml(t(labelKey))}</div>
+      <div class="mt-1 text-lg font-bold text-slate-800">${escapeHtml(value)}</div>
+    </div>
+  `;
+}
+
+function renderGiftComparisonTable(results) {
+  const body = results.map((item) => `
+    <tr>
+      <td class="border border-[#cde5e8] px-3 py-2 font-semibold">${escapeHtml(item.quality)}</td>
+      <td class="border border-[#cde5e8] px-3 py-2 text-right">${formatGiftNumber(item.favorPerGift)}</td>
+      <td class="border border-[#cde5e8] px-3 py-2 text-right">${formatGiftNumber(item.price)}</td>
+      <td class="border border-[#cde5e8] px-3 py-2 text-right">${formatGiftNumber(item.giftsNeeded)}</td>
+      <td class="border border-[#cde5e8] px-3 py-2 text-right">${formatGiftNumber(item.totalCost)}</td>
+      <td class="border border-[#cde5e8] px-3 py-2 text-right">${formatGiftNumber(item.overflowFavor)}</td>
+      <td class="border border-[#cde5e8] px-3 py-2">${escapeHtml(item.kingdoms)}</td>
+    </tr>
+  `).join('');
+
+  return `
+    <div class="responsive-table">
+      <table class="text-sm border-collapse">
+        <thead>
+          <tr class="bg-[#eefafa] text-slate-700">
+            <th class="border border-[#cde5e8] px-3 py-2 text-left">${escapeHtml(t('gift_table_quality'))}</th>
+            <th class="border border-[#cde5e8] px-3 py-2 text-right">${escapeHtml(t('gift_table_favor'))}</th>
+            <th class="border border-[#cde5e8] px-3 py-2 text-right">${escapeHtml(t('gift_table_price'))}</th>
+            <th class="border border-[#cde5e8] px-3 py-2 text-right">${escapeHtml(t('gift_table_needed'))}</th>
+            <th class="border border-[#cde5e8] px-3 py-2 text-right">${escapeHtml(t('gift_table_total_cost'))}</th>
+            <th class="border border-[#cde5e8] px-3 py-2 text-right">${escapeHtml(t('gift_table_overflow'))}</th>
+            <th class="border border-[#cde5e8] px-3 py-2 text-left">${escapeHtml(t('gift_table_kingdoms'))}</th>
+          </tr>
+        </thead>
+        <tbody>${body}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+function updateGiftCalculatorResult() {
+  const result = document.getElementById('gift-calculator-result');
+  const comparison = document.getElementById('gift-comparison-table');
+  if (!result || !comparison) return;
+
+  const { levelRows, qualityRows } = getGiftRowsData();
+  const currentLevel = parseNumberValue(document.getElementById('gift-current-level')?.value);
+  const currentFavor = parseNumberValue(document.getElementById('gift-current-favor')?.value);
+  const targetLevel = parseNumberValue(document.getElementById('gift-target-level')?.value);
+  const selectedQuality = document.getElementById('gift-quality')?.value || '';
+  const selectedCategory = document.getElementById('gift-category')?.value || 'daily';
+  const totalNeeded = calculateGiftFavorNeeded(levelRows, currentLevel, currentFavor, targetLevel);
+  const selectedRow = qualityRows.find((row) => row.quality === selectedQuality) || qualityRows[0] || null;
+
+  if (!levelRows.length || !qualityRows.length || !selectedRow) {
+    result.innerHTML = `<div class="text-sm text-slate-600">${t('gift_no_data')}</div>`;
+    comparison.innerHTML = '';
+    return;
+  }
+
+  const selectedResult = calculateGiftQualityResult(selectedRow, totalNeeded, selectedCategory);
+  result.innerHTML = [
+    renderGiftSummaryItem('gift_total_needed_label', formatGiftNumber(totalNeeded)),
+    renderGiftSummaryItem('gift_favor_per_gift_label', formatGiftNumber(selectedResult.favorPerGift)),
+    renderGiftSummaryItem('gift_gifts_needed_label', formatGiftNumber(selectedResult.giftsNeeded)),
+    renderGiftSummaryItem('gift_total_cost_label', formatGiftNumber(selectedResult.totalCost)),
+    renderGiftSummaryItem('gift_overflow_label', formatGiftNumber(selectedResult.overflowFavor)),
+    renderGiftSummaryItem('gift_available_kingdoms_label', selectedResult.kingdoms),
+  ].join('');
+
+  const comparisonResults = qualityRows.map((row) => calculateGiftQualityResult(row, totalNeeded, selectedCategory));
+  comparison.innerHTML = renderGiftComparisonTable(comparisonResults);
+}
+
+async function renderGiftCalculator(saved = {}) {
+  const status = document.getElementById('gift-calculator-status');
+  const currentLevelSelect = document.getElementById('gift-current-level');
+  const targetLevelSelect = document.getElementById('gift-target-level');
+  const qualitySelect = document.getElementById('gift-quality');
+  const categorySelect = document.getElementById('gift-category');
+  const currentFavorInput = document.getElementById('gift-current-favor');
+  if (!currentLevelSelect || !targetLevelSelect || !qualitySelect || !categorySelect) return;
+
+  if (status) status.textContent = t('gift_loading');
+  await fetchGiftCalculatorRows();
+  const { levelRows, qualityRows } = getGiftRowsData();
+
+  currentLevelSelect.innerHTML = levelRows
+    .map((row) => `<option value="${row.level}">${escapeHtml(t('level_value', { level: row.level }))}</option>`)
+    .join('');
+  targetLevelSelect.innerHTML = levelRows
+    .map((row) => `<option value="${row.level}">${escapeHtml(t('level_value', { level: row.level }))}</option>`)
+    .join('');
+  qualitySelect.innerHTML = qualityRows
+    .map((row) => `<option value="${escapeHtml(row.quality)}">${escapeHtml(row.quality)}</option>`)
+    .join('');
+  categorySelect.innerHTML = getGiftCategoryOptions()
+    .map(([value, label]) => `<option value="${value}">${escapeHtml(label)}</option>`)
+    .join('');
+
+  currentLevelSelect.disabled = levelRows.length === 0;
+  targetLevelSelect.disabled = levelRows.length === 0;
+  qualitySelect.disabled = qualityRows.length === 0;
+  categorySelect.disabled = qualityRows.length === 0;
+
+  const defaultCurrentLevel = levelRows[0]?.level || 1;
+  const defaultTargetLevel = levelRows[Math.min(1, levelRows.length - 1)]?.level || defaultCurrentLevel;
+  const defaults = {
+    'gift-current-level': String(defaultCurrentLevel),
+    'gift-target-level': String(defaultTargetLevel),
+    'gift-quality': qualityRows[0]?.quality || '',
+    'gift-category': 'daily',
+  };
+
+  [currentLevelSelect, targetLevelSelect, qualitySelect, categorySelect].forEach((select) => {
+    const desiredValue = saved[select.id] || defaults[select.id] || '';
+    const hasOption = Array.from(select.options).some((option) => option.value === desiredValue);
+    if (hasOption) select.value = desiredValue;
+  });
+  if (currentFavorInput && saved['gift-current-favor'] !== undefined) {
+    currentFavorInput.value = saved['gift-current-favor'];
+  }
+
+  if (status) {
+    status.textContent = levelRows.length && qualityRows.length
+      ? t('gift_loaded_status', { levels: levelRows.length, qualities: qualityRows.length })
+      : t('gift_no_data');
+  }
+  updateGiftCalculatorResult();
 }
 
 function getPreviousSeasonId(seasonId) {
@@ -2334,6 +2600,12 @@ function bindGlobalHandlers(containers) {
           return;
         }
 
+        if (t.id?.startsWith('gift-')) {
+          updateGiftCalculatorResult();
+          saveAllInputs();
+          return;
+        }
+
         markTargetRecommendationCustom(t);
 
         if (t.classList.contains('material-source-input')) {
@@ -2372,6 +2644,12 @@ function bindGlobalHandlers(containers) {
         if (t.id === 'fragment-discount-fee') updateFragmentFeeRates();
         if (t.id === 'fragment-dungeon-select') updateDungeonFragmentYield();
         updateFragmentCalculator();
+        saveAllInputs();
+        return;
+      }
+
+      if (t.id?.startsWith('gift-')) {
+        updateGiftCalculatorResult();
         saveAllInputs();
         return;
       }
@@ -2477,6 +2755,7 @@ async function handleSeasonChange(containers) {
     initEquipmentSeasonScore(saved);
     await initFragmentCalculator(saved);
     await initDungeonFragmentYield(saved);
+    await renderGiftCalculator(saved);
     await renderPrimordialRecommendations();
     await applySelectedTargetRecommendationIfNeeded();
 
@@ -2637,6 +2916,7 @@ async function init() {
   initEquipmentSeasonScore(saved);
   await initFragmentCalculator(saved);
   await initDungeonFragmentYield(saved);
+  await renderGiftCalculator(saved);
 
   initSeasonSelector(containers, saved);
   setAppLoading(true);
@@ -2685,6 +2965,7 @@ async function init() {
     initEquipmentSeasonScore(JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'));
     initFragmentCalculator(JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'));
     initDungeonFragmentYield(JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'));
+    renderGiftCalculator(JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'));
     updateTargetTimeFormDefaults();
     refreshTargetTimeLanguage();
     renderMaterialSource(containers);
