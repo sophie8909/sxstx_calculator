@@ -1038,7 +1038,7 @@ const EN_TRANSLATIONS = {
   side_nav_sources: { 'zh-Hant': '來源', 'zh-Hans': '来源', en: 'Sources' },
   nav_primordial_calculator: { 'zh-Hant': '原初計算機', 'zh-Hans': '原初计算机', en: 'Primordial Star Calculator' },
   nav_fragment_calculator: { 'zh-Hant': '裝備與碎片計算機', 'zh-Hans': '装备与碎片计算机', en: 'Equipment & Fragment Calculator' },
-  nav_feiya_home: { 'zh-Hant': 'Feiya Studio 首頁', 'zh-Hans': 'Feiya Studio 首页', en: 'Feiya Studio Home' },
+  nav_feiya_home: { 'zh-Hant': 'Feiya Studio（更新日誌 & FAQ）', 'zh-Hans': 'Feiya Studio（更新日志 & FAQ）', en: 'Feiya Studio (Blog & FAQ)' },
   seo_explanation_title: { 'zh-Hant': '杖劍傳說素材與養成進度估算工具', 'zh-Hans': '杖剑传说素材与养成进度估算工具', en: 'Sword x Staff material and progression planner' },
   seo_explanation_p1: { 'zh-Hant': '這個杖劍傳說素材計算機提供給正在規劃角色養成、技能材料與裝備養成的玩家使用。輸入目前進度、目標等級與持有素材後，可以快速估算升級所需資源，並整理角色經驗、技能、裝備、寵物、遺物與素材來源等項目。', 'zh-Hans': '这个杖剑传说素材计算机提供给正在规划角色养成、技能材料与装备养成的玩家使用。输入目前进度、目标等级与持有素材后，可以快速估算升级所需资源，并整理角色经验、技能、装备、宠物、遗物与素材来源等项目。', en: 'This Sword x Staff calculator helps players plan character growth, skill materials, and equipment upgrades. Enter current progress, target levels, and owned materials to estimate upgrade resources and review character EXP, skills, equipment, pets, relics, and material sources.' },
   seo_explanation_p2: { 'zh-Hant': '工具適合想提前安排每日素材、比較升級缺口、確認目標時間是否足夠的玩家。計算結果僅供規劃參考，實際素材數量仍可能隨杖劍傳說賽季、伺服器與遊戲版本調整。', 'zh-Hans': '工具适合想提前安排每日素材、比较升级缺口、确认目标时间是否足够的玩家。计算结果仅供规划参考，实际素材数量仍可能随杖剑传说赛季、服务器与游戏版本调整。', en: 'Use it to plan daily materials, compare upgrade gaps, and check whether the target time is enough. Results are planning references only; actual values may change by season, server, or game version.' },
