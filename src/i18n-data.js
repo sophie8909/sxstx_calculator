@@ -1134,7 +1134,7 @@ const EN_TRANSLATIONS = {
   gift_no_purchase_plan: { 'zh-Hant': '\u6c92\u6709\u53ef\u5efa\u8b70\u7684\u8cfc\u8cb7\u65b9\u6848\u3002', 'zh-Hans': '\u6ca1\u6709\u53ef\u5efa\u8bae\u7684\u8d2d\u4e70\u65b9\u6848\u3002', en: 'No recommended purchases.' },
   gift_table_kingdom: { 'zh-Hant': '\u570b\u5ea6', 'zh-Hans': '\u56fd\u5ea6', en: 'Kingdom' },
   gift_table_quality: { 'zh-Hant': '\u54c1\u8cea', 'zh-Hans': '\u54c1\u8d28', en: 'Quality' },
-  gift_table_favor: { 'zh-Hant': '\u6bcf\u4efd\u597d\u611f', 'zh-Hans': '\u6bcf\u4efd\u597d\u611f', en: 'Favor per gift' },
+  gift_table_favor: { 'zh-Hant': '好感度', 'zh-Hans': '好感度', en: 'Favor per gift' },
   gift_table_price: { 'zh-Hant': '\u50f9\u683c', 'zh-Hans': '\u4ef7\u683c', en: 'Price' },
   gift_table_quantity: { 'zh-Hant': '\u8cfc\u8cb7\u6578\u91cf', 'zh-Hans': '\u8d2d\u4e70\u6570\u91cf', en: 'Purchase quantity' },
   gift_table_spent: { 'zh-Hant': '\u82b1\u8cbb', 'zh-Hans': '\u82b1\u8d39', en: 'Spent' },
@@ -1142,7 +1142,7 @@ const EN_TRANSLATIONS = {
   gift_table_needed: { 'zh-Hant': '\u9700\u8981\u6578\u91cf', 'zh-Hans': '\u9700\u8981\u6570\u91cf', en: 'Gifts needed' },
   gift_table_total_cost: { 'zh-Hant': '\u7e3d\u6210\u672c', 'zh-Hans': '\u603b\u6210\u672c', en: 'Total cost' },
   gift_table_overflow: { 'zh-Hant': '\u6ea2\u51fa\u597d\u611f', 'zh-Hans': '\u6ea2\u51fa\u597d\u611f', en: 'Overflow favor' },
-  gift_table_kingdoms: { 'zh-Hant': '\u53ef\u8cfc\u8cb7\u738b\u570b', 'zh-Hans': '\u53ef\u8d2d\u4e70\u738b\u56fd', en: 'Available kingdoms' },
+  gift_table_kingdoms: { 'zh-Hant': '販售國度', 'zh-Hans': '贩售国度', en: 'Available kingdoms' },
 
   fragment_calculator_title: { 'zh-Hant': '碎片神鑄石計算機', 'zh-Hans': '碎片神铸石计算机', en: 'Fragment Divine Forging Stone Calculator' },
   equipment_season_score_title: { 'zh-Hant': '裝備賽季分數', 'zh-Hans': '装备赛季分数', en: 'Equipment Season Score' },
