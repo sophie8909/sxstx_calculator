@@ -1764,7 +1764,9 @@ function formatEquipmentScore(value) {
 
 function getCurrentSeasonEquipmentRows() {
   const currentSeason = normalizeSeasonId(state.seasonId);
-  return equipmentSeasonScoreRows.filter((item) => item.season === currentSeason);
+  return equipmentSeasonScoreRows
+    .filter((item) => item.season === currentSeason && (item.normalKey || item.abyssKey))
+    .slice(-2);
 }
 
 function getSelectedEquipmentClass() {
@@ -1801,8 +1803,10 @@ function hasEquipmentScore(row, scoreColumn) {
 function getEquipmentOptionLabel(option) {
   const displayName = getEquipmentDisplayName(option.row, option.slotId, option.rarity);
   const baseName = getEquipmentBaseName(option.row, option.rarity);
-  const labelName = displayName || baseName;
-  return `${labelName}（${EQUIPMENT_SCORE_COLUMNS[option.scoreColumn].label}）`;
+  const rarityLabel = EQUIPMENT_SCORE_COLUMNS[option.scoreColumn].label;
+  return displayName
+    ? `【${baseName}】${displayName}（${rarityLabel}）`
+    : `【${baseName}】（${rarityLabel}）`;
 }
 
 function getEquipmentOptionsForSlot(slotId) {
