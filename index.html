@@ -92,20 +92,20 @@
     </div>
   </div>
   <div class="app-layout">
-    <nav id="section-side-nav" class="section-side-nav" aria-label="區塊導覽">
-      <p class="section-side-nav-title">快速導覽</p>
-      <a href="#target-time-card">時間</a>
-      <a href="#primordial-star-card">原初</a>
-      <a href="#target-levels-card">目標</a>
-      <a href="#character-exp-card">角色</a>
-      <a href="#relic-card">遺物</a>
-      <a href="#skill-card">技能</a>
-      <a href="#equipment-card">裝備</a>
-      <a href="#pet-card">寵物</a>
-      <a href="#production-card">推車</a>
-      <a href="#owned-materials-card">素材</a>
-      <a href="#results-card">結果</a>
-      <a href="#material-source-card">來源</a>
+    <nav id="section-side-nav" class="section-side-nav" aria-label="區塊導覽" data-i18n-aria-label="side_nav_aria">
+      <p class="section-side-nav-title" data-i18n="side_nav_title">快速導覽</p>
+      <a href="#target-time-card" data-i18n="side_nav_time">時間</a>
+      <a href="#primordial-star-card" data-i18n="side_nav_primordial">原初</a>
+      <a href="#target-levels-card" data-i18n="side_nav_target">目標</a>
+      <a href="#character-exp-card" data-i18n="side_nav_character">角色</a>
+      <a href="#relic-card" data-i18n="side_nav_relic">遺物</a>
+      <a href="#skill-card" data-i18n="side_nav_skill">技能</a>
+      <a href="#equipment-card" data-i18n="side_nav_equipment">裝備</a>
+      <a href="#pet-card" data-i18n="side_nav_pet">寵物</a>
+      <a href="#production-card" data-i18n="side_nav_cart">推車</a>
+      <a href="#owned-materials-card" data-i18n="side_nav_materials">素材</a>
+      <a href="#results-card" data-i18n="side_nav_results">結果</a>
+      <a href="#material-source-card" data-i18n="side_nav_sources">來源</a>
     </nav>
   <div class="app-shell w-full max-w-7xl mx-auto">
     <header class="text-center mb-6">
@@ -117,11 +117,13 @@
       <select id="language-select" class="input-field rounded p-2 w-full md:w-auto md:min-w-[10rem]">
         <option value="zh-Hant" data-i18n="language_traditional">繁體中文</option>
         <option value="zh-Hans" data-i18n="language_simplified">簡體中文</option>
+        <option value="en" data-i18n="language_english">English</option>
       </select>
       <button
         type="button"
         class="calculator-nav-btn bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg text-sm"
         data-page="primordial"
+        data-i18n="nav_primordial_calculator"
       >
         原初計算機
       </button>
@@ -129,6 +131,7 @@
         type="button"
         class="calculator-nav-btn bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg text-sm"
         data-page="fragment"
+        data-i18n="nav_fragment_calculator"
       >
         碎片計算機
       </button>
@@ -144,6 +147,7 @@
       <a
         href="/"
         class="inline-flex items-center justify-center bg-white border border-[#b6d7da] hover:bg-teal-50 text-teal-700 font-bold py-2 px-4 rounded-lg text-sm"
+        data-i18n="nav_feiya_home"
       >
         Feiya Studio 首頁
       </a>
@@ -166,6 +170,7 @@
             inputmode="numeric"
             maxlength="12"
             placeholder="請輸入 12 碼玩家編號"
+            data-i18n-placeholder="player_code_placeholder"
             class="input-field rounded p-2 w-full md:w-auto md:min-w-[12rem]"
           />
         </div>
@@ -197,12 +202,12 @@
     </div>
 
     <section class="seo-explanation card rounded-lg p-4 shadow-lg mb-6 w-full page-section" aria-labelledby="calculator-about-title">
-      <h2 id="calculator-about-title" class="text-xl font-bold text-center mb-3">杖劍傳說素材與養成進度估算工具</h2>
+      <h2 id="calculator-about-title" class="text-xl font-bold text-center mb-3" data-i18n="seo_explanation_title">杖劍傳說素材與養成進度估算工具</h2>
       <div class="seo-explanation-copy text-sm md:text-base leading-relaxed text-slate-700">
-        <p>
+        <p data-i18n="seo_explanation_p1">
           這個杖劍傳說素材計算機提供給正在規劃角色養成、技能材料與裝備養成的玩家使用。輸入目前進度、目標等級與持有素材後，可以快速估算升級所需資源，並整理角色經驗、技能、裝備、寵物、遺物與素材來源等項目。
         </p>
-        <p>
+        <p data-i18n="seo_explanation_p2">
           工具適合想提前安排每日素材、比較升級缺口、確認目標時間是否足夠的玩家。計算結果僅供規劃參考，實際素材數量仍可能隨杖劍傳說賽季、伺服器與遊戲版本調整。
         </p>
       </div>
@@ -246,7 +251,7 @@
       </div>
 
       <div id="dungeon-power-panel" class="hidden mt-4 border-t border-[#cde5e8] pt-4">
-        <h3 class="text-lg font-semibold mb-3">副本戰力需求</h3>
+        <h3 class="text-lg font-semibold mb-3" data-i18n="dungeon_power_title">副本戰力需求</h3>
         <div id="dungeon-power-fields" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3"></div>
       </div>
 
@@ -257,7 +262,7 @@
       <h3 class="text-xl font-bold text-center mb-4" data-i18n="primordial_star_title">原初之星 (累計)</h3>
       <div id="primordial-star-cumulative" class=""></div>
       <div id="primordial-recommendation-panel" class="mt-4 border-t border-[#cde5e8] pt-4">
-        <h4 class="text-lg font-semibold text-center mb-3">累計原初推薦</h4>
+        <h4 class="text-lg font-semibold text-center mb-3" data-i18n="primordial_recommendation_title">累計原初推薦</h4>
         <div id="primordial-recommendation-fields" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
       </div>
     </div>
@@ -269,12 +274,12 @@
       <h3 class="text-xl font-bold text-center mb-4" data-i18n="target_levels_title">目標等級 (共鳴)</h3>
       <div class="flex justify-center mb-4">
         <label class="flex flex-col md:flex-row md:items-center gap-2 text-sm font-semibold">
-          <span>推薦檔位</span>
+          <span data-i18n="recommendation_type_label">推薦檔位</span>
           <select id="target-recommendation-type" class="input-field rounded p-2">
-            <option value="custom">自定義</option>
-            <option value="normal">微氪</option>
-            <option value="heavy">中氪</option>
-            <option value="super">頂氪</option>
+            <option value="custom" data-i18n="recommendation_custom">自定義</option>
+            <option value="normal" data-i18n="recommendation_normal">微氪</option>
+            <option value="heavy" data-i18n="recommendation_heavy">中氪</option>
+            <option value="super" data-i18n="recommendation_super">頂氪</option>
           </select>
         </label>
       </div>
@@ -336,13 +341,13 @@
           <span data-i18n="relic_distribution_title">遺物等級分布</span> <span id="relic-total-display" class="text-sm font-normal text-gray-400">(0/20)</span>
         </h3>
         <div class="absolute right-4 top-4">
-          <div class="inline-flex overflow-hidden rounded-full border border-[#9ed6d8] bg-[#eefafa] p-0.5 shadow-sm" role="group" aria-label="遺物輸入模式">
-            <button type="button" class="relic-mode-btn rounded-full px-3 py-1 text-sm font-semibold" data-mode="compact">新</button>
-            <button type="button" class="relic-mode-btn rounded-full px-3 py-1 text-sm font-semibold" data-mode="legacy">舊</button>
+          <div class="inline-flex overflow-hidden rounded-full border border-[#9ed6d8] bg-[#eefafa] p-0.5 shadow-sm" role="group" aria-label="遺物輸入模式" data-i18n-aria-label="relic_input_mode">
+            <button type="button" class="relic-mode-btn rounded-full px-3 py-1 text-sm font-semibold" data-mode="compact" data-i18n="relic_mode_new">新</button>
+            <button type="button" class="relic-mode-btn rounded-full px-3 py-1 text-sm font-semibold" data-mode="legacy" data-i18n="relic_mode_old">舊</button>
           </div>
-          <select id="relic-ui-mode" class="hidden" aria-label="遺物輸入模式">
-            <option value="compact">快速輸入</option>
-            <option value="legacy">舊版分布</option>
+          <select id="relic-ui-mode" class="hidden" aria-label="遺物輸入模式" data-i18n-aria-label="relic_input_mode">
+            <option value="compact" data-i18n="relic_mode_compact">快速輸入</option>
+            <option value="legacy" data-i18n="relic_mode_legacy">舊版分布</option>
           </select>
         </div>
         <div id="relic-distribution-inputs" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 xl:grid-cols-12 gap-4"></div>
@@ -426,58 +431,58 @@
   <div id="fragment-calculator-panel" class="hidden">
     <div class="card rounded-xl p-0 shadow-lg mb-6 w-full">
       <div class="border-b sticky top-0 z-10 px-4 py-2 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
-        <h2 class="text-2xl font-bold">碎片神鑄石計算機</h2>
+        <h2 class="text-2xl font-bold" data-i18n="fragment_calculator_title">碎片神鑄石計算機</h2>
       </div>
       <div class="p-4 space-y-4">
-        <div id="fragment-calculator-status" class="text-sm text-slate-600">正在載入碎片資料...</div>
+        <div id="fragment-calculator-status" class="text-sm text-slate-600" data-i18n="fragment_loading">正在載入碎片資料...</div>
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           <label class="block min-w-0">
-            <span class="block text-sm font-semibold mb-1">碎片種類</span>
+            <span class="block text-sm font-semibold mb-1" data-i18n="fragment_kind_label">碎片種類</span>
             <select id="fragment-kind" class="input-field rounded p-2 w-full"></select>
           </label>
           <label class="block min-w-0">
-            <span class="block text-sm font-semibold mb-1">碎片數量</span>
+            <span class="block text-sm font-semibold mb-1" data-i18n="fragment_quantity_label">碎片數量</span>
             <input id="fragment-quantity" type="number" min="0" step="1" class="input-field rounded p-2 w-full text-right" value="0" />
           </label>
           <label class="block min-w-0">
-            <span class="block text-sm font-semibold mb-1">分解後神鑄石數量</span>
+            <span class="block text-sm font-semibold mb-1" data-i18n="fragment_stone_output_label">分解後神鑄石數量</span>
             <input id="fragment-stone-output" type="number" min="0" step="0.01" class="input-field rounded p-2 w-full text-right" value="0" disabled />
           </label>
           <label class="block min-w-0">
-            <span class="block text-sm font-semibold mb-1">當前碎片售價（每組）</span>
+            <span class="block text-sm font-semibold mb-1" data-i18n="fragment_price_label">當前碎片售價（每組）</span>
             <input id="fragment-price" type="number" min="0" step="0.01" class="input-field rounded p-2 w-full text-right" value="0" />
           </label>
           <label class="block min-w-0">
-            <span class="block text-sm font-semibold mb-1">當前神鑄石售價（每組）</span>
+            <span class="block text-sm font-semibold mb-1" data-i18n="fragment_stone_price_label">當前神鑄石售價（每組）</span>
             <input id="fragment-stone-price" type="number" min="0" step="0.01" class="input-field rounded p-2 w-full text-right" value="0" />
           </label>
           <label class="block min-w-0">
-            <span class="block text-sm font-semibold mb-1">碎片分解神鑄石後售價（每組）</span>
+            <span class="block text-sm font-semibold mb-1" data-i18n="fragment_decomposed_sale_label">碎片分解神鑄石後售價（每組）</span>
             <input id="fragment-decomposed-sale" type="number" min="0" step="0.01" class="input-field rounded p-2 w-full text-right" value="0" disabled />
           </label>
           <label class="block min-w-0">
             <span class="flex items-center gap-2 text-sm font-semibold mb-1 min-h-[28px]">
-              <span>交易行出售抽成</span>
-              <span class="inline-flex overflow-hidden rounded-full border border-[#9ed6d8] bg-[#eefafa] p-0.5 shadow-sm" role="group" aria-label="手續費模式">
-                <button type="button" class="fragment-fee-mode-btn rounded-full px-3 py-1 text-xs font-semibold" data-mode="normal">正常</button>
-                <button type="button" class="fragment-fee-mode-btn rounded-full px-3 py-1 text-xs font-semibold" data-mode="discount">優惠</button>
+              <span data-i18n="fragment_fee_label">交易行出售抽成</span>
+              <span class="inline-flex overflow-hidden rounded-full border border-[#9ed6d8] bg-[#eefafa] p-0.5 shadow-sm" role="group" aria-label="手續費模式" data-i18n-aria-label="fragment_fee_mode">
+                <button type="button" class="fragment-fee-mode-btn rounded-full px-3 py-1 text-xs font-semibold" data-mode="normal" data-i18n="fragment_fee_normal">正常</button>
+                <button type="button" class="fragment-fee-mode-btn rounded-full px-3 py-1 text-xs font-semibold" data-mode="discount" data-i18n="fragment_fee_discount">優惠</button>
               </span>
             </span>
             <select id="fragment-fee-rate" class="input-field rounded p-2 w-full"></select>
           </label>
           <label class="block min-w-0">
-            <span class="block text-sm font-semibold mb-1 min-h-[28px]">神鑄石抽成後收入</span>
+            <span class="block text-sm font-semibold mb-1 min-h-[28px]" data-i18n="fragment_sale_after_fee_label">神鑄石抽成後收入</span>
             <input id="fragment-sale-after-fee" type="number" min="0" step="0.01" class="input-field rounded p-2 w-full text-right" value="0" disabled />
           </label>
           <label class="block min-w-0">
-            <span class="block text-sm font-semibold mb-1 min-h-[28px]">買碎片分解賣神鑄石收入</span>
+            <span class="block text-sm font-semibold mb-1 min-h-[28px]" data-i18n="fragment_profit_label">買碎片分解賣神鑄石收入</span>
             <input id="fragment-profit" type="number" step="0.01" class="input-field rounded p-2 w-full text-right" value="0" disabled />
           </label>
         </div>
         <input id="fragment-discount-fee" type="checkbox" class="hidden" />
         <div class="border-t border-[#cde5e8] pt-4 space-y-3">
           <label class="block min-w-0">
-            <span class="block text-sm font-semibold mb-1">副本神鑄石收益</span>
+            <span class="block text-sm font-semibold mb-1" data-i18n="fragment_dungeon_yield_label">副本神鑄石收益</span>
             <select id="fragment-dungeon-select" class="input-field rounded p-2 w-full"></select>
           </label>
           <div id="fragment-dungeon-yield-result" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"></div>
@@ -642,6 +647,7 @@
           <a href="https://discord.com/channels/1215600132003725353/1431686816674611372"
             class="text-teal-700 hover:text-teal-600 hover:underline underline-offset-2 break-all"
             target="_blank" rel="noopener"
+            data-i18n="footer_discord_link"
           >
             前往 Discord 討論串
           </a>

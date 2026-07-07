@@ -124,9 +124,9 @@ const PRIMORDIAL_RECOMMENDATION_SHEET = {
 };
 const DUNGEON_DIFFICULTIES = ['普通', '困難', '惡夢', '煉獄', '深淵'];
 const PRIMORDIAL_RECOMMENDATION_TIERS = [
-  ['normal', '微氪'],
-  ['heavy', '中氪'],
-  ['super', '頂氪'],
+  ['normal', 'recommendation_normal'],
+  ['heavy', 'recommendation_heavy'],
+  ['super', 'recommendation_super'],
 ];
 const FRAGMENT_FEE_RATES = {
   normal: [10, 20, 30, 50, 70],
@@ -205,7 +205,7 @@ function formatPresetOptionTime(iso) {
   const date = new Date(iso);
   if (!Number.isFinite(date.getTime())) return String(iso || '').trim();
 
-  return date.toLocaleString('zh-TW', {
+  return date.toLocaleString(getCurrentLanguage() === 'en' ? 'en-US' : getCurrentLanguage() === 'zh-Hans' ? 'zh-CN' : 'zh-TW', {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -595,6 +595,26 @@ function escapeHtml(value) {
     .replace(/'/g, '&#39;');
 }
 
+function getDifficultyLabel(difficulty) {
+  const key = {
+    '普通': 'difficulty_normal',
+    '困難': 'difficulty_hard',
+    '惡夢': 'difficulty_nightmare',
+    '煉獄': 'difficulty_hell',
+    '深淵': 'difficulty_abyss',
+  }[difficulty];
+  return key ? t(key) : difficulty;
+}
+
+function getFragmentTierLabel(tier) {
+  const key = {
+    '奇蹟': 'fragment_tier_miracle',
+    '神話': 'fragment_tier_mythic',
+    '深淵': 'fragment_tier_abyss',
+  }[tier];
+  return key ? t(key) : tier;
+}
+
 function formatPowerRequirement(value) {
   const raw = String(value || '').replace(/,/g, '').trim();
   if (!raw) return '';
@@ -604,9 +624,9 @@ function formatPowerRequirement(value) {
 
   if (Math.abs(amountWan) >= 10000) {
     const amountYi = amountWan / 10000;
-    return `${Number.isInteger(amountYi) ? amountYi : amountYi.toFixed(2).replace(/\.?0+$/, '')}億`;
+    return t('power_unit_yi', { value: Number.isInteger(amountYi) ? amountYi : amountYi.toFixed(2).replace(/\.?0+$/, '') });
   }
-  return `${amountWan}萬`;
+  return t('power_unit_wan', { value: amountWan });
 }
 
 async function fetchDungeonPowerRows() {
@@ -869,7 +889,8 @@ async function renderPrimordialRecommendations() {
 
   const rows = await fetchPrimordialRecommendationRows();
 
-  fields.innerHTML = PRIMORDIAL_RECOMMENDATION_TIERS.map(([key, label]) => {
+  fields.innerHTML = PRIMORDIAL_RECOMMENDATION_TIERS.map(([key, labelKey]) => {
+    const label = t(labelKey);
     const row = getRecommendationForCurrentSeason(rows, key);
     const value = row?.star || '';
     return `
@@ -879,7 +900,7 @@ async function renderPrimordialRecommendations() {
           class="input-field rounded p-2 w-full text-right"
           value="${escapeHtml(value)}"
           disabled
-          aria-label="${escapeHtml(label)}累計原初推薦"
+          aria-label="${escapeHtml(t('primordial_recommendation_aria', { label }))}"
         />
       </label>
     `;
@@ -1029,16 +1050,16 @@ function updateSpeedupHints(nextLevelHours, targetHours) {
   const nextLevelEl = document.getElementById('bed-levelup-speedup');
   const targetEl = document.getElementById('bed-target-speedup');
 
-  if (nextLevelEl) nextLevelEl.textContent = `+${nextLevelHours} 小時`;
-  if (targetEl) targetEl.textContent = `+${targetHours} 小時`;
+  if (nextLevelEl) nextLevelEl.textContent = t('hours_delta', { hours: nextLevelHours });
+  if (targetEl) targetEl.textContent = t('hours_delta', { hours: targetHours });
 }
 
 function refreshBedProgressSummary() {
   const { currentLevel, ownedExp, bedHourly, targetLevel } = readBedProgressState();
   const nextLevelTitle = document.getElementById('bed-levelup-summary-title');
   const targetLevelTitle = document.getElementById('bed-target-summary-title');
-  if (nextLevelTitle) nextLevelTitle.textContent = `升至下一級（Lv. ${currentLevel + 1}）`;
-  if (targetLevelTitle) targetLevelTitle.textContent = `升至目標等級（Lv. ${targetLevel}）`;
+  if (nextLevelTitle) nextLevelTitle.textContent = t('levelup_summary_title', { level: currentLevel + 1 });
+  if (targetLevelTitle) targetLevelTitle.textContent = t('target_summary_title', { level: targetLevel });
 
   const nextLevelBonusHours = getNextLevelSpeedupHours(currentLevel, ownedExp, bedHourly);
   const { levelupTs, minutesNeeded } = computeEtaToNextLevel(
@@ -1122,7 +1143,7 @@ function getMaterialInput(source, material, role) {
 function formatMaterialSourceNumber(value, maximumFractionDigits = 2) {
   const number = Number(value);
   if (!Number.isFinite(number) || number === 0) return '0';
-  return number.toLocaleString('zh-TW', { maximumFractionDigits });
+  return number.toLocaleString(getCurrentLanguage() === 'en' ? 'en-US' : getCurrentLanguage() === 'zh-Hans' ? 'zh-CN' : 'zh-TW', { maximumFractionDigits });
 }
 
 
@@ -1200,7 +1221,7 @@ async function fetchServerRows() {
     console.error('伺服器資料載入失敗', err);
     serverRowsCache = [];
     const errorEl = document.getElementById('player-code-error');
-    if (errorEl) errorEl.textContent = '伺服器資料載入失敗';
+    if (errorEl) errorEl.textContent = t('server_data_load_failed');
     return serverRowsCache;
   }
 }
@@ -1300,6 +1321,27 @@ function refreshSeasonSelectorLabels() {
 
   Array.from(seasonSelector.options).forEach((option) => {
     option.textContent = t(`season_name_${option.value}`);
+  });
+}
+
+function refreshTargetTimeLanguage() {
+  const customOption = document.querySelector('#target-time-preset option[value="__custom__"]');
+  if (customOption) customOption.textContent = t('custom_target_time');
+
+  const hiddenField = document.getElementById('target-time');
+  const displayBox = document.getElementById('target-time-display');
+  if (!hiddenField?.value || !displayBox || displayBox.classList.contains('hidden')) return;
+
+  const date = new Date(hiddenField.value);
+  if (!Number.isFinite(date.getTime())) return;
+  displayBox.textContent = date.toLocaleString(getCurrentLanguage() === 'en' ? 'en-US' : getCurrentLanguage() === 'zh-Hans' ? 'zh-CN' : 'zh-TW', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
   });
 }
 
@@ -1439,12 +1481,12 @@ function updateTargetTimeFormDefaults() {
       serverSelect.value = targetServer;
       if (serverManualInput) serverManualInput.value = '';
       if (serverManualWrap) serverManualWrap.classList.add('hidden');
-      if (serverManualToggle) serverManualToggle.textContent = '手動輸入';
+      if (serverManualToggle) serverManualToggle.textContent = t('relay_server_manual_toggle');
     } else {
       serverSelect.value = '';
       if (serverManualInput) serverManualInput.value = targetServer;
       if (serverManualWrap) serverManualWrap.classList.remove('hidden');
-      if (serverManualToggle) serverManualToggle.textContent = '使用清單';
+      if (serverManualToggle) serverManualToggle.textContent = t('relay_server_use_list');
     }
   }
   if (seasonSelect && seasonSelector?.value) seasonSelect.value = String(seasonSelector.value).toUpperCase();
@@ -1477,7 +1519,7 @@ function getFragmentDisplayName(row) {
 function formatFragmentNumber(value, fractionDigits = 0) {
   const number = Number(value);
   if (!Number.isFinite(number)) return '0';
-  return number.toLocaleString('zh-Hant', {
+  return number.toLocaleString(getCurrentLanguage() === 'en' ? 'en-US' : getCurrentLanguage() === 'zh-Hans' ? 'zh-CN' : 'zh-Hant', {
     maximumFractionDigits: fractionDigits,
     minimumFractionDigits: 0,
   });
@@ -1642,25 +1684,31 @@ function getPreviousSeasonFinalDungeon(rows, row) {
 }
 
 function renderDungeonYieldCard(item, extraLabel = '') {
+  const itemName = getDifficultyLabel(item.name);
   if (!item.fragment) {
     return `
       <div class="info-item rounded-lg p-3">
-        <div class="font-bold">${escapeHtml(item.name)}${extraLabel}</div>
-        <div class="text-sm text-slate-600 mt-1">無對應碎片資料</div>
+        <div class="font-bold">${escapeHtml(itemName)}${extraLabel}</div>
+        <div class="text-sm text-slate-600 mt-1">${t('fragment_no_matching_data')}</div>
       </div>
     `;
   }
 
   const total = item.pieces * item.stonePerPiece;
   const fragmentName = item.fragment.endsWith('碎片') ? item.fragment : `${item.fragment}碎片`;
+  const tierLabel = getFragmentTierLabel(item.tier);
   const detail = item.stonePerPiece > 0
-    ? `${formatFragmentNumber(item.pieces)} 片 × ${formatFragmentNumber(item.stonePerPiece, 2)} = ${formatFragmentNumber(total, 2)}`
-    : '缺少分解神鑄石數量';
+    ? t('fragment_yield_detail', {
+        pieces: formatFragmentNumber(item.pieces),
+        stone: formatFragmentNumber(item.stonePerPiece, 2),
+        total: formatFragmentNumber(total, 2),
+      })
+    : t('fragment_missing_stone_quantity');
 
   return `
     <div class="info-item rounded-lg p-3">
-      <div class="font-bold">${escapeHtml(item.name)}${extraLabel}</div>
-      <div class="text-sm text-slate-600 mt-1">${escapeHtml(fragmentName)}（${escapeHtml(item.tier)}）</div>
+      <div class="font-bold">${escapeHtml(itemName)}${extraLabel}</div>
+      <div class="text-sm text-slate-600 mt-1">${escapeHtml(fragmentName)}（${escapeHtml(tierLabel)}）</div>
       <div class="mt-2 text-lg font-bold">${formatFragmentNumber(total, 2)}</div>
       <div class="text-xs text-slate-500">${escapeHtml(detail)}</div>
     </div>
@@ -1674,7 +1722,7 @@ function updateDungeonFragmentYield() {
 
   const row = dungeonFragmentYieldRowsCache?.[Number(select.value)] || null;
   if (!row) {
-    result.innerHTML = '<div class="text-sm text-slate-600">目前沒有可用的副本碎片資料。</div>';
+    result.innerHTML = `<div class="text-sm text-slate-600">${t('fragment_no_dungeon_yield_data')}</div>`;
     return;
   }
 
@@ -1683,7 +1731,10 @@ function updateDungeonFragmentYield() {
   if (previousRow) {
     const hasPreviousAbyss = previousRow.abyss_fragment && previousRow.abyss_stone > 0;
     rows.push({
-      name: `上季最後副本 ${previousRow.dungeon_name} ${hasPreviousAbyss ? '深淵' : '煉獄'}`,
+      name: t('previous_final_dungeon_label', {
+        dungeon: previousRow.dungeon_name,
+        difficulty: hasPreviousAbyss ? t('difficulty_abyss') : t('difficulty_hell'),
+      }),
       fragment: hasPreviousAbyss ? previousRow.abyss_fragment : previousRow.equipment_fragment,
       tier: hasPreviousAbyss ? DUNGEON_FRAGMENT_REWARDS.abyss.tier : DUNGEON_FRAGMENT_REWARDS.hell.tier,
       pieces: hasPreviousAbyss ? previousRow.abyss_pieces : previousRow.hell_pieces,
@@ -1699,7 +1750,7 @@ async function initFragmentCalculator(saved = {}) {
   const status = document.getElementById('fragment-calculator-status');
   if (!select) return;
 
-  if (status) status.textContent = '正在載入碎片資料...';
+  if (status) status.textContent = t('fragment_loading');
   const rows = await fetchFragmentRows();
   const visibleRows = filterRowsForCurrentAndPreviousFinal(rows);
   select.innerHTML = visibleRows.map((row) => {
@@ -1708,15 +1759,15 @@ async function initFragmentCalculator(saved = {}) {
   }).join('');
 
   if (visibleRows.length === 0) {
-    select.innerHTML = '<option value="">目前賽季沒有可用的碎片資料</option>';
+    select.innerHTML = `<option value="">${t('fragment_no_current_season_options')}</option>`;
     select.disabled = true;
-    if (status) status.textContent = '目前賽季沒有可用的碎片與神鑄石資料。';
+    if (status) status.textContent = t('fragment_no_current_season_status');
   } else {
     select.disabled = false;
     const savedValue = saved['fragment-kind'];
     const hasSavedOption = Array.from(select.options).some((option) => option.value === savedValue);
     if (hasSavedOption) select.value = savedValue;
-    if (status) status.textContent = `已載入 ${visibleRows.length} 筆當前賽季與上季末副本分解資料。`;
+    if (status) status.textContent = t('fragment_loaded_status', { count: visibleRows.length });
   }
 
   updateFragmentFeeRates();
@@ -1735,7 +1786,7 @@ async function initDungeonFragmentYield(saved = {}) {
   }).join('');
 
   if (visibleRows.length === 0) {
-    select.innerHTML = '<option value="">目前賽季沒有可用的副本資料</option>';
+    select.innerHTML = `<option value="">${t('fragment_no_dungeon_options')}</option>`;
     select.disabled = true;
   } else {
     select.disabled = false;
@@ -1770,7 +1821,8 @@ function renderDungeonPowerPanel(preset, dungeonPowerRows) {
   const powerRow = findDungeonPowerRow(preset, dungeonPowerRows, state.seasonId);
   fields.innerHTML = DUNGEON_DIFFICULTIES.map((difficulty) => {
     const value = formatPowerRequirement(powerRow?.powers?.[difficulty] || '');
-    const safeDifficulty = escapeHtml(difficulty);
+    const difficultyLabel = getDifficultyLabel(difficulty);
+    const safeDifficulty = escapeHtml(difficultyLabel);
     const safeValue = escapeHtml(value);
     return `
       <label class="block min-w-0">
@@ -1780,7 +1832,7 @@ function renderDungeonPowerPanel(preset, dungeonPowerRows) {
           value="${safeValue}"
           placeholder=""
           disabled
-          aria-label="${safeDifficulty}戰力需求"
+          aria-label="${escapeHtml(t('power_requirement_aria', { difficulty: difficultyLabel }))}"
         />
       </label>
     `;
@@ -1840,14 +1892,14 @@ async function initServerSelector(containers) {
     }
 
     if (!PLAYER_CODE_PATTERN.test(playerCode)) {
-      if (playerError) playerError.textContent = '玩家編號需為 12 碼數字';
+      if (playerError) playerError.textContent = t('player_code_invalid');
       return;
     }
 
     const serverId = playerCode.slice(0, 7);
     const server = getServerById(serverId);
     if (!server) {
-      if (playerError) playerError.textContent = '找不到對應伺服器';
+      if (playerError) playerError.textContent = t('player_code_server_not_found');
       return;
     }
 
@@ -1982,7 +2034,7 @@ async function initTargetTimeControls(containers) {
 
       if (ts) {
         const d = new Date(ts);
-        displayBox.textContent = d.toLocaleString('zh-TW', {
+        displayBox.textContent = d.toLocaleString(getCurrentLanguage() === 'en' ? 'en-US' : getCurrentLanguage() === 'zh-Hans' ? 'zh-CN' : 'zh-TW', {
           year: 'numeric',
           month: '2-digit',
           day: '2-digit',
@@ -2298,7 +2350,7 @@ function getNotifyLeadMinutes() {
 }
 
 async function enableLevelUpNotifications() {
-  const locale = getCurrentLanguage() === 'zh-Hans' ? 'zh-CN' : 'zh-TW';
+  const locale = getCurrentLanguage() === 'en' ? 'en-US' : getCurrentLanguage() === 'zh-Hans' ? 'zh-CN' : 'zh-TW';
   const { currentLevel, ownedWan, ownedExp, bedHourly } = readBedProgressState();
   const notifyTime = getNotifyLeadMinutes();
 
@@ -2336,7 +2388,7 @@ async function enableLevelUpNotifications() {
 }
 
 async function enableTargetLevelCalendar() {
-  const locale = getCurrentLanguage() === 'zh-Hans' ? 'zh-CN' : 'zh-TW';
+  const locale = getCurrentLanguage() === 'en' ? 'en-US' : getCurrentLanguage() === 'zh-Hans' ? 'zh-CN' : 'zh-TW';
   const { currentLevel, ownedWan, ownedExp, bedHourly, targetLevel } = readBedProgressState();
   const notifyTime = getNotifyLeadMinutes();
 
@@ -2372,7 +2424,7 @@ async function enableTargetLevelCalendar() {
 }
 
 async function enableNextSeasonExpHoardCalendar() {
-  const locale = getCurrentLanguage() === 'zh-Hans' ? 'zh-CN' : 'zh-TW';
+  const locale = getCurrentLanguage() === 'en' ? 'en-US' : getCurrentLanguage() === 'zh-Hans' ? 'zh-CN' : 'zh-TW';
   const seasonEndTs = getSeasonEndTargetTimestamp();
   if (!Number.isFinite(seasonEndTs)) {
     alert(t('calendar_hoard_unavailable'));
@@ -2459,7 +2511,10 @@ async function init() {
     applySelectedTargetRecommendationIfNeeded().then(() => triggerRecalculate(containers));
     updateFragmentFeeRates();
     updateFragmentCalculator();
+    initFragmentCalculator(JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'));
+    initDungeonFragmentYield(JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'));
     updateTargetTimeFormDefaults();
+    refreshTargetTimeLanguage();
     renderMaterialSource(containers);
     loadAllInputs(['season-select']);
     bindTooltipLayers();

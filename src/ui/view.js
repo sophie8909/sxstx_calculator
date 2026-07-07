@@ -12,6 +12,7 @@ import {
 } from '../model.js';
 
 function getLocale() {
+  if (getCurrentLanguage() === 'en') return 'en-US';
   return getCurrentLanguage() === 'zh-Hans' ? 'zh-CN' : 'zh-TW';
 }
 
@@ -90,18 +91,18 @@ function formatEstimateText(estimatedRanges = []) {
       if (typeof range === 'string') {
         const [rawFrom, rawTo] = range.split('-').map((value) => Number(value));
         if (!Number.isFinite(rawFrom) || !Number.isFinite(rawTo)) return '';
-        return rawFrom === rawTo ? `${rawFrom}等級` : `${rawFrom}~${rawTo}等級`;
+        return rawFrom === rawTo ? t('level_value', { level: rawFrom }) : t('level_range', { from: rawFrom, to: rawTo });
       }
 
       const from = Number(range?.from);
       const to = Number(range?.to);
       if (!Number.isFinite(from) || !Number.isFinite(to)) return '';
-      return from === to ? `${from}等級` : `${from}~${to}等級`;
+      return from === to ? t('level_value', { level: from }) : t('level_range', { from, to });
     })
     .filter(Boolean);
 
   if (!ranges.length) return '';
-  return `（${ranges.join('、')}等級數據為推算）`;
+  return t('estimated_range_hint', { ranges: ranges.join(t('list_separator')) });
 }
 
 function getReadonlyBadgeHtml() {
@@ -160,9 +161,9 @@ export function renderPrimordialStarCumulative(container) {
   container.innerHTML = '';
 
   [
-    ['primordial-star-accumulated', '目前累計原初', t('quantity_placeholder'), false],
-    ['primordial-star-current-season', '當前賽季目標原初', t('readonly_badge'), true],
-    ['primordial-star-total', '加入當前賽季後總原初', t('readonly_badge'), true],
+    ['primordial-star-accumulated', t('primordial_star_accumulated'), t('quantity_placeholder'), false],
+    ['primordial-star-current-season', t('primordial_star_current_season'), t('readonly_badge'), true],
+    ['primordial-star-total', t('primordial_star_total'), t('readonly_badge'), true],
   ].forEach(([id, labelText, placeholder, isReadOnly]) => {
     const group = createInputGroup(id, labelText, placeholder, false);
     const label = group.querySelector('label');
@@ -269,8 +270,8 @@ export function renderRelicDistribution(container) {
   container.className = 'grid grid-cols-1 md:grid-cols-2 gap-4';
 
   [
-    ['relic-completed-level', '已完成遺物等級', '等級'],
-    ['relic-next-progress', '下一等級進度數量', '0-20'],
+    ['relic-completed-level', t('relic_completed_level'), t('level_placeholder')],
+    ['relic-next-progress', t('relic_next_progress'), '0-20'],
   ].forEach(([id, labelText, placeholder]) => {
     const group = createInputGroup(id, labelText, placeholder);
     const label = group.querySelector('label');
@@ -451,20 +452,20 @@ export function renderCharBed(container) {
 
   const boostArea = el('div', ['character-exp-speedup-results']);
   const boostTitle = el('div', ['character-exp-speedup-results-title']);
-  boostTitle.textContent = '加速效果';
+  boostTitle.textContent = t('speedup_effect_title');
   const boostNextRow = el('div', ['character-exp-speedup-result-row']);
   const boostNextLabel = el('span');
-  boostNextLabel.textContent = '用於下一級';
+  boostNextLabel.textContent = t('speedup_for_next_level');
   const boostNext = el('span', ['character-exp-speedup-result-value']);
   boostNext.id = 'bed-levelup-speedup';
-  boostNext.textContent = '+0 小時';
+  boostNext.textContent = t('hours_delta', { hours: 0 });
   boostNextRow.append(boostNextLabel, boostNext);
   const boostTargetRow = el('div', ['character-exp-speedup-result-row']);
   const boostTargetLabel = el('span');
-  boostTargetLabel.textContent = '用於目標時間';
+  boostTargetLabel.textContent = t('speedup_for_target_time');
   const boostTarget = el('span', ['character-exp-speedup-result-value']);
   boostTarget.id = 'bed-target-speedup';
-  boostTarget.textContent = '+0 小時';
+  boostTarget.textContent = t('hours_delta', { hours: 0 });
   boostTargetRow.append(boostTargetLabel, boostTarget);
   boostArea.append(boostTitle, boostNextRow, boostTargetRow);
 
@@ -479,12 +480,12 @@ export function renderCharBed(container) {
 
     const table = el('dl', ['character-exp-summary-table']);
     const expLabel = el('dt');
-    expLabel.textContent = '所需經驗';
+    expLabel.textContent = t('required_exp_label');
     const expValue = el('dd');
     expValue.id = expId;
     expValue.textContent = '--';
     const timeLabel = el('dt');
-    timeLabel.textContent = '時間';
+    timeLabel.textContent = t('time_label');
     const timeValue = el('dd');
     timeValue.id = timeId;
     timeValue.textContent = '--';
@@ -497,13 +498,13 @@ export function renderCharBed(container) {
   infoBox.append(
     makeSummaryBlock({
       titleId: 'bed-levelup-summary-title',
-      defaultTitle: '升至下一級（Lv. --）',
+      defaultTitle: t('levelup_summary_title', { level: '--' }),
       expId: 'bed-levelup-exp',
       timeId: 'bed-levelup-time',
     }),
     makeSummaryBlock({
       titleId: 'bed-target-summary-title',
-      defaultTitle: '升至目標等級（Lv. --）',
+      defaultTitle: t('target_summary_title', { level: '--' }),
       expId: 'bed-target-exp',
       timeId: 'bed-target-eta',
     })
@@ -552,7 +553,7 @@ export function renderCharBed(container) {
   const expRequiredButton = el('button', ['inline-flex', 'items-center', 'justify-center', 'rounded-lg', 'border', 'border-[#b6d7da]', 'bg-white', 'px-4', 'py-2', 'text-teal-700', 'hover:bg-teal-50', 'w-full', 'md:w-auto']);
   expRequiredButton.type = 'button';
   expRequiredButton.id = 'open-exp-required-form-btn';
-  expRequiredButton.textContent = '填寫升級所需經驗';
+  expRequiredButton.textContent = t('open_exp_required_form');
 
   reminderPanel.append(hoardRow, hoardButton, expRequiredButton);
 
@@ -828,7 +829,7 @@ export function renderResults(containers, payload, missingFiles = [], options = 
     root.insertAdjacentHTML(
       'afterbegin',
       `<div class="bg-yellow-900/50 border-l-4 border-yellow-400 text-yellow-300 p-3 rounded-lg mb-3 text-sm">
-        <p>目前使用上次暫存資料</p>
+        <p>${t('cache_fallback_notice')}</p>
        </div>`
     );
   }
@@ -907,7 +908,7 @@ export function renderLevelupTimeText(minutesNeeded, levelupTs) {
   }
 
   if (minutesNeeded <= 0) {
-    display.textContent = '已可升級';
+    display.textContent = t('ready_to_level');
     return;
   }
 
@@ -918,7 +919,7 @@ export function renderLevelupTimeText(minutesNeeded, levelupTs) {
     hour: '2-digit',
     minute: '2-digit',
   });
-  display.textContent = `${fmt(minutesNeeded)} 分鐘，約 ${timeText}`;
+  display.textContent = t('minutes_approx_time', { minutes: fmt(minutesNeeded), time: timeText });
 }
 
 export function renderTargetEtaText(minutesNeeded, etaTs) {
@@ -931,7 +932,7 @@ export function renderTargetEtaText(minutesNeeded, etaTs) {
   }
 
   if (minutesNeeded <= 0) {
-    display.textContent = '已達成';
+    display.textContent = t('target_done');
     return;
   }
 
@@ -942,7 +943,7 @@ export function renderTargetEtaText(minutesNeeded, etaTs) {
     hour: '2-digit',
     minute: '2-digit',
   });
-  display.textContent = `${fmt(minutesNeeded)} 分鐘，約 ${timeText}`;
+  display.textContent = t('minutes_approx_time', { minutes: fmt(minutesNeeded), time: timeText });
 }
 
 export function renderLevelupExpText(expNeeded) {

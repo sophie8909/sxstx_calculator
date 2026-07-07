@@ -11,6 +11,7 @@ function detectDefaultLanguage() {
   if (saved) return saved;
 
   const locale = (navigator.language || '').toLowerCase();
+  if (locale.startsWith('en')) return 'en';
   if (locale.startsWith('zh-cn') || locale.startsWith('zh-sg')) return 'zh-Hans';
   return 'zh-Hant';
 }
@@ -53,6 +54,16 @@ export function applyStaticTranslations() {
   document.querySelectorAll('[data-i18n-placeholder]').forEach((node) => {
     const key = node.dataset.i18nPlaceholder;
     if (key) node.placeholder = t(key);
+  });
+
+  document.querySelectorAll('[data-i18n-aria-label]').forEach((node) => {
+    const key = node.dataset.i18nAriaLabel;
+    if (key) node.setAttribute('aria-label', t(key));
+  });
+
+  document.querySelectorAll('[data-i18n-title]').forEach((node) => {
+    const key = node.dataset.i18nTitle;
+    if (key) node.setAttribute('title', t(key));
   });
 
   const clearButton = document.getElementById('clear-local-data-btn');

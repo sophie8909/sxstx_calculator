@@ -305,13 +305,13 @@ function applyInitialContext() {
       serverSelect.disabled = false;
       if (serverManualInput) serverManualInput.value = '';
       if (serverManualWrap) serverManualWrap.classList.add('hidden');
-      if (serverManualToggle) serverManualToggle.textContent = '手動輸入';
+      if (serverManualToggle) serverManualToggle.textContent = t('relay_server_manual_toggle');
     } else {
       serverSelect.value = '';
       serverSelect.disabled = true;
       if (serverManualInput) serverManualInput.value = server;
       if (serverManualWrap) serverManualWrap.classList.remove('hidden');
-      if (serverManualToggle) serverManualToggle.textContent = '使用清單';
+      if (serverManualToggle) serverManualToggle.textContent = t('relay_server_use_list');
     }
   }
 
@@ -364,8 +364,8 @@ function applyCategoryDescriptionLock() {
     if (dungeonSelect) dungeonSelect.classList.add('hidden');
     descriptionInput.classList.remove('hidden');
     descriptionInput.value = categorySelect.value === SEASON_START_CATEGORY
-      ? SEASON_START_DESCRIPTION
-      : SEASON_END_DESCRIPTION;
+      ? t('relay_season_start_auto_description')
+      : t('relay_season_end_auto_description');
     descriptionInput.disabled = true;
     descriptionInput.setAttribute('aria-readonly', 'true');
     return;
@@ -390,7 +390,9 @@ function applyCategoryDescriptionLock() {
   descriptionInput.classList.remove('hidden');
   if (descriptionInput.disabled && (
     descriptionInput.value === SEASON_START_DESCRIPTION ||
-    descriptionInput.value === SEASON_END_DESCRIPTION
+    descriptionInput.value === SEASON_END_DESCRIPTION ||
+    descriptionInput.value === t('relay_season_start_auto_description') ||
+    descriptionInput.value === t('relay_season_end_auto_description')
   )) {
     descriptionInput.value = '';
   }
