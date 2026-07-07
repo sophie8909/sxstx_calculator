@@ -1193,6 +1193,12 @@ function getExpRequiredFormDefaults() {
 
 function openExpRequiredFormInterface(event) {
   event?.preventDefault();
+  const card = document.getElementById('exp-required-inline-card');
+  if (card && !card.classList.contains('hidden')) {
+    window.dispatchEvent(new CustomEvent('expRequiredFormCollapse'));
+    return;
+  }
+
   window.dispatchEvent(new CustomEvent('expRequiredFormPrefill', {
     detail: getExpRequiredFormDefaults(),
   }));

@@ -591,6 +591,7 @@ async function init() {
   window.addEventListener('expRequiredFormPrefill', (event) => {
     applyExpRequiredPrefill(event.detail || {});
   });
+  window.addEventListener('expRequiredFormCollapse', collapseExpRequiredForm);
   document.getElementById('relay-server-manual-toggle')?.addEventListener('click', syncManualServerVisibility);
   document.getElementById('relay-description-category')?.addEventListener('change', applyCategoryDescriptionLock);
   document.getElementById('relay-season')?.addEventListener('change', () => {
