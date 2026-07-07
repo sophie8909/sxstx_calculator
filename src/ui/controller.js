@@ -1944,14 +1944,8 @@ function getGiftRowsData() {
   };
 }
 
-function getGiftLevelBounds(levelRows) {
-  const levels = levelRows.map((row) => row.level).filter(Number.isFinite);
-  if (!levels.length) return { min: 1, max: 1 };
-  return {
-    min: Math.min(...levels),
-    max: Math.max(...levels),
-  };
-}
+const GIFT_CURRENT_LEVEL_BOUNDS = { min: 1, max: 99 };
+const GIFT_TARGET_LEVEL_BOUNDS = { min: 1, max: 100 };
 
 function clampGiftLevelInput(input, bounds, fallback) {
   if (!input) return fallback;
@@ -2280,12 +2274,11 @@ function updateGiftCalculatorResult() {
   if (!result || !purchaseTable || !comparison) return;
 
   const { levelRows, qualityRows } = getGiftRowsData();
-  const bounds = getGiftLevelBounds(levelRows);
   const currentLevelInput = document.getElementById('gift-current-level');
   const targetLevelInput = document.getElementById('gift-target-level');
-  const currentLevel = clampGiftLevelInput(currentLevelInput, bounds, bounds.min);
+  const currentLevel = clampGiftLevelInput(currentLevelInput, GIFT_CURRENT_LEVEL_BOUNDS, GIFT_CURRENT_LEVEL_BOUNDS.min);
   const currentFavor = Math.max(0, Math.trunc(parseNumberValue(document.getElementById('gift-current-favor')?.value)));
-  const targetLevel = clampGiftLevelInput(targetLevelInput, bounds, Math.min(bounds.max, currentLevel + 1));
+  const targetLevel = clampGiftLevelInput(targetLevelInput, GIFT_TARGET_LEVEL_BOUNDS, Math.min(GIFT_TARGET_LEVEL_BOUNDS.max, currentLevel + 1));
   const selectedCategory = document.getElementById('gift-category')?.value || 'daily';
   const { totalNeeded, missingLevels } = calculateGiftFavorNeeded(levelRows, currentLevel, currentFavor, targetLevel);
 
@@ -2343,7 +2336,6 @@ async function renderGiftCalculator(saved = {}) {
   if (status) status.textContent = t('gift_loading');
   await fetchGiftCalculatorRows();
   const { levelRows, qualityRows } = getGiftRowsData();
-  const bounds = getGiftLevelBounds(levelRows);
 
   categorySelect.innerHTML = getGiftCategoryOptions()
     .map(([value, label]) => `<option value="${value}">${escapeHtml(label)}</option>`)
@@ -2358,12 +2350,12 @@ async function renderGiftCalculator(saved = {}) {
     `;
   }).join('');
 
-  currentLevelInput.disabled = levelRows.length === 0;
-  targetLevelInput.disabled = levelRows.length === 0;
-  categorySelect.disabled = qualityRows.length === 0;
+  currentLevelInput.disabled = false;
+  targetLevelInput.disabled = false;
+  categorySelect.disabled = false;
 
-  const defaultCurrentLevel = levelRows[0]?.level || bounds.min;
-  const defaultTargetLevel = levelRows[Math.min(1, levelRows.length - 1)]?.level || defaultCurrentLevel;
+  const defaultCurrentLevel = GIFT_CURRENT_LEVEL_BOUNDS.min;
+  const defaultTargetLevel = Math.min(GIFT_TARGET_LEVEL_BOUNDS.max, defaultCurrentLevel + 1);
   const defaults = {
     'gift-current-level': String(defaultCurrentLevel),
     'gift-target-level': String(defaultTargetLevel),
@@ -2371,6 +2363,7 @@ async function renderGiftCalculator(saved = {}) {
   };
 
   [currentLevelInput, targetLevelInput].forEach((input) => {
+    const bounds = input.id === 'gift-current-level' ? GIFT_CURRENT_LEVEL_BOUNDS : GIFT_TARGET_LEVEL_BOUNDS;
     input.min = String(bounds.min);
     input.max = String(bounds.max);
     input.value = saved[input.id] || defaults[input.id] || String(bounds.min);
