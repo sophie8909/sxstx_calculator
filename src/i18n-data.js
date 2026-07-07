@@ -918,7 +918,7 @@ const EN_TRANSLATIONS = {
   section_summary: { en: 'Results summary' },
   server_label: { en: 'Server:' },
   player_id: { en: 'Player ID:' },
-  job_label: { 'zh-Hant': '職位：', 'zh-Hans': '职位：', en: 'Class:' },
+  job_label: { 'zh-Hant': '職業：', 'zh-Hans': '职业：', en: 'Class:' },
   job_sage: { 'zh-Hant': '賢者', 'zh-Hans': '贤者', en: 'Sage' },
   job_warlock: { 'zh-Hant': '術士', 'zh-Hans': '术士', en: 'Warlock' },
   job_fighter: { 'zh-Hant': '鬥士', 'zh-Hans': '斗士', en: 'Fighter' },
