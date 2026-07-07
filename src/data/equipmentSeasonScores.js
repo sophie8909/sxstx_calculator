@@ -53,7 +53,7 @@ export const EQUIPMENT_SEASON_SCORE_ROWS = [
   {
     season: 's4',
     normalKey: '雲朵',
-    scores: { miracle: 3810 },
+    scores: { mythic: 3810 },
     displayNames: {
       normal: {
         off_weapon: { knuckle: '星流月落', shield: '星天邀約' },
