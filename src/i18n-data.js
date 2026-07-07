@@ -1099,6 +1099,7 @@ const EN_TRANSLATIONS = {
   gift_loading: { 'zh-Hant': '\u6b63\u5728\u8f09\u5165\u79ae\u7269\u8cc7\u6599...', 'zh-Hans': '\u6b63\u5728\u8f7d\u5165\u793c\u7269\u8d44\u6599...', en: 'Loading gift data...' },
   gift_loaded_status: { 'zh-Hant': '\u5df2\u8f09\u5165 {levels} \u7b46\u597d\u611f\u7b49\u7d1a\u8207 {qualities} \u7b46\u79ae\u7269\u54c1\u8cea\u8cc7\u6599\u3002', 'zh-Hans': '\u5df2\u8f7d\u5165 {levels} \u7b14\u597d\u611f\u7b49\u7ea7\u4e0e {qualities} \u7b14\u793c\u7269\u54c1\u8d28\u8d44\u6599\u3002', en: 'Loaded {levels} favor levels and {qualities} gift qualities.' },
   gift_no_data: { 'zh-Hant': '\u76ee\u524d\u6c92\u6709\u53ef\u7528\u7684\u79ae\u7269\u8cc7\u6599\u3002', 'zh-Hans': '\u76ee\u524d\u6ca1\u6709\u53ef\u7528\u7684\u793c\u7269\u8d44\u6599\u3002', en: 'No gift data is available.' },
+  gift_missing_level_data: { 'zh-Hant': '缺少好感等級資料：{levels}', 'zh-Hans': '缺少好感等级资料：{levels}', en: 'Missing favor level data: {levels}' },
   gift_current_level_label: { 'zh-Hant': '\u76ee\u524d\u597d\u611f\u7b49\u7d1a', 'zh-Hans': '\u76ee\u524d\u597d\u611f\u7b49\u7ea7', en: 'Current favor level' },
   gift_current_favor_label: { 'zh-Hant': '\u76ee\u524d\u7b49\u7d1a\u5df2\u7d2f\u7a4d\u597d\u611f', 'zh-Hans': '\u76ee\u524d\u7b49\u7ea7\u5df2\u7d2f\u79ef\u597d\u611f', en: 'Current favor in level' },
   gift_target_level_label: { 'zh-Hant': '\u76ee\u6a19\u597d\u611f\u7b49\u7d1a', 'zh-Hans': '\u76ee\u6807\u597d\u611f\u7b49\u7ea7', en: 'Target favor level' },

@@ -569,7 +569,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
           <label class="block min-w-0">
             <span class="block text-sm font-semibold mb-1" data-i18n="gift_current_level_label">目前好感等級</span>
-            <select id="gift-current-level" class="input-field rounded p-2 w-full"></select>
+            <input id="gift-current-level" type="number" min="1" step="1" class="input-field rounded p-2 w-full text-right" />
           </label>
           <label class="block min-w-0">
             <span class="block text-sm font-semibold mb-1" data-i18n="gift_current_favor_label">目前等級已累積好感</span>
@@ -577,7 +577,7 @@
           </label>
           <label class="block min-w-0">
             <span class="block text-sm font-semibold mb-1" data-i18n="gift_target_level_label">目標好感等級</span>
-            <select id="gift-target-level" class="input-field rounded p-2 w-full"></select>
+            <input id="gift-target-level" type="number" min="1" step="1" class="input-field rounded p-2 w-full text-right" />
           </label>
           <label class="block min-w-0">
             <span class="block text-sm font-semibold mb-1" data-i18n="gift_quality_label">禮物品質</span>
@@ -588,6 +588,8 @@
             <select id="gift-category" class="input-field rounded p-2 w-full"></select>
           </label>
         </div>
+
+        <div id="gift-level-warning" class="hidden rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800"></div>
 
         <div id="gift-calculator-result" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"></div>
 

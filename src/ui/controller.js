@@ -1799,20 +1799,55 @@ function getGiftRowsData() {
   };
 }
 
+function getGiftLevelBounds(levelRows) {
+  const levels = levelRows.map((row) => row.level).filter(Number.isFinite);
+  if (!levels.length) return { min: 1, max: 1 };
+  return {
+    min: Math.min(...levels),
+    max: Math.max(...levels),
+  };
+}
+
+function clampGiftLevelInput(input, bounds, fallback) {
+  if (!input) return fallback;
+
+  input.min = String(bounds.min);
+  input.max = String(bounds.max);
+  input.step = '1';
+
+  const rawValue = Number(input.value);
+  const fallbackLevel = Number.isInteger(fallback) ? fallback : bounds.min;
+  const integerValue = Number.isFinite(rawValue) ? Math.trunc(rawValue) : fallbackLevel;
+  const clampedValue = Math.min(bounds.max, Math.max(bounds.min, integerValue));
+  input.value = String(clampedValue);
+  return clampedValue;
+}
+
 function calculateGiftFavorNeeded(levelRows, currentLevel, currentFavor, targetLevel) {
-  if (!levelRows.length || targetLevel <= currentLevel) return 0;
+  if (!levelRows.length || targetLevel <= currentLevel) {
+    return { totalNeeded: 0, missingLevels: [] };
+  }
 
   const levelMap = new Map(levelRows.map((row) => [row.level, row.requiredFavor]));
+  const missingLevels = [];
   let total = 0;
   for (let level = currentLevel; level < targetLevel; level += 1) {
-    const required = levelMap.get(level) || 0;
+    const required = levelMap.get(level);
+    if (!Number.isFinite(required)) {
+      missingLevels.push(level);
+      continue;
+    }
     if (level === currentLevel) {
       total += Math.max(0, required - currentFavor);
     } else {
       total += required;
     }
   }
-  return total;
+
+  return {
+    totalNeeded: missingLevels.length ? null : total,
+    missingLevels,
+  };
 }
 
 function getGiftAvailableKingdoms(row, category) {
@@ -1822,9 +1857,10 @@ function getGiftAvailableKingdoms(row, category) {
 
 function calculateGiftQualityResult(row, totalNeeded, category) {
   const favorPerGift = parseNumberValue(row?.favor);
-  const giftsNeeded = favorPerGift > 0 ? Math.ceil(totalNeeded / favorPerGift) : 0;
-  const totalCost = giftsNeeded * parseNumberValue(row?.price);
-  const overflowFavor = Math.max(0, giftsNeeded * favorPerGift - totalNeeded);
+  const canCalculateQuantity = Number.isFinite(totalNeeded) && totalNeeded >= 0;
+  const giftsNeeded = canCalculateQuantity && favorPerGift > 0 ? Math.ceil(totalNeeded / favorPerGift) : null;
+  const totalCost = giftsNeeded === null ? null : giftsNeeded * parseNumberValue(row?.price);
+  const overflowFavor = giftsNeeded === null ? null : Math.max(0, giftsNeeded * favorPerGift - totalNeeded);
   return {
     quality: row?.quality || '',
     favorPerGift,
@@ -1837,6 +1873,7 @@ function calculateGiftQualityResult(row, totalNeeded, category) {
 }
 
 function formatGiftNumber(value) {
+  if (!Number.isFinite(value)) return '--';
   return formatFragmentNumber(value, 2);
 }
 
@@ -1885,21 +1922,39 @@ function renderGiftComparisonTable(results) {
 function updateGiftCalculatorResult() {
   const result = document.getElementById('gift-calculator-result');
   const comparison = document.getElementById('gift-comparison-table');
+  const warning = document.getElementById('gift-level-warning');
   if (!result || !comparison) return;
 
   const { levelRows, qualityRows } = getGiftRowsData();
-  const currentLevel = parseNumberValue(document.getElementById('gift-current-level')?.value);
+  const bounds = getGiftLevelBounds(levelRows);
+  const currentLevelInput = document.getElementById('gift-current-level');
+  const targetLevelInput = document.getElementById('gift-target-level');
+  const currentLevel = clampGiftLevelInput(currentLevelInput, bounds, bounds.min);
   const currentFavor = parseNumberValue(document.getElementById('gift-current-favor')?.value);
-  const targetLevel = parseNumberValue(document.getElementById('gift-target-level')?.value);
+  const targetLevel = clampGiftLevelInput(targetLevelInput, bounds, Math.min(bounds.max, currentLevel + 1));
   const selectedQuality = document.getElementById('gift-quality')?.value || '';
   const selectedCategory = document.getElementById('gift-category')?.value || 'daily';
-  const totalNeeded = calculateGiftFavorNeeded(levelRows, currentLevel, currentFavor, targetLevel);
+  const { totalNeeded, missingLevels } = calculateGiftFavorNeeded(levelRows, currentLevel, currentFavor, targetLevel);
   const selectedRow = qualityRows.find((row) => row.quality === selectedQuality) || qualityRows[0] || null;
 
   if (!levelRows.length || !qualityRows.length || !selectedRow) {
+    if (warning) {
+      warning.classList.add('hidden');
+      warning.textContent = '';
+    }
     result.innerHTML = `<div class="text-sm text-slate-600">${t('gift_no_data')}</div>`;
     comparison.innerHTML = '';
     return;
+  }
+
+  if (warning) {
+    if (missingLevels.length) {
+      warning.textContent = t('gift_missing_level_data', { levels: missingLevels.join(getCurrentLanguage() === 'en' ? ', ' : '、') });
+      warning.classList.remove('hidden');
+    } else {
+      warning.textContent = '';
+      warning.classList.add('hidden');
+    }
   }
 
   const selectedResult = calculateGiftQualityResult(selectedRow, totalNeeded, selectedCategory);
@@ -1918,23 +1973,18 @@ function updateGiftCalculatorResult() {
 
 async function renderGiftCalculator(saved = {}) {
   const status = document.getElementById('gift-calculator-status');
-  const currentLevelSelect = document.getElementById('gift-current-level');
-  const targetLevelSelect = document.getElementById('gift-target-level');
+  const currentLevelInput = document.getElementById('gift-current-level');
+  const targetLevelInput = document.getElementById('gift-target-level');
   const qualitySelect = document.getElementById('gift-quality');
   const categorySelect = document.getElementById('gift-category');
   const currentFavorInput = document.getElementById('gift-current-favor');
-  if (!currentLevelSelect || !targetLevelSelect || !qualitySelect || !categorySelect) return;
+  if (!currentLevelInput || !targetLevelInput || !qualitySelect || !categorySelect) return;
 
   if (status) status.textContent = t('gift_loading');
   await fetchGiftCalculatorRows();
   const { levelRows, qualityRows } = getGiftRowsData();
+  const bounds = getGiftLevelBounds(levelRows);
 
-  currentLevelSelect.innerHTML = levelRows
-    .map((row) => `<option value="${row.level}">${escapeHtml(t('level_value', { level: row.level }))}</option>`)
-    .join('');
-  targetLevelSelect.innerHTML = levelRows
-    .map((row) => `<option value="${row.level}">${escapeHtml(t('level_value', { level: row.level }))}</option>`)
-    .join('');
   qualitySelect.innerHTML = qualityRows
     .map((row) => `<option value="${escapeHtml(row.quality)}">${escapeHtml(row.quality)}</option>`)
     .join('');
@@ -1942,12 +1992,12 @@ async function renderGiftCalculator(saved = {}) {
     .map(([value, label]) => `<option value="${value}">${escapeHtml(label)}</option>`)
     .join('');
 
-  currentLevelSelect.disabled = levelRows.length === 0;
-  targetLevelSelect.disabled = levelRows.length === 0;
+  currentLevelInput.disabled = levelRows.length === 0;
+  targetLevelInput.disabled = levelRows.length === 0;
   qualitySelect.disabled = qualityRows.length === 0;
   categorySelect.disabled = qualityRows.length === 0;
 
-  const defaultCurrentLevel = levelRows[0]?.level || 1;
+  const defaultCurrentLevel = levelRows[0]?.level || bounds.min;
   const defaultTargetLevel = levelRows[Math.min(1, levelRows.length - 1)]?.level || defaultCurrentLevel;
   const defaults = {
     'gift-current-level': String(defaultCurrentLevel),
@@ -1956,7 +2006,13 @@ async function renderGiftCalculator(saved = {}) {
     'gift-category': 'daily',
   };
 
-  [currentLevelSelect, targetLevelSelect, qualitySelect, categorySelect].forEach((select) => {
+  [currentLevelInput, targetLevelInput].forEach((input) => {
+    input.min = String(bounds.min);
+    input.max = String(bounds.max);
+    input.value = saved[input.id] || defaults[input.id] || String(bounds.min);
+  });
+
+  [qualitySelect, categorySelect].forEach((select) => {
     const desiredValue = saved[select.id] || defaults[select.id] || '';
     const hasOption = Array.from(select.options).some((option) => option.value === desiredValue);
     if (hasOption) select.value = desiredValue;
