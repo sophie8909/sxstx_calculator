@@ -1791,6 +1791,15 @@ function getGiftCategoryOptions() {
   ];
 }
 
+const GIFT_KINGDOMS = [
+  { id: 'forest', labelKey: 'gift_kingdom_forest', aliases: ['森之國', '森之国'] },
+  { id: 'marsh', labelKey: 'gift_kingdom_marsh', aliases: ['澤之國', '泽之国'] },
+  { id: 'dragon', labelKey: 'gift_kingdom_dragon', aliases: ['龍之國', '龙之国'] },
+  { id: 'wing', labelKey: 'gift_kingdom_wing', aliases: ['羽之國', '羽之国'] },
+  { id: 'hapadi', labelKey: 'gift_kingdom_hapadi', aliases: ['哈帕迪'] },
+  { id: 'ignis', labelKey: 'gift_kingdom_ignis', aliases: ['伊格尼斯'] },
+];
+
 function getGiftRowsData() {
   const rows = giftRowsCache || [];
   return {
@@ -1877,11 +1886,225 @@ function formatGiftNumber(value) {
   return formatFragmentNumber(value, 2);
 }
 
+function getGiftKingdomLabel(kingdom) {
+  return t(kingdom.labelKey);
+}
+
+function readGiftKingdomCoins() {
+  return new Map(GIFT_KINGDOMS.map((kingdom) => {
+    const value = parseNumberValue(document.getElementById(`gift-coins-${kingdom.id}`)?.value);
+    return [kingdom.id, Math.max(0, Math.trunc(value))];
+  }));
+}
+
+function getAvailableGiftKingdoms(row, category) {
+  const value = String(row?.categories?.[category] || '').trim();
+  if (!value) return [];
+  return GIFT_KINGDOMS.filter((kingdom) => (
+    kingdom.aliases.some((alias) => value.includes(alias))
+  ));
+}
+
 function renderGiftSummaryItem(labelKey, value) {
   return `
     <div class="info-item rounded-lg p-3">
       <div class="text-xs font-semibold text-slate-500">${escapeHtml(t(labelKey))}</div>
       <div class="mt-1 text-lg font-bold text-slate-800">${escapeHtml(value)}</div>
+    </div>
+  `;
+}
+
+function compareGiftPlanState(a, b) {
+  if (!b) return a;
+  if (!a) return b;
+  if (a.cost !== b.cost) return a.cost < b.cost ? a : b;
+  if (a.gifts !== b.gifts) return a.gifts < b.gifts ? a : b;
+  return a;
+}
+
+function addGiftPurchase(purchases, option, quantity) {
+  if (quantity <= 0) return purchases;
+  const next = purchases.map((purchase) => ({ ...purchase }));
+  const existing = next.find((purchase) => purchase.kingdomId === option.kingdom.id && purchase.quality === option.quality);
+  if (existing) {
+    existing.quantity += quantity;
+    existing.spent += option.price * quantity;
+    existing.obtainedFavor += option.favor * quantity;
+  } else {
+    next.push({
+      kingdomId: option.kingdom.id,
+      kingdomLabel: getGiftKingdomLabel(option.kingdom),
+      quality: option.quality,
+      favorPerGift: option.favor,
+      price: option.price,
+      quantity,
+      spent: option.price * quantity,
+      obtainedFavor: option.favor * quantity,
+    });
+  }
+  return next;
+}
+
+function buildGiftPurchaseOptions(qualityRows, category, coinsByKingdom) {
+  const options = [];
+  qualityRows.forEach((row) => {
+    const favor = Math.trunc(parseNumberValue(row.favor));
+    const price = Math.trunc(parseNumberValue(row.price));
+    if (!row.quality || favor <= 0 || price <= 0) return;
+
+    getAvailableGiftKingdoms(row, category).forEach((kingdom) => {
+      const budget = coinsByKingdom.get(kingdom.id) || 0;
+      const maxCount = Math.floor(budget / price);
+      if (maxCount <= 0) return;
+      options.push({
+        kingdom,
+        quality: row.quality,
+        favor,
+        price,
+        maxCount,
+      });
+    });
+  });
+  return options;
+}
+
+function optimizeGiftKingdomOptions(options, favorCap, budget) {
+  let states = new Map([[0, { favor: 0, cost: 0, gifts: 0, purchases: [] }]]);
+
+  options.forEach((option) => {
+    let remaining = option.maxCount;
+    let chunkSize = 1;
+    while (remaining > 0) {
+      const quantity = Math.min(chunkSize, remaining);
+      const chunk = {
+        favor: option.favor * quantity,
+        cost: option.price * quantity,
+        gifts: quantity,
+        option,
+        quantity,
+      };
+      const nextStates = new Map(states);
+      states.forEach((stateValue) => {
+        if (stateValue.cost + chunk.cost > budget) return;
+        const favor = Math.min(favorCap, stateValue.favor + chunk.favor);
+        const candidate = {
+          favor,
+          cost: stateValue.cost + chunk.cost,
+          gifts: stateValue.gifts + chunk.gifts,
+          purchases: addGiftPurchase(stateValue.purchases, chunk.option, chunk.quantity),
+        };
+        nextStates.set(favor, compareGiftPlanState(candidate, nextStates.get(favor)));
+      });
+      states = nextStates;
+      remaining -= quantity;
+      chunkSize *= 2;
+    }
+  });
+
+  return states;
+}
+
+function combineGiftKingdomPlans(currentStates, kingdomStates, favorCap) {
+  const nextStates = new Map();
+  currentStates.forEach((currentState) => {
+    kingdomStates.forEach((kingdomState) => {
+      const favor = Math.min(favorCap, currentState.favor + kingdomState.favor);
+      const candidate = {
+        favor,
+        cost: currentState.cost + kingdomState.cost,
+        gifts: currentState.gifts + kingdomState.gifts,
+        purchases: [...currentState.purchases, ...kingdomState.purchases],
+      };
+      nextStates.set(favor, compareGiftPlanState(candidate, nextStates.get(favor)));
+    });
+  });
+  return nextStates;
+}
+
+function compareGiftFinalPlan(candidate, best, neededFavor) {
+  if (!best) return candidate;
+  const candidateReachable = candidate.favor >= neededFavor;
+  const bestReachable = best.favor >= neededFavor;
+  if (candidateReachable !== bestReachable) return candidateReachable ? candidate : best;
+
+  if (candidateReachable) {
+    const candidateOverflow = candidate.favor - neededFavor;
+    const bestOverflow = best.favor - neededFavor;
+    if (candidateOverflow !== bestOverflow) return candidateOverflow < bestOverflow ? candidate : best;
+    if (candidate.cost !== best.cost) return candidate.cost < best.cost ? candidate : best;
+    if (candidate.gifts !== best.gifts) return candidate.gifts < best.gifts ? candidate : best;
+    return best;
+  }
+
+  if (candidate.favor !== best.favor) return candidate.favor > best.favor ? candidate : best;
+  if (candidate.cost !== best.cost) return candidate.cost < best.cost ? candidate : best;
+  if (candidate.gifts !== best.gifts) return candidate.gifts < best.gifts ? candidate : best;
+  return best;
+}
+
+function optimizeGiftPurchases(qualityRows, category, coinsByKingdom, neededFavor) {
+  if (!Number.isFinite(neededFavor) || neededFavor <= 0) {
+    return { favor: 0, cost: 0, gifts: 0, purchases: [], reachable: neededFavor === 0 };
+  }
+
+  const options = buildGiftPurchaseOptions(qualityRows, category, coinsByKingdom);
+  const maxGiftFavor = options.reduce((max, option) => Math.max(max, option.favor), 0);
+  const favorCap = Math.max(neededFavor, neededFavor + maxGiftFavor - 1);
+  let combinedStates = new Map([[0, { favor: 0, cost: 0, gifts: 0, purchases: [] }]]);
+
+  GIFT_KINGDOMS.forEach((kingdom) => {
+    const kingdomOptions = options.filter((option) => option.kingdom.id === kingdom.id);
+    const kingdomStates = optimizeGiftKingdomOptions(kingdomOptions, favorCap, coinsByKingdom.get(kingdom.id) || 0);
+    combinedStates = combineGiftKingdomPlans(combinedStates, kingdomStates, favorCap);
+  });
+
+  let best = null;
+  combinedStates.forEach((stateValue) => {
+    best = compareGiftFinalPlan(stateValue, best, neededFavor);
+  });
+
+  return {
+    ...(best || { favor: 0, cost: 0, gifts: 0, purchases: [] }),
+    reachable: Boolean(best && best.favor >= neededFavor),
+  };
+}
+
+function renderGiftPurchaseTable(purchases) {
+  if (!purchases.length) {
+    return `<div class="text-sm text-slate-600">${escapeHtml(t('gift_no_purchase_plan'))}</div>`;
+  }
+
+  const rows = purchases
+    .slice()
+    .sort((a, b) => a.kingdomLabel.localeCompare(b.kingdomLabel) || a.price - b.price || a.quality.localeCompare(b.quality))
+    .map((item) => `
+      <tr>
+        <td class="border border-[#cde5e8] px-3 py-2 font-semibold">${escapeHtml(item.kingdomLabel)}</td>
+        <td class="border border-[#cde5e8] px-3 py-2">${escapeHtml(item.quality)}</td>
+        <td class="border border-[#cde5e8] px-3 py-2 text-right">${formatGiftNumber(item.favorPerGift)}</td>
+        <td class="border border-[#cde5e8] px-3 py-2 text-right">${formatGiftNumber(item.price)}</td>
+        <td class="border border-[#cde5e8] px-3 py-2 text-right">${formatGiftNumber(item.quantity)}</td>
+        <td class="border border-[#cde5e8] px-3 py-2 text-right">${formatGiftNumber(item.spent)}</td>
+        <td class="border border-[#cde5e8] px-3 py-2 text-right">${formatGiftNumber(item.obtainedFavor)}</td>
+      </tr>
+    `).join('');
+
+  return `
+    <div class="responsive-table">
+      <table class="text-sm border-collapse">
+        <thead>
+          <tr class="bg-[#eefafa] text-slate-700">
+            <th class="border border-[#cde5e8] px-3 py-2 text-left">${escapeHtml(t('gift_table_kingdom'))}</th>
+            <th class="border border-[#cde5e8] px-3 py-2 text-left">${escapeHtml(t('gift_table_quality'))}</th>
+            <th class="border border-[#cde5e8] px-3 py-2 text-right">${escapeHtml(t('gift_table_favor'))}</th>
+            <th class="border border-[#cde5e8] px-3 py-2 text-right">${escapeHtml(t('gift_table_price'))}</th>
+            <th class="border border-[#cde5e8] px-3 py-2 text-right">${escapeHtml(t('gift_table_quantity'))}</th>
+            <th class="border border-[#cde5e8] px-3 py-2 text-right">${escapeHtml(t('gift_table_spent'))}</th>
+            <th class="border border-[#cde5e8] px-3 py-2 text-right">${escapeHtml(t('gift_table_obtained'))}</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
     </div>
   `;
 }
@@ -1892,9 +2115,6 @@ function renderGiftComparisonTable(results) {
       <td class="border border-[#cde5e8] px-3 py-2 font-semibold">${escapeHtml(item.quality)}</td>
       <td class="border border-[#cde5e8] px-3 py-2 text-right">${formatGiftNumber(item.favorPerGift)}</td>
       <td class="border border-[#cde5e8] px-3 py-2 text-right">${formatGiftNumber(item.price)}</td>
-      <td class="border border-[#cde5e8] px-3 py-2 text-right">${formatGiftNumber(item.giftsNeeded)}</td>
-      <td class="border border-[#cde5e8] px-3 py-2 text-right">${formatGiftNumber(item.totalCost)}</td>
-      <td class="border border-[#cde5e8] px-3 py-2 text-right">${formatGiftNumber(item.overflowFavor)}</td>
       <td class="border border-[#cde5e8] px-3 py-2">${escapeHtml(item.kingdoms)}</td>
     </tr>
   `).join('');
@@ -1907,9 +2127,6 @@ function renderGiftComparisonTable(results) {
             <th class="border border-[#cde5e8] px-3 py-2 text-left">${escapeHtml(t('gift_table_quality'))}</th>
             <th class="border border-[#cde5e8] px-3 py-2 text-right">${escapeHtml(t('gift_table_favor'))}</th>
             <th class="border border-[#cde5e8] px-3 py-2 text-right">${escapeHtml(t('gift_table_price'))}</th>
-            <th class="border border-[#cde5e8] px-3 py-2 text-right">${escapeHtml(t('gift_table_needed'))}</th>
-            <th class="border border-[#cde5e8] px-3 py-2 text-right">${escapeHtml(t('gift_table_total_cost'))}</th>
-            <th class="border border-[#cde5e8] px-3 py-2 text-right">${escapeHtml(t('gift_table_overflow'))}</th>
             <th class="border border-[#cde5e8] px-3 py-2 text-left">${escapeHtml(t('gift_table_kingdoms'))}</th>
           </tr>
         </thead>
@@ -1921,28 +2138,28 @@ function renderGiftComparisonTable(results) {
 
 function updateGiftCalculatorResult() {
   const result = document.getElementById('gift-calculator-result');
+  const purchaseTable = document.getElementById('gift-purchase-table');
   const comparison = document.getElementById('gift-comparison-table');
   const warning = document.getElementById('gift-level-warning');
-  if (!result || !comparison) return;
+  if (!result || !purchaseTable || !comparison) return;
 
   const { levelRows, qualityRows } = getGiftRowsData();
   const bounds = getGiftLevelBounds(levelRows);
   const currentLevelInput = document.getElementById('gift-current-level');
   const targetLevelInput = document.getElementById('gift-target-level');
   const currentLevel = clampGiftLevelInput(currentLevelInput, bounds, bounds.min);
-  const currentFavor = parseNumberValue(document.getElementById('gift-current-favor')?.value);
+  const currentFavor = Math.max(0, Math.trunc(parseNumberValue(document.getElementById('gift-current-favor')?.value)));
   const targetLevel = clampGiftLevelInput(targetLevelInput, bounds, Math.min(bounds.max, currentLevel + 1));
-  const selectedQuality = document.getElementById('gift-quality')?.value || '';
   const selectedCategory = document.getElementById('gift-category')?.value || 'daily';
   const { totalNeeded, missingLevels } = calculateGiftFavorNeeded(levelRows, currentLevel, currentFavor, targetLevel);
-  const selectedRow = qualityRows.find((row) => row.quality === selectedQuality) || qualityRows[0] || null;
 
-  if (!levelRows.length || !qualityRows.length || !selectedRow) {
+  if (!levelRows.length || !qualityRows.length) {
     if (warning) {
       warning.classList.add('hidden');
       warning.textContent = '';
     }
     result.innerHTML = `<div class="text-sm text-slate-600">${t('gift_no_data')}</div>`;
+    purchaseTable.innerHTML = '';
     comparison.innerHTML = '';
     return;
   }
@@ -1957,16 +2174,23 @@ function updateGiftCalculatorResult() {
     }
   }
 
-  const selectedResult = calculateGiftQualityResult(selectedRow, totalNeeded, selectedCategory);
+  const coinsByKingdom = readGiftKingdomCoins();
+  const canOptimize = Number.isFinite(totalNeeded);
+  const plan = canOptimize
+    ? optimizeGiftPurchases(qualityRows, selectedCategory, coinsByKingdom, totalNeeded)
+    : { favor: null, cost: null, purchases: [], reachable: false };
+  const missingFavor = Number.isFinite(totalNeeded) ? Math.max(0, totalNeeded - plan.favor) : null;
+  const overflowFavor = canOptimize ? (plan.reachable ? Math.max(0, plan.favor - totalNeeded) : 0) : null;
   result.innerHTML = [
     renderGiftSummaryItem('gift_total_needed_label', formatGiftNumber(totalNeeded)),
-    renderGiftSummaryItem('gift_favor_per_gift_label', formatGiftNumber(selectedResult.favorPerGift)),
-    renderGiftSummaryItem('gift_gifts_needed_label', formatGiftNumber(selectedResult.giftsNeeded)),
-    renderGiftSummaryItem('gift_total_cost_label', formatGiftNumber(selectedResult.totalCost)),
-    renderGiftSummaryItem('gift_overflow_label', formatGiftNumber(selectedResult.overflowFavor)),
-    renderGiftSummaryItem('gift_available_kingdoms_label', selectedResult.kingdoms),
+    renderGiftSummaryItem('gift_obtainable_favor_label', formatGiftNumber(plan.favor)),
+    renderGiftSummaryItem('gift_missing_favor_label', formatGiftNumber(missingFavor)),
+    renderGiftSummaryItem('gift_total_cost_label', formatGiftNumber(plan.cost)),
+    renderGiftSummaryItem('gift_overflow_label', formatGiftNumber(overflowFavor)),
+    renderGiftSummaryItem('gift_reachable_label', plan.reachable ? t('gift_reachable_yes') : t('gift_reachable_no')),
   ].join('');
 
+  purchaseTable.innerHTML = renderGiftPurchaseTable(plan.purchases);
   const comparisonResults = qualityRows.map((row) => calculateGiftQualityResult(row, totalNeeded, selectedCategory));
   comparison.innerHTML = renderGiftComparisonTable(comparisonResults);
 }
@@ -1975,26 +2199,31 @@ async function renderGiftCalculator(saved = {}) {
   const status = document.getElementById('gift-calculator-status');
   const currentLevelInput = document.getElementById('gift-current-level');
   const targetLevelInput = document.getElementById('gift-target-level');
-  const qualitySelect = document.getElementById('gift-quality');
   const categorySelect = document.getElementById('gift-category');
   const currentFavorInput = document.getElementById('gift-current-favor');
-  if (!currentLevelInput || !targetLevelInput || !qualitySelect || !categorySelect) return;
+  const kingdomCoinsContainer = document.getElementById('gift-kingdom-coins');
+  if (!currentLevelInput || !targetLevelInput || !categorySelect || !kingdomCoinsContainer) return;
 
   if (status) status.textContent = t('gift_loading');
   await fetchGiftCalculatorRows();
   const { levelRows, qualityRows } = getGiftRowsData();
   const bounds = getGiftLevelBounds(levelRows);
 
-  qualitySelect.innerHTML = qualityRows
-    .map((row) => `<option value="${escapeHtml(row.quality)}">${escapeHtml(row.quality)}</option>`)
-    .join('');
   categorySelect.innerHTML = getGiftCategoryOptions()
     .map(([value, label]) => `<option value="${value}">${escapeHtml(label)}</option>`)
     .join('');
+  kingdomCoinsContainer.innerHTML = GIFT_KINGDOMS.map((kingdom) => {
+    const inputId = `gift-coins-${kingdom.id}`;
+    return `
+      <label class="block min-w-0">
+        <span class="block text-sm font-semibold mb-1">${escapeHtml(t('gift_kingdom_coin_label', { kingdom: getGiftKingdomLabel(kingdom) }))}</span>
+        <input id="${inputId}" type="number" min="0" step="1" class="input-field rounded p-2 w-full text-right" value="0" />
+      </label>
+    `;
+  }).join('');
 
   currentLevelInput.disabled = levelRows.length === 0;
   targetLevelInput.disabled = levelRows.length === 0;
-  qualitySelect.disabled = qualityRows.length === 0;
   categorySelect.disabled = qualityRows.length === 0;
 
   const defaultCurrentLevel = levelRows[0]?.level || bounds.min;
@@ -2002,7 +2231,6 @@ async function renderGiftCalculator(saved = {}) {
   const defaults = {
     'gift-current-level': String(defaultCurrentLevel),
     'gift-target-level': String(defaultTargetLevel),
-    'gift-quality': qualityRows[0]?.quality || '',
     'gift-category': 'daily',
   };
 
@@ -2011,8 +2239,12 @@ async function renderGiftCalculator(saved = {}) {
     input.max = String(bounds.max);
     input.value = saved[input.id] || defaults[input.id] || String(bounds.min);
   });
+  GIFT_KINGDOMS.forEach((kingdom) => {
+    const input = document.getElementById(`gift-coins-${kingdom.id}`);
+    if (input) input.value = saved[input.id] || '0';
+  });
 
-  [qualitySelect, categorySelect].forEach((select) => {
+  [categorySelect].forEach((select) => {
     const desiredValue = saved[select.id] || defaults[select.id] || '';
     const hasOption = Array.from(select.options).some((option) => option.value === desiredValue);
     if (hasOption) select.value = desiredValue;

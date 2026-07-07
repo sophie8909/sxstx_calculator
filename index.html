@@ -566,7 +566,7 @@
       </div>
       <div class="p-4 space-y-4">
         <div id="gift-calculator-status" class="text-sm text-slate-600" data-i18n="gift_loading">正在載入禮物資料...</div>
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <label class="block min-w-0">
             <span class="block text-sm font-semibold mb-1" data-i18n="gift_current_level_label">目前好感等級</span>
             <input id="gift-current-level" type="number" min="1" step="1" class="input-field rounded p-2 w-full text-right" />
@@ -580,13 +580,14 @@
             <input id="gift-target-level" type="number" min="1" step="1" class="input-field rounded p-2 w-full text-right" />
           </label>
           <label class="block min-w-0">
-            <span class="block text-sm font-semibold mb-1" data-i18n="gift_quality_label">禮物品質</span>
-            <select id="gift-quality" class="input-field rounded p-2 w-full"></select>
-          </label>
-          <label class="block min-w-0">
             <span class="block text-sm font-semibold mb-1" data-i18n="gift_category_label">禮物類別</span>
             <select id="gift-category" class="input-field rounded p-2 w-full"></select>
           </label>
+        </div>
+
+        <div>
+          <h3 class="text-lg font-bold mb-3" data-i18n="gift_kingdom_coins_title">持有王國幣</h3>
+          <div id="gift-kingdom-coins" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
         </div>
 
         <div id="gift-level-warning" class="hidden rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800"></div>
@@ -594,7 +595,12 @@
         <div id="gift-calculator-result" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"></div>
 
         <div class="border-t border-[#cde5e8] pt-4 space-y-3">
-          <h3 class="text-xl font-bold" data-i18n="gift_comparison_title">各品質比較</h3>
+          <h3 class="text-xl font-bold" data-i18n="gift_purchase_plan_title">建議購買方案</h3>
+          <div id="gift-purchase-table"></div>
+        </div>
+
+        <div class="border-t border-[#cde5e8] pt-4 space-y-3">
+          <h3 class="text-xl font-bold" data-i18n="gift_comparison_title">禮物參考資料</h3>
           <div id="gift-comparison-table"></div>
         </div>
       </div>
