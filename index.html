@@ -566,7 +566,14 @@
       </div>
       <div class="p-4 space-y-4">
         <div id="gift-calculator-status" class="text-sm text-slate-600" data-i18n="gift_loading">正在載入禮物資料...</div>
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
+          <label class="block min-w-0">
+            <span class="block text-sm font-semibold mb-1" data-i18n="gift_recipient_type_label">夥伴類型</span>
+            <select id="gift-recipient-type" class="input-field rounded p-2 w-full">
+              <option value="partner" data-i18n="gift_recipient_partner">夥伴</option>
+              <option value="star_god" data-i18n="gift_recipient_star_god">星間之神</option>
+            </select>
+          </label>
           <label class="block min-w-0">
             <span class="block text-sm font-semibold mb-1" data-i18n="gift_current_level_label">目前好感等級</span>
             <input id="gift-current-level" type="number" min="1" max="99" step="1" class="input-field rounded p-2 w-full text-right" />

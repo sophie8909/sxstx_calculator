@@ -1002,7 +1002,8 @@ function parseGiftCalculatorRows(csvRows) {
   const headers = (csvRows.shift() || []).map((header) => String(header || '').trim());
   const index = {
     level: getHeaderIndex(headers, ['level']),
-    requiredFavor: getHeaderIndex(headers, ['所需好感']),
+    partnerRequiredFavor: getHeaderIndex(headers, ['夥伴所需好感', '伙伴所需好感', '所需好感']),
+    starGodRequiredFavor: getHeaderIndex(headers, ['星間之神所需好感', '星间之神所需好感']),
     quality: getHeaderIndex(headers, ['禮物品質']),
     favor: getHeaderIndex(headers, ['好感']),
     price: getHeaderIndex(headers, ['價格']),
@@ -1014,7 +1015,8 @@ function parseGiftCalculatorRows(csvRows) {
 
   return csvRows.map((row) => ({
     level: String(row[index.level] || '').trim(),
-    required_favor: String(row[index.requiredFavor] || '').trim(),
+    partner_required_favor: String(row[index.partnerRequiredFavor] || '').trim(),
+    star_god_required_favor: String(row[index.starGodRequiredFavor] || '').trim(),
     quality: String(row[index.quality] || '').trim(),
     favor: String(row[index.favor] || '').trim(),
     price: String(row[index.price] || '').trim(),
@@ -1027,11 +1029,12 @@ function parseGiftCalculatorRows(csvRows) {
   }));
 }
 
-function getGiftLevelRows(rows) {
+function getGiftLevelRows(rows, recipientType = 'partner') {
+  const favorKey = recipientType === 'star_god' ? 'star_god_required_favor' : 'partner_required_favor';
   return rows
     .map((row) => ({
       level: parseNumberValue(row.level),
-      requiredFavor: parseNumberValue(row.required_favor),
+      requiredFavor: parseNumberValue(row[favorKey]),
     }))
     .filter((row) => Number.isFinite(row.level) && row.level > 0 && row.requiredFavor > 0)
     .sort((a, b) => a.level - b.level);
@@ -1941,10 +1944,19 @@ const GIFT_KINGDOMS = [
   { id: 'ignis', labelKey: 'gift_kingdom_ignis', aliases: ['伊格尼斯'] },
 ];
 
-function getGiftRowsData() {
+const GIFT_RECIPIENT_TYPES = [
+  { id: 'partner', labelKey: 'gift_recipient_partner', totalNeededLabelKey: 'gift_partner_total_needed_label' },
+  { id: 'star_god', labelKey: 'gift_recipient_star_god', totalNeededLabelKey: 'gift_star_god_total_needed_label' },
+];
+
+function getGiftRecipientType(value) {
+  return GIFT_RECIPIENT_TYPES.find((type) => type.id === value) || GIFT_RECIPIENT_TYPES[0];
+}
+
+function getGiftRowsData(recipientType = 'partner') {
   const rows = giftRowsCache || [];
   return {
-    levelRows: getGiftLevelRows(rows),
+    levelRows: getGiftLevelRows(rows, recipientType),
     qualityRows: getGiftQualityRows(rows),
   };
 }
@@ -2394,7 +2406,8 @@ function updateGiftCalculatorResult() {
   const warning = document.getElementById('gift-level-warning');
   if (!result || !purchaseTable || !comparison) return;
 
-  const { levelRows, qualityRows } = getGiftRowsData();
+  const recipientType = getGiftRecipientType(document.getElementById('gift-recipient-type')?.value);
+  const { levelRows, qualityRows } = getGiftRowsData(recipientType.id);
   const currentLevelInput = document.getElementById('gift-current-level');
   const targetLevelInput = document.getElementById('gift-target-level');
   const currentLevel = clampGiftLevelInput(currentLevelInput, GIFT_CURRENT_LEVEL_BOUNDS, GIFT_CURRENT_LEVEL_BOUNDS.min);
@@ -2438,7 +2451,7 @@ function updateGiftCalculatorResult() {
   const missingFavor = Number.isFinite(totalNeeded) ? Math.max(0, totalNeeded - summaryPlan.favor) : null;
   const overflowFavor = canOptimize ? (summaryPlan.reachable ? Math.max(0, summaryPlan.favor - totalNeeded) : 0) : null;
   result.innerHTML = [
-    renderGiftSummaryItem('gift_total_needed_label', formatGiftNumber(totalNeeded)),
+    renderGiftSummaryItem(recipientType.totalNeededLabelKey, formatGiftNumber(totalNeeded)),
     renderGiftSummaryItem('gift_obtainable_favor_label', formatGiftNumber(summaryPlan.favor)),
     renderGiftSummaryItem('gift_missing_favor_label', formatGiftNumber(missingFavor)),
     renderGiftSummaryItem('gift_total_cost_label', formatGiftNumber(summaryPlan.cost)),
@@ -2458,16 +2471,21 @@ async function renderGiftCalculator(saved = {}) {
   const status = document.getElementById('gift-calculator-status');
   const currentLevelInput = document.getElementById('gift-current-level');
   const targetLevelInput = document.getElementById('gift-target-level');
+  const recipientTypeSelect = document.getElementById('gift-recipient-type');
   const categorySelect = document.getElementById('gift-category');
   const currentFavorInput = document.getElementById('gift-current-favor');
   const kingdomCoinsContainer = document.getElementById('gift-kingdom-coins');
   const ownedGiftsContainer = document.getElementById('gift-owned-gifts');
-  if (!currentLevelInput || !targetLevelInput || !categorySelect || !kingdomCoinsContainer || !ownedGiftsContainer) return;
+  if (!currentLevelInput || !targetLevelInput || !recipientTypeSelect || !categorySelect || !kingdomCoinsContainer || !ownedGiftsContainer) return;
 
   if (status) status.textContent = t('gift_loading');
   await fetchGiftCalculatorRows();
-  const { levelRows, qualityRows } = getGiftRowsData();
+  const savedRecipientType = getGiftRecipientType(saved['gift-recipient-type']);
+  const { levelRows, qualityRows } = getGiftRowsData(savedRecipientType.id);
 
+  recipientTypeSelect.innerHTML = GIFT_RECIPIENT_TYPES
+    .map((type) => `<option value="${type.id}">${escapeHtml(t(type.labelKey))}</option>`)
+    .join('');
   categorySelect.innerHTML = getGiftCategoryOptions()
     .map(([value, label]) => `<option value="${value}">${escapeHtml(label)}</option>`)
     .join('');
@@ -2493,6 +2511,7 @@ async function renderGiftCalculator(saved = {}) {
 
   currentLevelInput.disabled = false;
   targetLevelInput.disabled = false;
+  recipientTypeSelect.disabled = false;
   categorySelect.disabled = false;
 
   const defaultCurrentLevel = GIFT_CURRENT_LEVEL_BOUNDS.min;
@@ -2500,6 +2519,7 @@ async function renderGiftCalculator(saved = {}) {
   const defaults = {
     'gift-current-level': String(defaultCurrentLevel),
     'gift-target-level': String(defaultTargetLevel),
+    'gift-recipient-type': savedRecipientType.id,
     'gift-category': 'daily',
   };
 
@@ -2518,7 +2538,7 @@ async function renderGiftCalculator(saved = {}) {
     if (input) input.value = saved[input.id] || '0';
   });
 
-  [categorySelect].forEach((select) => {
+  [recipientTypeSelect, categorySelect].forEach((select) => {
     const desiredValue = saved[select.id] || defaults[select.id] || '';
     const hasOption = Array.from(select.options).some((option) => option.value === desiredValue);
     if (hasOption) select.value = desiredValue;
