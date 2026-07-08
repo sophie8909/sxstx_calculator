@@ -110,6 +110,7 @@ const TIME_PRESETS_FALLBACK = [
 
 const SEASON_START_CATEGORY = '【賽季開始】';
 const SEASON_END_CATEGORY = '【賽季結束】';
+const SEASON_CATEGORY = '【賽季】';
 const DUNGEON_CATEGORY = '【副本開啟】';
 const DUNGEON_ANCHOR_LABEL = '淨心護甲';
 const DUNGEON_OPEN_INTERVAL_DAYS = 14;
@@ -2827,6 +2828,7 @@ async function initTargetTimeControls(containers) {
   );
 
   const visiblePresets = normalizeTargetTimePresetOptions(matchingPresets.filter((p) => {
+    if (getPresetTitleKey(p) === SEASON_CATEGORY) return false;
     if (hasServerDungeonBaseline && p.generated_from === 'global_dungeon_anchor') return;
     if (p.generated_from === 'season_start') {
       const generatedDungeon = getPresetDungeonName(p);
