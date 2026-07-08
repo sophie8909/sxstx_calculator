@@ -2059,9 +2059,19 @@ function readOwnedGiftCounts(ownedGiftRows) {
 function getAvailableGiftKingdoms(row, category) {
   const value = String(row?.categories?.[category] || '').trim();
   if (!value) return [];
-  return GIFT_KINGDOMS.filter((kingdom) => (
-    kingdom.aliases.some((alias) => value.includes(alias))
-  ));
+  return GIFT_KINGDOMS
+    .map((kingdom, fallbackRank) => {
+      const aliasRanks = kingdom.aliases
+        .map((alias) => value.indexOf(alias))
+        .filter((rank) => rank >= 0);
+      if (!aliasRanks.length) return null;
+      return {
+        ...kingdom,
+        sourceRank: Math.min(...aliasRanks) * GIFT_KINGDOMS.length + fallbackRank,
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.sourceRank - b.sourceRank);
 }
 
 function renderGiftSummaryItem(labelKey, value) {
@@ -2073,12 +2083,46 @@ function renderGiftSummaryItem(labelKey, value) {
   `;
 }
 
+function getGiftSourceRank(source) {
+  if (source?.kingdomId === 'owned' || source === 'owned') return -1;
+  if (Number.isFinite(source?.sourceRank)) return source.sourceRank;
+  const kingdomId = source?.kingdomId || source;
+  const index = GIFT_KINGDOMS.findIndex((kingdom) => kingdom.id === kingdomId);
+  return index >= 0 ? index : GIFT_KINGDOMS.length;
+}
+
+function getGiftPlanMetrics(plan) {
+  const purchases = plan?.purchases || [];
+  const paidPurchases = purchases.filter((purchase) => purchase.kingdomId !== 'owned');
+  const paidLocations = new Set(paidPurchases.map((purchase) => purchase.kingdomId));
+  const sourceSignature = [...paidLocations]
+    .map((kingdomId) => getGiftSourceRank(purchases.find((purchase) => purchase.kingdomId === kingdomId) || kingdomId))
+    .sort((a, b) => a - b)
+    .map((rank) => String(rank).padStart(2, '0'))
+    .join('|');
+
+  return {
+    paidGiftCount: paidPurchases.reduce((sum, purchase) => sum + purchase.quantity, 0),
+    paidLocationCount: paidLocations.size,
+    cost: plan?.cost || 0,
+    totalGiftCount: plan?.gifts || 0,
+    sourceSignature,
+  };
+}
+
+function compareGiftMetricValues(left, right) {
+  if (left.cost !== right.cost) return left.cost < right.cost ? -1 : 1;
+  if (left.paidGiftCount !== right.paidGiftCount) return left.paidGiftCount < right.paidGiftCount ? -1 : 1;
+  if (left.paidLocationCount !== right.paidLocationCount) return left.paidLocationCount < right.paidLocationCount ? -1 : 1;
+  if (left.sourceSignature !== right.sourceSignature) return left.sourceSignature.localeCompare(right.sourceSignature);
+  if (left.totalGiftCount !== right.totalGiftCount) return left.totalGiftCount < right.totalGiftCount ? -1 : 1;
+  return 0;
+}
+
 function compareGiftPlanState(a, b) {
   if (!b) return a;
   if (!a) return b;
-  if (a.cost !== b.cost) return a.cost < b.cost ? a : b;
-  if (a.gifts !== b.gifts) return a.gifts < b.gifts ? a : b;
-  return a;
+  return compareGiftMetricValues(getGiftPlanMetrics(a), getGiftPlanMetrics(b)) <= 0 ? a : b;
 }
 
 function addGiftPurchase(purchases, option, quantity) {
@@ -2096,6 +2140,7 @@ function addGiftPurchase(purchases, option, quantity) {
       quality: option.quality,
       favorPerGift: option.favor,
       price: option.price,
+      sourceRank: getGiftSourceRank(option.kingdom),
       quantity,
       spent: option.price * quantity,
       obtainedFavor: option.favor * quantity,
@@ -2202,39 +2247,47 @@ function compareGiftFinalPlan(candidate, best, neededFavor) {
     const candidateOverflow = candidate.favor - neededFavor;
     const bestOverflow = best.favor - neededFavor;
     if (candidateOverflow !== bestOverflow) return candidateOverflow < bestOverflow ? candidate : best;
-    if (candidate.cost !== best.cost) return candidate.cost < best.cost ? candidate : best;
-    if (candidate.gifts !== best.gifts) return candidate.gifts < best.gifts ? candidate : best;
+    const metricComparison = compareGiftMetricValues(getGiftPlanMetrics(candidate), getGiftPlanMetrics(best));
+    if (metricComparison !== 0) return metricComparison < 0 ? candidate : best;
     return best;
   }
 
   if (candidate.favor !== best.favor) return candidate.favor > best.favor ? candidate : best;
-  if (candidate.cost !== best.cost) return candidate.cost < best.cost ? candidate : best;
-  if (candidate.gifts !== best.gifts) return candidate.gifts < best.gifts ? candidate : best;
-  return best;
+  const metricComparison = compareGiftMetricValues(getGiftPlanMetrics(candidate), getGiftPlanMetrics(best));
+  return metricComparison < 0 ? candidate : best;
 }
 
-function optimizeGiftPurchases(qualityRows, category, coinsByKingdom, ownedGiftCounts, neededFavor) {
+function optimizeGiftPurchases(qualityRows, category, coinsByKingdom, ownedGiftCounts, neededFavor, ownedFirst = false) {
   if (!Number.isFinite(neededFavor) || neededFavor <= 0) {
     return { favor: 0, cost: 0, gifts: 0, purchases: [], reachable: neededFavor === 0 };
   }
 
   const ownedOptions = buildOwnedGiftOptions(qualityRows, ownedGiftCounts);
+  const paidOptions = buildGiftPurchaseOptions(qualityRows, category, coinsByKingdom);
   const options = [
     ...ownedOptions,
-    ...buildGiftPurchaseOptions(qualityRows, category, coinsByKingdom),
+    ...paidOptions,
   ];
   const maxGiftFavor = options.reduce((max, option) => Math.max(max, option.favor), 0);
   const favorCap = Math.max(neededFavor, neededFavor + maxGiftFavor - 1);
   let combinedStates = new Map([[0, { favor: 0, cost: 0, gifts: 0, purchases: [] }]]);
 
-  combinedStates = combineGiftKingdomPlans(
-    combinedStates,
-    optimizeGiftKingdomOptions(ownedOptions, favorCap, 0),
-    favorCap
-  );
+  const ownedStates = optimizeGiftKingdomOptions(ownedOptions, favorCap, 0);
+  if (ownedFirst) {
+    let ownedBase = null;
+    ownedStates.forEach((stateValue) => {
+      ownedBase = compareGiftFinalPlan(stateValue, ownedBase, neededFavor);
+    });
+    if (ownedBase?.favor >= neededFavor) {
+      return { ...ownedBase, reachable: true };
+    }
+    combinedStates = new Map([[ownedBase?.favor || 0, ownedBase || { favor: 0, cost: 0, gifts: 0, purchases: [] }]]);
+  } else {
+    combinedStates = combineGiftKingdomPlans(combinedStates, ownedStates, favorCap);
+  }
 
   GIFT_KINGDOMS.forEach((kingdom) => {
-    const kingdomOptions = options.filter((option) => option.kingdom.id === kingdom.id);
+    const kingdomOptions = paidOptions.filter((option) => option.kingdom.id === kingdom.id);
     const kingdomStates = optimizeGiftKingdomOptions(kingdomOptions, favorCap, coinsByKingdom.get(kingdom.id) || 0);
     combinedStates = combineGiftKingdomPlans(combinedStates, kingdomStates, favorCap);
   });
@@ -2257,7 +2310,7 @@ function renderGiftPurchaseTable(purchases) {
 
   const rows = purchases
     .slice()
-    .sort((a, b) => a.kingdomLabel.localeCompare(b.kingdomLabel) || a.price - b.price || a.quality.localeCompare(b.quality))
+    .sort((a, b) => getGiftSourceRank(a) - getGiftSourceRank(b) || a.price - b.price || a.quality.localeCompare(b.quality))
     .map((item) => `
       <tr>
         <td class="border border-[#cde5e8] px-3 py-2 font-semibold">${escapeHtml(item.kingdomLabel)}</td>
@@ -2286,6 +2339,23 @@ function renderGiftPurchaseTable(purchases) {
         </thead>
         <tbody>${rows}</tbody>
       </table>
+    </div>
+  `;
+}
+
+function renderGiftPlanSection(titleKey, plan, neededFavor) {
+  const missingFavor = Number.isFinite(neededFavor) ? Math.max(0, neededFavor - plan.favor) : null;
+  const overflowFavor = Number.isFinite(neededFavor) && plan.reachable ? Math.max(0, plan.favor - neededFavor) : null;
+  return `
+    <div class="space-y-2">
+      <h4 class="text-lg font-bold">${escapeHtml(t(titleKey))}</h4>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+        ${renderGiftSummaryItem('gift_obtainable_favor_label', formatGiftNumber(plan.favor))}
+        ${renderGiftSummaryItem('gift_missing_favor_label', formatGiftNumber(missingFavor))}
+        ${renderGiftSummaryItem('gift_overflow_label', formatGiftNumber(overflowFavor))}
+        ${renderGiftSummaryItem('gift_total_cost_label', formatGiftNumber(plan.cost))}
+      </div>
+      ${renderGiftPurchaseTable(plan.purchases)}
     </div>
   `;
 }
@@ -2358,21 +2428,28 @@ function updateGiftCalculatorResult() {
   const ownedGiftRows = getGiftOwnedGiftRows(qualityRows);
   const ownedGiftCounts = readOwnedGiftCounts(ownedGiftRows);
   const canOptimize = Number.isFinite(totalNeeded);
-  const plan = canOptimize
-    ? optimizeGiftPurchases(qualityRows, selectedCategory, coinsByKingdom, ownedGiftCounts, totalNeeded)
+  const minimumOverflowPlan = canOptimize
+    ? optimizeGiftPurchases(qualityRows, selectedCategory, coinsByKingdom, ownedGiftCounts, totalNeeded, false)
     : { favor: null, cost: null, purchases: [], reachable: false };
-  const missingFavor = Number.isFinite(totalNeeded) ? Math.max(0, totalNeeded - plan.favor) : null;
-  const overflowFavor = canOptimize ? (plan.reachable ? Math.max(0, plan.favor - totalNeeded) : 0) : null;
+  const ownedFirstPlan = canOptimize
+    ? optimizeGiftPurchases(qualityRows, selectedCategory, coinsByKingdom, ownedGiftCounts, totalNeeded, true)
+    : { favor: null, cost: null, purchases: [], reachable: false };
+  const summaryPlan = minimumOverflowPlan;
+  const missingFavor = Number.isFinite(totalNeeded) ? Math.max(0, totalNeeded - summaryPlan.favor) : null;
+  const overflowFavor = canOptimize ? (summaryPlan.reachable ? Math.max(0, summaryPlan.favor - totalNeeded) : 0) : null;
   result.innerHTML = [
     renderGiftSummaryItem('gift_total_needed_label', formatGiftNumber(totalNeeded)),
-    renderGiftSummaryItem('gift_obtainable_favor_label', formatGiftNumber(plan.favor)),
+    renderGiftSummaryItem('gift_obtainable_favor_label', formatGiftNumber(summaryPlan.favor)),
     renderGiftSummaryItem('gift_missing_favor_label', formatGiftNumber(missingFavor)),
-    renderGiftSummaryItem('gift_total_cost_label', formatGiftNumber(plan.cost)),
+    renderGiftSummaryItem('gift_total_cost_label', formatGiftNumber(summaryPlan.cost)),
     renderGiftSummaryItem('gift_overflow_label', formatGiftNumber(overflowFavor)),
-    renderGiftSummaryItem('gift_reachable_label', plan.reachable ? t('gift_reachable_yes') : t('gift_reachable_no')),
+    renderGiftSummaryItem('gift_reachable_label', summaryPlan.reachable ? t('gift_reachable_yes') : t('gift_reachable_no')),
   ].join('');
 
-  purchaseTable.innerHTML = renderGiftPurchaseTable(plan.purchases);
+  purchaseTable.innerHTML = [
+    renderGiftPlanSection('gift_plan_min_overflow_title', minimumOverflowPlan, totalNeeded),
+    renderGiftPlanSection('gift_plan_owned_first_title', ownedFirstPlan, totalNeeded),
+  ].join('');
   const comparisonResults = qualityRows.map((row) => calculateGiftQualityResult(row, totalNeeded, selectedCategory));
   comparison.innerHTML = renderGiftComparisonTable(comparisonResults);
 }
