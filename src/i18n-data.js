@@ -1117,6 +1117,8 @@ const EN_TRANSLATIONS = {
   gift_kingdom_wing: { 'zh-Hant': '\u7fbd\u4e4b\u570b', 'zh-Hans': '\u7fbd\u4e4b\u56fd', en: 'Wing Kingdom' },
   gift_kingdom_hapadi: { 'zh-Hant': '\u54c8\u5e15\u8fea', 'zh-Hans': '\u54c8\u5e15\u8fea', en: 'Hapadi' },
   gift_kingdom_ignis: { 'zh-Hant': '\u4f0a\u683c\u5c3c\u65af', 'zh-Hans': '\u4f0a\u683c\u5c3c\u65af', en: 'Ignis' },
+  gift_owned_gifts_title: { 'zh-Hant': '\u7576\u524d\u6301\u6709\u79ae\u7269\u6578', 'zh-Hans': '\u5f53\u524d\u6301\u6709\u793c\u7269\u6570', en: 'Owned gifts' },
+  gift_owned_source_label: { 'zh-Hant': '\u5df2\u6301\u6709', 'zh-Hans': '\u5df2\u6301\u6709', en: 'Owned' },
   gift_total_needed_label: { 'zh-Hant': '\u9084\u9700\u597d\u611f', 'zh-Hans': '\u8fd8\u9700\u597d\u611f', en: 'Favor still needed' },
   gift_obtainable_favor_label: { 'zh-Hant': '\u53ef\u53d6\u5f97\u597d\u611f', 'zh-Hans': '\u53ef\u53d6\u5f97\u597d\u611f', en: 'Obtainable favor' },
   gift_missing_favor_label: { 'zh-Hant': '\u7f3a\u5c11\u597d\u611f', 'zh-Hans': '\u7f3a\u5c11\u597d\u611f', en: 'Missing favor' },

@@ -1999,6 +1999,21 @@ function getGiftAvailableKingdoms(row, category) {
   return value || t('gift_no_available_kingdoms');
 }
 
+function getGiftOwnedGiftRows(qualityRows) {
+  return qualityRows
+    .slice()
+    .sort((a, b) => (
+      parseNumberValue(b.price) - parseNumberValue(a.price) ||
+      parseNumberValue(b.favor) - parseNumberValue(a.favor) ||
+      String(a.quality || '').localeCompare(String(b.quality || ''))
+    ))
+    .slice(0, 3)
+    .flatMap((row) => [1, 2].map((slot) => ({
+      ...row,
+      slotLabel: `${row.quality} ${slot}`,
+    })));
+}
+
 function calculateGiftQualityResult(row, totalNeeded, category) {
   const favorPerGift = parseNumberValue(row?.favor);
   const canCalculateQuantity = Number.isFinite(totalNeeded) && totalNeeded >= 0;
@@ -2030,6 +2045,15 @@ function readGiftKingdomCoins() {
     const value = parseNumberValue(document.getElementById(`gift-coins-${kingdom.id}`)?.value);
     return [kingdom.id, Math.max(0, Math.trunc(value))];
   }));
+}
+
+function readOwnedGiftCounts(ownedGiftRows) {
+  const counts = new Map();
+  ownedGiftRows.forEach((row, index) => {
+    const value = parseNumberValue(document.getElementById(`gift-owned-${index}`)?.value);
+    counts.set(row.quality, (counts.get(row.quality) || 0) + Math.max(0, Math.trunc(value)));
+  });
+  return counts;
 }
 
 function getAvailableGiftKingdoms(row, category) {
@@ -2101,6 +2125,18 @@ function buildGiftPurchaseOptions(qualityRows, category, coinsByKingdom) {
     });
   });
   return options;
+}
+
+function buildOwnedGiftOptions(qualityRows, ownedGiftCounts) {
+  return qualityRows
+    .map((row) => ({
+      kingdom: { id: 'owned', labelKey: 'gift_owned_source_label' },
+      quality: row.quality,
+      favor: Math.trunc(parseNumberValue(row.favor)),
+      price: 0,
+      maxCount: ownedGiftCounts.get(row.quality) || 0,
+    }))
+    .filter((option) => option.quality && option.favor > 0 && option.maxCount > 0);
 }
 
 function optimizeGiftKingdomOptions(options, favorCap, budget) {
@@ -2177,15 +2213,25 @@ function compareGiftFinalPlan(candidate, best, neededFavor) {
   return best;
 }
 
-function optimizeGiftPurchases(qualityRows, category, coinsByKingdom, neededFavor) {
+function optimizeGiftPurchases(qualityRows, category, coinsByKingdom, ownedGiftCounts, neededFavor) {
   if (!Number.isFinite(neededFavor) || neededFavor <= 0) {
     return { favor: 0, cost: 0, gifts: 0, purchases: [], reachable: neededFavor === 0 };
   }
 
-  const options = buildGiftPurchaseOptions(qualityRows, category, coinsByKingdom);
+  const ownedOptions = buildOwnedGiftOptions(qualityRows, ownedGiftCounts);
+  const options = [
+    ...ownedOptions,
+    ...buildGiftPurchaseOptions(qualityRows, category, coinsByKingdom),
+  ];
   const maxGiftFavor = options.reduce((max, option) => Math.max(max, option.favor), 0);
   const favorCap = Math.max(neededFavor, neededFavor + maxGiftFavor - 1);
   let combinedStates = new Map([[0, { favor: 0, cost: 0, gifts: 0, purchases: [] }]]);
+
+  combinedStates = combineGiftKingdomPlans(
+    combinedStates,
+    optimizeGiftKingdomOptions(ownedOptions, favorCap, 0),
+    favorCap
+  );
 
   GIFT_KINGDOMS.forEach((kingdom) => {
     const kingdomOptions = options.filter((option) => option.kingdom.id === kingdom.id);
@@ -2309,9 +2355,11 @@ function updateGiftCalculatorResult() {
   }
 
   const coinsByKingdom = readGiftKingdomCoins();
+  const ownedGiftRows = getGiftOwnedGiftRows(qualityRows);
+  const ownedGiftCounts = readOwnedGiftCounts(ownedGiftRows);
   const canOptimize = Number.isFinite(totalNeeded);
   const plan = canOptimize
-    ? optimizeGiftPurchases(qualityRows, selectedCategory, coinsByKingdom, totalNeeded)
+    ? optimizeGiftPurchases(qualityRows, selectedCategory, coinsByKingdom, ownedGiftCounts, totalNeeded)
     : { favor: null, cost: null, purchases: [], reachable: false };
   const missingFavor = Number.isFinite(totalNeeded) ? Math.max(0, totalNeeded - plan.favor) : null;
   const overflowFavor = canOptimize ? (plan.reachable ? Math.max(0, plan.favor - totalNeeded) : 0) : null;
@@ -2336,7 +2384,8 @@ async function renderGiftCalculator(saved = {}) {
   const categorySelect = document.getElementById('gift-category');
   const currentFavorInput = document.getElementById('gift-current-favor');
   const kingdomCoinsContainer = document.getElementById('gift-kingdom-coins');
-  if (!currentLevelInput || !targetLevelInput || !categorySelect || !kingdomCoinsContainer) return;
+  const ownedGiftsContainer = document.getElementById('gift-owned-gifts');
+  if (!currentLevelInput || !targetLevelInput || !categorySelect || !kingdomCoinsContainer || !ownedGiftsContainer) return;
 
   if (status) status.textContent = t('gift_loading');
   await fetchGiftCalculatorRows();
@@ -2350,6 +2399,16 @@ async function renderGiftCalculator(saved = {}) {
     return `
       <label class="block min-w-0">
         <span class="block text-sm font-semibold mb-1">${escapeHtml(t('gift_kingdom_coin_label', { kingdom: getGiftKingdomLabel(kingdom) }))}</span>
+        <input id="${inputId}" type="number" min="0" step="1" class="input-field rounded p-2 w-full text-right" value="0" />
+      </label>
+    `;
+  }).join('');
+  const ownedGiftRows = getGiftOwnedGiftRows(qualityRows);
+  ownedGiftsContainer.innerHTML = ownedGiftRows.map((row, index) => {
+    const inputId = `gift-owned-${index}`;
+    return `
+      <label class="block min-w-0">
+        <span class="block text-sm font-semibold mb-1">${escapeHtml(row.slotLabel || row.quality)}</span>
         <input id="${inputId}" type="number" min="0" step="1" class="input-field rounded p-2 w-full text-right" value="0" />
       </label>
     `;
@@ -2375,6 +2434,10 @@ async function renderGiftCalculator(saved = {}) {
   });
   GIFT_KINGDOMS.forEach((kingdom) => {
     const input = document.getElementById(`gift-coins-${kingdom.id}`);
+    if (input) input.value = saved[input.id] || '0';
+  });
+  ownedGiftRows.forEach((row, index) => {
+    const input = document.getElementById(`gift-owned-${index}`);
     if (input) input.value = saved[input.id] || '0';
   });
 
