@@ -6,8 +6,10 @@
 但也加了其他計算機進去
 懶得更新這邊的 README 了
 
-更新 Log 見：［更新日誌 + FAQ](https://feiyastudio.com/sxstx-calculator)
+更新 Log 見：[更新日誌 + FAQ](https://feiyastudio.com/sxstx-calculator)
+
 最快找到我去官方 DC 的討論串： [原初計算機（賽季資源計算機）](https://discord.com/channels/1215600132003725353/1431686816674611372)
+
 總之能算的東西如果有想算但還沒有也可以來這邊跟我說
 看心情加
 
