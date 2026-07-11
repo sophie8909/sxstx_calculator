@@ -33,6 +33,7 @@ import {
   renderRelicDistribution,
 } from './view.js';
 import { applyStaticTranslations, getCurrentLanguage, initLanguage, t } from '../i18n-inline.js';
+import { findMissingUpgradeLevel } from '../core/upgradeCost.js';
 import { loadServers } from '../services/dataService.js';
 import { CACHE_FALLBACK_EVENT, CACHE_UPDATED_EVENT, fetchTextWithCache } from '../services/dataCache.js';
 
@@ -1297,6 +1298,7 @@ function refreshBedProgressSummary() {
 
   updateExpRequirements(currentLevel, ownedExp, targetLevel);
   updateSpeedupHints(nextLevelBonusHours, targetBonusHours);
+  updateExpRequiredFormButton(currentLevel, targetLevel);
 
   return {
     currentLevel,
@@ -1383,24 +1385,36 @@ function updateExpRequirements(curLv, ownedExp, targetChar) {
   if (elTarget) elTarget.textContent = needTargetExp.toLocaleString();
 }
 
-function getNextLevelRequiredExpValue(currentLevel, ownedExp) {
-  const table = state.cumulativeCostData['character'];
-  if (!table || !table.length) return NaN;
+function getMissingCharacterExpLevel(currentLevel, targetLevel) {
+  return findMissingUpgradeLevel(
+    state.gameData.characterUpgradeCosts,
+    currentLevel,
+    targetLevel
+  );
+}
 
-  const currentExpBase = getCharacterCumulativeExp(currentLevel);
-  const nextLevelExpBase = getCharacterCumulativeExp(currentLevel + 1);
-  return Math.max(0, nextLevelExpBase - currentExpBase - ownedExp);
+function updateExpRequiredFormButton(currentLevel, targetLevel) {
+  const button = document.getElementById('open-exp-required-form-btn');
+  if (!button) return;
+
+  const missingLevel = getMissingCharacterExpLevel(currentLevel, targetLevel);
+  const wasVisible = !button.classList.contains('hidden');
+  button.classList.toggle('hidden', missingLevel === null);
+
+  if (wasVisible && missingLevel === null) {
+    window.dispatchEvent(new CustomEvent('expRequiredFormCollapse'));
+  }
 }
 
 function getExpRequiredFormDefaults() {
-  const { currentLevel, ownedExp } = readBedProgressState();
+  const { currentLevel, targetLevel } = readBedProgressState();
   const selectedSeason = getSelectedSeason();
-  const nextExp = getNextLevelRequiredExpValue(currentLevel, ownedExp);
+  const missingLevel = getMissingCharacterExpLevel(currentLevel, targetLevel);
 
   return {
     season: selectedSeason?.name || selectedSeason?.id?.toUpperCase() || '',
-    level: currentLevel > 0 ? String(currentLevel) : '',
-    requiredExp: Number.isFinite(nextExp) ? convertExpToOwnedInputUnit(nextExp) : '',
+    level: missingLevel === null ? '' : String(missingLevel),
+    requiredExp: '',
   };
 }
 

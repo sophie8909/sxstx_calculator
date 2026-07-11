@@ -756,8 +756,8 @@ export const I18N_DICTIONARIES = {
     "zh-Hans": "升级所需经验填写"
   },
   "exp_required_form_intro": {
-    "zh-Hant": "先在這裡確認資料，送出後會在背景送到 Google 表單。",
-    "zh-Hans": "先在这里确认资料，送出后会在后台送到 Google 表单。"
+    "zh-Hant": "請填寫從該等級升到下一級所需的總經驗，不是扣除目前持有經驗後，您個人還缺少的經驗。",
+    "zh-Hans": "请填写从该等级升到下一级所需的总经验，不是扣除当前持有经验后，您个人还缺少的经验。"
   },
   "exp_required_season_label": {
     "zh-Hant": "賽季",
@@ -768,8 +768,8 @@ export const I18N_DICTIONARIES = {
     "zh-Hans": "当前角色等级"
   },
   "exp_required_value_label": {
-    "zh-Hant": "升下一級所需經驗",
-    "zh-Hans": "升下一级所需经验"
+    "zh-Hant": "升下一級所需總經驗",
+    "zh-Hans": "升下一级所需总经验"
   },
   "exp_required_value_hint": {
     "zh-Hant": "單位與角色經驗區塊的「目前持有經驗」相同。",
@@ -1008,10 +1008,10 @@ const EN_TRANSLATIONS = {
   relay_validation_required: { en: 'Fill in server, season, target date, and description first.' },
   relay_validation_date: { en: 'Target date format is invalid.' },
   exp_required_form_title: { en: 'Required EXP Form' },
-  exp_required_form_intro: { en: 'Confirm the data here first. Submissions are sent to Google Form in the background.' },
+  exp_required_form_intro: { en: 'Enter the total EXP required to advance from this level to the next, not the amount you personally still need after subtracting your current EXP.' },
   exp_required_season_label: { en: 'Season' },
   exp_required_level_label: { en: 'Current character level' },
-  exp_required_value_label: { en: 'EXP required for next level' },
+  exp_required_value_label: { en: 'Total EXP required for next level' },
   exp_required_value_hint: { en: 'Use the same unit as Current EXP into this level in the Character EXP section.' },
   exp_required_submit: { en: 'Submit' },
   exp_required_submitting: { en: 'Submitting...' },

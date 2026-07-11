@@ -322,8 +322,7 @@
 
       <div id="exp-required-inline-card" class="card rounded-lg p-4 shadow-lg w-full page-section hidden">
         <h3 class="text-xl font-bold text-center mb-4" data-i18n="exp_required_form_title">升級所需經驗填寫</h3>
-
-
+        <p class="text-sm text-slate-600 text-center mb-4" data-i18n="exp_required_form_intro">請填寫從該等級升到下一級所需的總經驗，不是扣除目前持有經驗後，您個人還缺少的經驗。</p>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label for="exp-required-season" class="block font-semibold mb-2" data-i18n="exp_required_season_label">賽季</label>
@@ -340,7 +339,7 @@
             <input id="exp-required-level" type="number" min="0" step="1" class="input-field rounded p-3 w-full text-right" required />
           </div>
           <div>
-            <label for="exp-required-value" class="block font-semibold mb-2" data-i18n="exp_required_value_label">升下一級所需經驗</label>
+            <label for="exp-required-value" class="block font-semibold mb-2" data-i18n="exp_required_value_label">升下一級所需總經驗</label>
             <input id="exp-required-value" type="number" min="0" step="0.01" class="input-field rounded p-3 w-full text-right" required />
             <p class="text-xs text-slate-500 mt-2" data-i18n="exp_required_value_hint">單位與角色經驗區塊的「目前持有經驗」相同。</p>
           </div>

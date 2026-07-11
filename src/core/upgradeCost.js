@@ -195,15 +195,18 @@ export function getCostDelta(costTable, currentLevel, targetLevel) {
 export function findMissingUpgradeLevel(sourceTable, currentLevel, targetLevel) {
   if (!sourceTable || sourceTable.length === 0) return null;
 
-  const sorted = [...sourceTable]
+  const availableLevels = new Set(sourceTable
     .map((row) => Number(row.level))
-    .filter((value) => Number.isFinite(value));
-  if (sorted.length <= 1) return null;
+    .filter((value) => Number.isFinite(value)));
+  if (availableLevels.size === 0) return null;
 
-  const minLevel = Math.min(...sorted);
   const start = Math.max(0, Math.floor(Number(currentLevel) || 0));
   const end = Math.max(start, Math.floor(Number(targetLevel) || 0));
-  if (end <= minLevel) return null;
+  if (end <= start) return null;
+
+  for (let level = start; level < end; level += 1) {
+    if (!availableLevels.has(level)) return level;
+  }
 
   return null;
 }
