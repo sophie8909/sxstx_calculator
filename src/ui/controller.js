@@ -3385,7 +3385,7 @@ async function handleSeasonChange(containers) {
 
 function openGoogleCalendarEvent({ title, details, eventTs }) {
   const eventStart = new Date(eventTs);
-  const eventEnd = new Date(eventTs + 30 * 60 * 1000);
+  const eventEnd = new Date(eventTs);
   const formatGoogleCalendarDate = (date) =>
     date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
 
