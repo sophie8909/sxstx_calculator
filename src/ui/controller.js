@@ -3430,7 +3430,6 @@ async function enableLevelUpNotifications() {
     return;
   }
 
-  const eventTs = levelupTs - notifyTime * 60 * 1000;
   const upgradeTimeText = new Date(levelupTs).toLocaleString(locale, {
     year: 'numeric',
     month: '2-digit',
@@ -3446,7 +3445,7 @@ async function enableLevelUpNotifications() {
       notifyMinutes: notifyTime,
       upgradeTime: upgradeTimeText,
     }),
-    eventTs,
+    eventTs: levelupTs,
   });
 }
 
@@ -3466,7 +3465,6 @@ async function enableTargetLevelCalendar() {
     return;
   }
 
-  const eventTs = etaTs - notifyTime * 60 * 1000;
   const targetTimeText = new Date(etaTs).toLocaleString(locale, {
     year: 'numeric',
     month: '2-digit',
@@ -3482,7 +3480,7 @@ async function enableTargetLevelCalendar() {
       upgradeTime: targetTimeText,
       level: targetLevel,
     }),
-    eventTs,
+    eventTs: etaTs,
   });
 }
 

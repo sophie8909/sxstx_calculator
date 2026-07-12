@@ -528,7 +528,7 @@ export function renderCharBed(container) {
     const option = el('option');
     option.value = value;
     option.textContent = label;
-    if (value === 'min3') option.selected = true;
+    if (value === 'min0') option.selected = true;
     notifySelect.appendChild(option);
   });
 
