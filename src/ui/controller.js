@@ -713,6 +713,7 @@ async function fetchDungeonPowerRows() {
           season_day: Number(getCsvValue(row, headers, ['開國天數', '開国天數', 'season_day'])),
           day: Number(getCsvValue(row, headers, ['時間', 'time', 'day'])),
           dungeon_name: getCsvValue(row, headers, ['副本', 'dungeon']),
+          level_limit: getCsvValue(row, headers, ['等級限制', '等级限制', 'level_limit', 'level_requirement']),
           powers,
         };
       })
@@ -2857,6 +2858,19 @@ function renderDungeonPowerPanel(preset, dungeonPowerRows) {
   }
 
   const powerRow = findDungeonPowerRow(preset, dungeonPowerRows, state.seasonId);
+  const levelLimit = parseNumberValue(powerRow?.level_limit);
+  const levelLimitEl = document.getElementById('dungeon-power-level-limit');
+  if (levelLimitEl) {
+    levelLimitEl.textContent = levelLimit > 0
+      ? t('dungeon_power_level_limit', { level: levelLimit })
+      : '';
+  }
+
+  const targetCharacterInput = document.getElementById('target-character');
+  if (targetCharacterInput && !targetCharacterInput.value.trim() && levelLimit > 0) {
+    targetCharacterInput.value = String(levelLimit);
+  }
+
   fields.innerHTML = DUNGEON_DIFFICULTIES.map((difficulty) => {
     const value = formatPowerRequirement(powerRow?.powers?.[difficulty] || '');
     const difficultyLabel = getDifficultyLabel(difficulty);

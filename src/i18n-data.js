@@ -1043,6 +1043,7 @@ const EN_TRANSLATIONS = {
   seo_explanation_p1: { 'zh-Hant': '這個杖劍傳說素材計算機提供給正在規劃角色養成、技能材料與裝備養成的玩家使用。輸入目前進度、目標等級與持有素材後，可以快速估算升級所需資源，並整理角色經驗、技能、裝備、寵物、遺物與素材來源等項目。', 'zh-Hans': '这个杖剑传说素材计算机提供给正在规划角色养成、技能材料与装备养成的玩家使用。输入目前进度、目标等级与持有素材后，可以快速估算升级所需资源，并整理角色经验、技能、装备、宠物、遗物与素材来源等项目。', en: 'This Sword x Staff calculator helps players plan character growth, skill materials, and equipment upgrades. Enter current progress, target levels, and owned materials to estimate upgrade resources and review character EXP, skills, equipment, pets, relics, and material sources.' },
   seo_explanation_p2: { 'zh-Hant': '工具適合想提前安排每日素材、比較升級缺口、確認目標時間是否足夠的玩家。計算結果僅供規劃參考，實際素材數量仍可能隨杖劍傳說賽季、伺服器與遊戲版本調整。', 'zh-Hans': '工具适合想提前安排每日素材、比较升级缺口、确认目标时间是否足够的玩家。计算结果仅供规划参考，实际素材数量仍可能随杖剑传说赛季、服务器与游戏版本调整。', en: 'Use it to plan daily materials, compare upgrade gaps, and check whether the target time is enough. Results are planning references only; actual values may change by season, server, or game version.' },
   dungeon_power_title: { 'zh-Hant': '副本戰力需求', 'zh-Hans': '副本战力需求', en: 'Dungeon power requirement' },
+  dungeon_power_level_limit: { 'zh-Hant': ' (等級限制：{level}等)', 'zh-Hans': '（等级限制：{level}级）', en: ' (Level limit: {level})' },
   primordial_recommendation_title: { 'zh-Hant': '累計原初推薦', 'zh-Hans': '累计原初推荐', en: 'Cumulative Primordial Star recommendation' },
   recommendation_type_label: { 'zh-Hant': '推薦檔位', 'zh-Hans': '推荐档位', en: 'Recommended tier' },
   recommendation_custom: { 'zh-Hant': '自定義', 'zh-Hans': '自定义', en: 'Custom' },
