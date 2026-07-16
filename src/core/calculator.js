@@ -2,6 +2,7 @@ import {
   getCharacterCumulativeExpFromTable,
   getCostDelta,
 } from './upgradeCost.js';
+import { calculateRemainingExperience } from './experience.js';
 
 function addMaterialDelta(target, delta) {
   Object.entries(delta).forEach(([materialId, value]) => {
@@ -151,7 +152,8 @@ export function expCalculation({
   const cumPrev = getCharacterCumulativeExpFromTable(table, normalizedCurrentLevel);
   const cumThis = getCharacterCumulativeExpFromTable(table, normalizedTargetLevel);
   const acceleratedExp = Math.max(0, Number(bedExpHourly) || 0) * Math.max(0, Number(bonusHours) || 0);
-  const expNeeded = Math.max(0, cumThis - cumPrev - Math.max(0, Number(ownedExp) || 0) - acceleratedExp);
+  const requiredExp = Math.max(0, cumThis - cumPrev);
+  const expNeeded = calculateRemainingExperience(requiredExp, ownedExp + acceleratedExp);
   if (expNeeded <= 0) return { levelupTs: now, minutesNeeded: 0, expNeeded: 0 };
 
   const ratePerHour = Number(bedExpHourly);

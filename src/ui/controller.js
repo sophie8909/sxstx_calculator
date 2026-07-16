@@ -34,6 +34,11 @@ import {
 } from './view.js';
 import { applyStaticTranslations, getCurrentLanguage, initLanguage, t } from '../i18n-inline.js';
 import { findMissingUpgradeLevel } from '../core/upgradeCost.js';
+import {
+  calculateRemainingExperience,
+  convertExperienceToAbsolute,
+  parseExperienceInput,
+} from '../core/experience.js';
 import { loadServers } from '../services/dataService.js';
 import { CACHE_FALLBACK_EVENT, CACHE_UPDATED_EVENT, fetchTextWithCache } from '../services/dataCache.js';
 
@@ -1160,17 +1165,11 @@ function usesLargeExpUnit() {
   return (getSelectedSeason()?.season || 0) >= 4;
 }
 
-function getOwnedExpWanValue() {
-  const raw = document.getElementById('owned-exp-wan')?.value?.trim() || '';
-  if (raw === '') return NaN;
-
-  const value = parseFloat(raw);
-  return Number.isNaN(value) ? NaN : Math.max(0, value);
-}
-
-function convertWanToOwnedExp(ownedWan) {
-  if (Number.isNaN(ownedWan)) return NaN;
-  return Math.floor(Math.max(0, ownedWan) * (usesLargeExpUnit() ? 100000000 : 10000));
+function readCurrentExpInput() {
+  const rawInput = document.getElementById('owned-exp-wan')?.value?.trim() || '';
+  const parsedValue = parseExperienceInput(rawInput);
+  const absoluteValue = convertExperienceToAbsolute(parsedValue, usesLargeExpUnit());
+  return { rawInput, parsedValue, absoluteValue };
 }
 
 function convertExpToOwnedInputUnit(expValue) {
@@ -1179,29 +1178,28 @@ function convertExpToOwnedInputUnit(expValue) {
   return Number.isInteger(value) ? String(value) : String(Math.round(value * 100) / 100);
 }
 
-function syncOwnedExpInputFromWan(ownedWan) {
+function syncOwnedExpInputFromAbsolute(absoluteValue) {
   const ownedExpInput = document.getElementById('owned-exp');
   if (!ownedExpInput) return 0;
 
-  if (Number.isNaN(ownedWan)) {
+  if (!Number.isFinite(absoluteValue)) {
     ownedExpInput.value = '';
     return 0;
   }
 
-  const ownedExp = convertWanToOwnedExp(ownedWan);
-  ownedExpInput.value = String(ownedExp);
-  return ownedExp;
+  ownedExpInput.value = String(absoluteValue);
+  return absoluteValue;
 }
 
-function buildOwnedExpSignature(currentLevel, ownedWan, bedHourly) {
-  return [state.seasonId, currentLevel, Number.isNaN(ownedWan) ? 'nan' : ownedWan, bedHourly].join('|');
+function buildOwnedExpSignature(currentLevel, rawInput, absoluteValue, bedHourly) {
+  return [state.seasonId, currentLevel, rawInput || 'nan', absoluteValue, bedHourly].join('|');
 }
 
-function getLiveOwnedExp(currentLevel, ownedWan, bedHourly) {
+function getLiveOwnedExp(currentLevel, rawInput, absoluteValue, bedHourly) {
   const ownedExpInput = document.getElementById('owned-exp');
   if (!ownedExpInput) return 0;
 
-  if (Number.isNaN(ownedWan)) {
+  if (!Number.isFinite(absoluteValue)) {
     liveOwnedExpState.signature = '';
     liveOwnedExpState.baseOwnedExp = 0;
     liveOwnedExpState.baseTimestamp = Date.now();
@@ -1209,10 +1207,10 @@ function getLiveOwnedExp(currentLevel, ownedWan, bedHourly) {
     return 0;
   }
 
-  const signature = buildOwnedExpSignature(currentLevel, ownedWan, bedHourly);
+  const signature = buildOwnedExpSignature(currentLevel, rawInput, absoluteValue, bedHourly);
   if (liveOwnedExpState.signature !== signature) {
     liveOwnedExpState.signature = signature;
-    liveOwnedExpState.baseOwnedExp = convertWanToOwnedExp(ownedWan);
+    liveOwnedExpState.baseOwnedExp = syncOwnedExpInputFromAbsolute(absoluteValue);
     liveOwnedExpState.baseTimestamp = Date.now();
   }
 
@@ -1225,14 +1223,19 @@ function getLiveOwnedExp(currentLevel, ownedWan, bedHourly) {
 
 function readBedProgressState() {
   const currentLevel = Math.max(0, parseInt(document.getElementById('character-current')?.value, 10) || 0);
-  const ownedWan = getOwnedExpWanValue();
+  const currentExpInput = readCurrentExpInput();
   const bedHourly = Math.max(0, parseFloat(document.getElementById('bed-exp-hourly')?.value) || 0);
   const targetLevel = Math.max(0, parseInt(document.getElementById('target-character')?.value, 10) || 0);
-  const ownedExp = getLiveOwnedExp(currentLevel, ownedWan, bedHourly);
+  const ownedExp = getLiveOwnedExp(
+    currentLevel,
+    currentExpInput.rawInput,
+    currentExpInput.absoluteValue,
+    bedHourly
+  );
 
   return {
     currentLevel,
-    ownedWan,
+    ownedWan: currentExpInput.parsedValue,
     ownedExp,
     bedHourly,
     targetLevel,
@@ -1376,13 +1379,15 @@ function updateExpRequirements(curLv, ownedExp, targetChar) {
   const nextLevelExpBase = getCharacterCumulativeExp(curLv + 1);
   const targetExpBase = getCharacterCumulativeExp(targetChar);
 
-  const needNextExp = Math.max(0, nextLevelExpBase - currentExpBase - ownedExp);
-  const needTargetExp = Math.max(0, targetExpBase - currentExpBase - ownedExp);
+  const requiredExp = Math.max(0, nextLevelExpBase - currentExpBase);
+  const targetRequiredExp = Math.max(0, targetExpBase - currentExpBase);
+  const remainingExp = calculateRemainingExperience(requiredExp, ownedExp);
+  const targetRemainingExp = calculateRemainingExperience(targetRequiredExp, ownedExp);
 
   const elNext = document.getElementById('bed-levelup-exp');
   const elTarget = document.getElementById('bed-target-exp');
-  if (elNext) elNext.textContent = needNextExp.toLocaleString();
-  if (elTarget) elTarget.textContent = needTargetExp.toLocaleString();
+  if (elNext) elNext.textContent = remainingExp.toLocaleString();
+  if (elTarget) elTarget.textContent = targetRemainingExp.toLocaleString();
 }
 
 function getMissingCharacterExpLevel(currentLevel, targetLevel) {
