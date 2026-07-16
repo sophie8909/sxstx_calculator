@@ -35,7 +35,15 @@ export function buildCumulativeCostData(gameData) {
     output[type] = [];
     if (!source || source.length === 0) return;
 
-    const firstRow = source[0];
+    const sourceRows = type === 'character'
+      ? source.filter((rawRow) => {
+        const costExp = Number(rawRow?.cost_exp);
+        return Number.isFinite(costExp) && costExp > 0;
+      })
+      : source;
+    if (sourceRows.length === 0) return;
+
+    const firstRow = sourceRows[0];
     const costKeys = Object.keys(firstRow)
       .map((key) => normalizeKey(key))
       .filter((key) => /^cost_/.test(String(key).toLowerCase()));
@@ -44,7 +52,7 @@ export function buildCumulativeCostData(gameData) {
       cumulative[key] = 0;
     });
 
-    source.forEach((rawRow) => {
+    sourceRows.forEach((rawRow) => {
       const row = {};
       Object.keys(rawRow).forEach((key) => {
         row[normalizeKey(key).toLowerCase()] = rawRow[key];
@@ -196,6 +204,11 @@ export function findMissingUpgradeLevel(sourceTable, currentLevel, targetLevel) 
   if (!sourceTable || sourceTable.length === 0) return null;
 
   const availableLevels = new Set(sourceTable
+    .filter((row) => {
+      if (!Object.prototype.hasOwnProperty.call(row, 'cost_exp')) return true;
+      const costExp = Number(row.cost_exp);
+      return Number.isFinite(costExp) && costExp > 0;
+    })
     .map((row) => Number(row.level))
     .filter((value) => Number.isFinite(value)));
   if (availableLevels.size === 0) return null;
