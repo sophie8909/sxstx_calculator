@@ -65,6 +65,7 @@ const mergePriority = {
   merge_16: 16,
 };
 let isAppLoading = true;
+let hasCompletedInitialLoad = false;
 const LOADING_DISABLED_ATTR = 'data-loading-disabled';
 
 function setAppLoading(loading) {
@@ -2839,10 +2840,17 @@ async function initDungeonFragmentYield(saved = {}) {
 
 function markTargetRecommendationCustom(target) {
   if (!target?.id || !target.id.startsWith('target-')) return;
+  if (target.id === 'target-character') target.removeAttribute('data-dungeon-auto-level');
   if (target.id === 'target-primordial_star') return;
 
   const selector = document.getElementById('target-recommendation-type');
   if (selector && selector.value !== 'custom') selector.value = 'custom';
+}
+
+function restoreDungeonAutoTargetLevel() {
+  const input = document.getElementById('target-character');
+  const level = parseNumberValue(input?.dataset.dungeonAutoLevel);
+  if (input && level > 0) input.value = String(level);
 }
 
 function renderDungeonPowerPanel(preset, dungeonPowerRows) {
@@ -2867,8 +2875,12 @@ function renderDungeonPowerPanel(preset, dungeonPowerRows) {
   }
 
   const targetCharacterInput = document.getElementById('target-character');
-  if (targetCharacterInput && !targetCharacterInput.value.trim() && levelLimit > 0) {
+  const previousAutoLevel = parseNumberValue(targetCharacterInput?.dataset.dungeonAutoLevel);
+  const targetValue = targetCharacterInput?.value.trim() || '';
+  const canAutoFillTarget = !hasCompletedInitialLoad || !targetValue || (previousAutoLevel > 0 && Number(targetValue) === previousAutoLevel);
+  if (targetCharacterInput && canAutoFillTarget && levelLimit > 0) {
     targetCharacterInput.value = String(levelLimit);
+    targetCharacterInput.dataset.dungeonAutoLevel = String(levelLimit);
   }
 
   fields.innerHTML = DUNGEON_DIFFICULTIES.map((difficulty) => {
@@ -3385,6 +3397,7 @@ async function handleSeasonChange(containers) {
     renderRelicDistribution(containers.relicDistributionInputs);
     setAppLoading(true);
     loadAllInputs(['season-select']);
+    restoreDungeonAutoTargetLevel();
     updateRelicModeButtons();
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
     await initEquipmentSeasonScore(saved);
@@ -3573,6 +3586,7 @@ async function init() {
   await loadMaterialAvgDefaults();
   renderMaterialSource(containers);
   loadAllInputs(['season-select']);
+  restoreDungeonAutoTargetLevel();
   bindTooltipLayers();
   updateDaysRemainingFromTarget();
   updateAllMaterialSources();
@@ -3580,6 +3594,7 @@ async function init() {
   setupAutoUpdate();
   setInterval(() => updateCurrentTime(containers.currentTimeDisplay), 1000);
   updateCurrentTime(containers.currentTimeDisplay);
+  hasCompletedInitialLoad = true;
   window.addEventListener('languagechange', async () => {
     applyStaticTranslations();
     refreshSeasonSelectorLabels();
