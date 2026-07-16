@@ -1375,9 +1375,11 @@ function updateExpRequirements(curLv, ownedExp, targetChar) {
   const table = state.cumulativeCostData['character'];
   if (!table || !table.length) return;
 
-  const currentExpBase = getCharacterCumulativeExp(curLv);
-  const nextLevelExpBase = getCharacterCumulativeExp(curLv + 1);
-  const targetExpBase = getCharacterCumulativeExp(targetChar);
+  // Character row L is the transition L -> L + 1. The current level starts
+  // after row L - 1, while the next level ends after row L.
+  const currentExpBase = getCharacterCumulativeExp(curLv - 1);
+  const nextLevelExpBase = getCharacterCumulativeExp(curLv);
+  const targetExpBase = getCharacterCumulativeExp(targetChar - 1);
 
   const requiredExp = Math.max(0, nextLevelExpBase - currentExpBase);
   const targetRequiredExp = Math.max(0, targetExpBase - currentExpBase);

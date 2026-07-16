@@ -111,20 +111,23 @@ export function computeReachableCharacterLevel({
     ? Math.max(0, (new Date(targetTime).getTime() - now) / 36e5)
     : 0;
   const bonusHours = getSpeedupHoursForHours(hours, speedupState, speedupHoursPerUse);
-  const baseCum = getCharacterCumulativeExpFromTable(table, normalizedCurrentLevel);
+  // The character's current-level base is the experience needed to reach
+  // level L, which ends at transition row L - 1.
+  const baseCum = getCharacterCumulativeExpFromTable(table, normalizedCurrentLevel - 1);
   const available =
     Math.max(0, Number(ownedExp) || 0) +
     Math.max(0, Number(bedExpHourly) || 0) * (hours + bonusHours);
   const totalExp = baseCum + available;
   const index = table.findLastIndex((row) => (row.cost_exp || 0) <= totalExp);
-  let reachable = index !== -1 ? table[index].level : currentLevel;
+  // A cumulative row L represents the start of level L + 1.
+  let reachable = index !== -1 ? table[index].level + 1 : currentLevel;
   const maxLevelInTable = table[table.length - 1]?.level ?? currentLevel;
   const maxKnownExp = getCharacterCumulativeExpFromTable(table, maxLevelInTable);
   const previousKnownExp = getCharacterCumulativeExpFromTable(table, maxLevelInTable - 1);
   const lastLevelExp = Math.max(0, maxKnownExp - previousKnownExp);
 
-  if (totalExp > maxKnownExp && lastLevelExp > 0) {
-    reachable = maxLevelInTable + Math.floor((totalExp - maxKnownExp) / lastLevelExp);
+  if (totalExp >= maxKnownExp && lastLevelExp > 0) {
+    reachable = maxLevelInTable + 1 + Math.floor((totalExp - maxKnownExp) / lastLevelExp);
   }
 
   return Math.max(reachable, normalizedCurrentLevel);
@@ -149,8 +152,10 @@ export function expCalculation({
     return { levelupTs: now, minutesNeeded: 0, expNeeded: 0, status: 'reached' };
   }
 
-  const cumPrev = getCharacterCumulativeExpFromTable(table, normalizedCurrentLevel);
-  const cumThis = getCharacterCumulativeExpFromTable(table, normalizedTargetLevel);
+  // Target level T is reached after transition row T - 1. Do not use row T,
+  // because row T is the cost from T to T + 1.
+  const cumPrev = getCharacterCumulativeExpFromTable(table, normalizedCurrentLevel - 1);
+  const cumThis = getCharacterCumulativeExpFromTable(table, normalizedTargetLevel - 1);
   const acceleratedExp = Math.max(0, Number(bedExpHourly) || 0) * Math.max(0, Number(bonusHours) || 0);
   const requiredExp = Math.max(0, cumThis - cumPrev);
   const expNeeded = calculateRemainingExperience(requiredExp, ownedExp + acceleratedExp);

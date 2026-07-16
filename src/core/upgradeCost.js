@@ -158,6 +158,8 @@ export function getCumulative(costTable, level) {
 }
 
 export function getCharacterCumulativeExpFromTable(table, level) {
+  // Character rows describe transitions: row L is the cost from L to L + 1.
+  // This helper returns C(L), the sum through transition row L.
   if (!table || !table.length || level <= 0) return 0;
 
   const maxLevelInTable = table[table.length - 1]?.level || 0;
