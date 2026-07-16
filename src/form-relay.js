@@ -19,10 +19,14 @@ const DUNGEON_POWER_SHEET = {
   gid: '2044399102',
 };
 const DUNGEON_CATEGORY = '【副本開啟】';
+const RELIC_CATEGORY = '【遺物】';
+const EVENT_CATEGORY = '【活動】';
+const RELIC_SERIES_SHEET = { id: '1boxKipNVI-tCaJEaX-AoOTijEgKcxKfilhbtxkLbX-E', gid: '2041024019' };
 
 const FALLBACK_SERVERS = ['台港澳'];
 const EXP_REQUIRED_SUBMIT_TIMEOUT_MS = 15000;
 let dungeonNameRowsCache = null;
+let relicSeriesNamesCache = null;
 let expRequiredSubmitTimer = null;
 
 function getInitialContext() {
@@ -166,6 +170,42 @@ async function fetchDungeonNameRows() {
   return dungeonNameRowsCache;
 }
 
+async function fetchRelicSeriesNames() {
+  if (relicSeriesNamesCache) return relicSeriesNamesCache;
+  const url = 'https://docs.google.com/spreadsheets/d/' + RELIC_SERIES_SHEET.id + '/export?format=csv&gid=' + RELIC_SERIES_SHEET.gid;
+  try {
+    const rows = parseCsvRows(await fetchTextWithCache('google-sheet:relic-series', url));
+    const [seasonCell, kingdomCell, relicCell] = rows[0] || [];
+    const seasons = String(seasonCell || '').trim().split(/\s+/).slice(1);
+    const kingdoms = String(kingdomCell || '').trim().split(/\s+/).slice(1);
+    const relics = String(relicCell || '').trim().split(/\s+/).slice(1);
+    relicSeriesNamesCache = kingdoms.map((kingdom, index) => ({
+      season: seasons[index] || '',
+      name: relics[index] ? '【' + kingdom + '】' + relics[index] : '',
+    })).filter((row) => row.name);
+  } catch (error) {
+    console.warn('[form relay] failed to fetch relic series', error);
+    relicSeriesNamesCache = [];
+  }
+  return relicSeriesNamesCache;
+}
+
+async function fillRelicSeriesOptions() {
+  const seasonSelect = document.getElementById('relay-season');
+  const relicSelect = document.getElementById('relay-relic-series');
+  if (!seasonSelect || !relicSelect) return;
+  const selectedSeason = normalizeSeasonId(seasonSelect.value).toLowerCase();
+  const names = (await fetchRelicSeriesNames())
+    .filter((row) => !row.season || row.season.toLowerCase() === selectedSeason)
+    .map((row) => row.name);
+  relicSelect.innerHTML = '';
+  names.forEach((name) => {
+    const option = document.createElement('option');
+    option.value = name;
+    option.textContent = name;
+    relicSelect.appendChild(option);
+  });
+}
 async function fillDungeonOptions() {
   const seasonSelect = document.getElementById('relay-season');
   const dungeonSelect = document.getElementById('relay-dungeon-name');
@@ -250,6 +290,8 @@ function getRelayFormState() {
   const categorySelect = document.getElementById('relay-description-category');
   const descriptionInput = document.getElementById('relay-description');
   const dungeonSelect = document.getElementById('relay-dungeon-name');
+  const relicSelect = document.getElementById('relay-relic-series');
+  const eventSelect = document.getElementById('relay-event-name');
 
   return {
     selectedServer: serverSelect?.value || '',
@@ -259,9 +301,10 @@ function getRelayFormState() {
     category: categorySelect?.value || '',
     description: descriptionInput?.value || '',
     dungeonName: dungeonSelect?.value || '',
+    relicName: relicSelect?.value || '',
+    eventName: eventSelect?.value || '',
   };
 }
-
 function fillServerOptions(servers) {
   const select = document.getElementById('relay-server-name');
   if (!select) return;
@@ -330,6 +373,8 @@ function restoreRelayFormState(savedState) {
   const categorySelect = document.getElementById('relay-description-category');
   const descriptionInput = document.getElementById('relay-description');
   const dungeonSelect = document.getElementById('relay-dungeon-name');
+  const relicSelect = document.getElementById('relay-relic-series');
+  const eventSelect = document.getElementById('relay-event-name');
 
   if (savedState.isManual) {
     if (serverSelect) serverSelect.value = '';
@@ -351,17 +396,24 @@ function restoreRelayFormState(savedState) {
   fillDungeonOptions().then(() => {
     if (dungeonSelect && savedState.dungeonName) dungeonSelect.value = savedState.dungeonName;
   });
+  fillRelicSeriesOptions().then(() => {
+    if (relicSelect && savedState.relicName) relicSelect.value = savedState.relicName;
+  });
+  if (eventSelect && savedState.eventName) eventSelect.value = savedState.eventName;
   applyCategoryDescriptionLock();
 }
-
 function applyCategoryDescriptionLock() {
   const categorySelect = document.getElementById('relay-description-category');
   const descriptionInput = document.getElementById('relay-description');
   const dungeonSelect = document.getElementById('relay-dungeon-name');
+  const relicSelect = document.getElementById('relay-relic-series');
+  const eventSelect = document.getElementById('relay-event-name');
   if (!categorySelect || !descriptionInput) return;
 
   if (categorySelect.value === SEASON_START_CATEGORY || categorySelect.value === SEASON_END_CATEGORY) {
     if (dungeonSelect) dungeonSelect.classList.add('hidden');
+    if (relicSelect) relicSelect.classList.add('hidden');
+    if (eventSelect) eventSelect.classList.add('hidden');
     descriptionInput.classList.remove('hidden');
     descriptionInput.value = categorySelect.value === SEASON_START_CATEGORY
       ? t('relay_season_start_auto_description')
@@ -372,6 +424,8 @@ function applyCategoryDescriptionLock() {
   }
 
   if (categorySelect.value === DUNGEON_CATEGORY) {
+    if (relicSelect) relicSelect.classList.add('hidden');
+    if (eventSelect) eventSelect.classList.add('hidden');
     descriptionInput.classList.add('hidden');
     descriptionInput.disabled = true;
     descriptionInput.required = false;
@@ -383,9 +437,56 @@ function applyCategoryDescriptionLock() {
     return;
   }
 
+  if (categorySelect.value === RELIC_CATEGORY) {
+    if (dungeonSelect) {
+      dungeonSelect.classList.add('hidden');
+      dungeonSelect.required = false;
+    }
+    if (eventSelect) {
+      eventSelect.classList.add('hidden');
+      eventSelect.required = false;
+    }
+    descriptionInput.classList.add('hidden');
+    descriptionInput.disabled = true;
+    descriptionInput.required = false;
+    if (relicSelect) {
+      relicSelect.classList.remove('hidden');
+      relicSelect.required = true;
+    }
+    fillRelicSeriesOptions();
+    return;
+  }
+
+  if (categorySelect.value === EVENT_CATEGORY) {
+    if (dungeonSelect) {
+      dungeonSelect.classList.add('hidden');
+      dungeonSelect.required = false;
+    }
+    if (relicSelect) {
+      relicSelect.classList.add('hidden');
+      relicSelect.required = false;
+    }
+    descriptionInput.classList.add('hidden');
+    descriptionInput.disabled = true;
+    descriptionInput.required = false;
+    if (eventSelect) {
+      eventSelect.classList.remove('hidden');
+      eventSelect.required = true;
+    }
+    return;
+  }
+
   if (dungeonSelect) {
     dungeonSelect.classList.add('hidden');
     dungeonSelect.required = false;
+  }
+  if (relicSelect) {
+    relicSelect.classList.add('hidden');
+    relicSelect.required = false;
+  }
+  if (eventSelect) {
+    eventSelect.classList.add('hidden');
+    eventSelect.required = false;
   }
   descriptionInput.classList.remove('hidden');
   if (descriptionInput.disabled && (
@@ -400,17 +501,23 @@ function applyCategoryDescriptionLock() {
   descriptionInput.required = true;
   descriptionInput.removeAttribute('aria-readonly');
 }
-
 function buildSubmittedDescription(category, body) {
   if (category === SEASON_START_CATEGORY) return SEASON_START_CATEGORY;
   if (category === SEASON_END_CATEGORY) return SEASON_END_CATEGORY;
   if (category === DUNGEON_CATEGORY) {
     const dungeonName = document.getElementById('relay-dungeon-name')?.value || '';
-    return dungeonName ? `${DUNGEON_CATEGORY}${dungeonName}` : '';
+    return dungeonName ? DUNGEON_CATEGORY + dungeonName : '';
   }
-  return category ? `${category}${body}` : body;
+  if (category === RELIC_CATEGORY) {
+    const relicName = document.getElementById('relay-relic-series')?.value || '';
+    return relicName ? RELIC_CATEGORY + relicName : '';
+  }
+  if (category === EVENT_CATEGORY) {
+    const eventName = document.getElementById('relay-event-name')?.value || '';
+    return eventName ? EVENT_CATEGORY + eventName : '';
+  }
+  return category ? category + body : body;
 }
-
 function syncManualServerVisibility() {
   const serverSelect = document.getElementById('relay-server-name');
   const serverManualWrap = document.getElementById('relay-server-manual-wrap');
@@ -584,6 +691,7 @@ async function init() {
   fillServerOptions(servers);
   applyInitialContext();
   await fillDungeonOptions();
+  await fillRelicSeriesOptions();
   applyCategoryDescriptionLock();
 
   submitButton?.addEventListener('click', submitRelayForm);
@@ -595,7 +703,7 @@ async function init() {
   document.getElementById('relay-server-manual-toggle')?.addEventListener('click', syncManualServerVisibility);
   document.getElementById('relay-description-category')?.addEventListener('change', applyCategoryDescriptionLock);
   document.getElementById('relay-season')?.addEventListener('change', () => {
-    fillDungeonOptions().then(applyCategoryDescriptionLock);
+    Promise.all([fillDungeonOptions(), fillRelicSeriesOptions()]).then(applyCategoryDescriptionLock);
   });
   document.getElementById('relay-description')?.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') {

@@ -707,11 +707,27 @@ export const I18N_DICTIONARIES = {
     "zh-Hant": "【遺物】",
     "zh-Hans": "【遗物】"
   },
-  "relay_category_season": {
-    "zh-Hant": "【賽季】",
-    "zh-Hans": "【赛季】"
+  "relay_category_event": {
+    "zh-Hant": "【活動】",
+    "zh-Hans": "【活动】"
   },
-  "relay_category_season_start": {
+  "relay_event_treasure_battle": {
+    "zh-Hant": "祕寶大作戰",
+    "zh-Hans": "秘宝大作战"
+  },
+  "relay_event_bingo": {
+    "zh-Hant": "賓果抽抽樂",
+    "zh-Hans": "宾果抽抽乐"
+  },
+  "relay_event_fennec_puzzle": {
+    "zh-Hant": "菲涅克的謎題",
+    "zh-Hans": "菲涅克的谜题"
+  },
+  "relay_event_lucky_scratch": {
+    "zh-Hant": "幸運刮刮樂",
+    "zh-Hans": "幸运刮刮乐"
+  },
+    "relay_category_season_start": {
     "zh-Hant": "【賽季開始】",
     "zh-Hans": "【赛季开始】"
   },
@@ -994,7 +1010,11 @@ const EN_TRANSLATIONS = {
   relay_category_none: { en: 'No category' },
   relay_category_dungeon: { en: '[Dungeon Open]' },
   relay_category_relic: { en: '[Relic]' },
-  relay_category_season: { en: '[Season]' },
+  relay_category_event: { en: '[Event]' },
+  relay_event_treasure_battle: { en: 'Treasure Battle' },
+  relay_event_bingo: { en: 'Bingo Draw' },
+  relay_event_fennec_puzzle: { en: "Fennec's Puzzle" },
+  relay_event_lucky_scratch: { en: 'Lucky Scratch Card' },
   relay_category_season_start: { en: '[Season Start]' },
   relay_category_season_end: { en: '[Season End]' },
   relay_description_label: { en: 'Description' },
