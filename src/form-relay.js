@@ -172,9 +172,9 @@ async function fetchDungeonNameRows() {
 
 async function fetchRelicSeriesNames() {
   if (relicSeriesNamesCache) return relicSeriesNamesCache;
-  const url = 'https://docs.google.com/spreadsheets/d/' + RELIC_SERIES_SHEET.id + '/export?format=csv&gid=' + RELIC_SERIES_SHEET.gid;
+  const url = 'https://docs.google.com/spreadsheets/d/' + RELIC_SERIES_SHEET.id + '/gviz/tq?tqx=out:csv&gid=' + RELIC_SERIES_SHEET.gid;
   try {
-    const rows = parseCsvRows(await fetchTextWithCache('google-sheet:relic-series', url));
+    const rows = parseCsvRows(await fetchTextWithCache('google-sheet:relic-series-v2', url));
     const [seasonCell, kingdomCell, relicCell] = rows[0] || [];
     const seasons = String(seasonCell || '').trim().split(/\s+/).slice(1);
     const kingdoms = String(kingdomCell || '').trim().split(/\s+/).slice(1);
