@@ -1,4 +1,5 @@
 import './ads.js';
+import './theme.js';
 import { initLanguage, applyStaticTranslations, t } from './i18n-inline.js';
 import { fetchTextWithCache } from './services/dataCache.js';
 

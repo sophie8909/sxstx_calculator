@@ -1069,3 +1069,59 @@ main a[data-i18n='relay_open_google_form'] {
     grid-template-columns: 8.75rem minmax(0, 1fr);
   }
 }
+
+
+.theme-toggle {
+  border: 1px solid #9ed6d8;
+  background: #eefafa;
+  color: #165f63;
+  cursor: pointer;
+  transition: background-color .18s ease, border-color .18s ease, color .18s ease, transform .18s ease;
+}
+
+.theme-toggle:hover, .theme-toggle:focus-visible {
+  background: #d9f3f1;
+  border-color: #55b8b5;
+  outline: 2px solid #9ed6d8;
+  outline-offset: 2px;
+}
+
+.theme-toggle:active { transform: translateY(1px); }
+
+/* ===== dark theme ===== */
+html[data-theme='dark'] body {
+  background: linear-gradient(180deg, #0f2024 0%, #122d31 100%);
+  color: #e2e8f0;
+}
+html[data-theme='dark'] h1, html[data-theme='dark'] h2, html[data-theme='dark'] h3, html[data-theme='dark'] h4 { color: #7de0d5; text-shadow: 0 1px 2px rgba(0, 0, 0, .35); }
+html[data-theme='dark'] .card, html[data-theme='dark'] .section-side-nav { background: rgba(20, 42, 47, .94); border-color: #28565b; box-shadow: 0 2px 12px rgba(0, 0, 0, .28); }
+html[data-theme='dark'] .section-side-nav-title, html[data-theme='dark'] .section-side-nav a { color: #8de5dc; }
+html[data-theme='dark'] .section-side-nav a:hover, html[data-theme='dark'] .section-side-nav a:focus-visible { background: #1b4145; border-color: #3a7778; color: #c4fff8; }
+html[data-theme='dark'] .input-field { background-color: #172f34; color: #e2e8f0; border-color: #477a7d; }
+html[data-theme='dark'] .input-field:focus { background-color: #1b3c40; border-color: #55d8ca; }
+html[data-theme='dark'] .input-field:disabled { background-color: #26383c; color: #94a3b8; border-color: #475569; }
+html[data-theme='dark'] select option { background-color: #172f34; color: #e2e8f0; }
+html[data-theme='dark'] label, html[data-theme='dark'] .font-semibold, html[data-theme='dark'] .font-bold { color: #dbeafe; }
+html[data-theme='dark'] .text-slate-600, html[data-theme='dark'] .text-slate-500, html[data-theme='dark'] .text-gray-500, html[data-theme='dark'] .text-gray-600 { color: #a8bac8 !important; }
+html[data-theme='dark'] .text-gray-400 { color: #94a3b8 !important; }
+html[data-theme='dark'] .bg-gray-50, html[data-theme='dark'] .bg-gray-100 { background-color: #203b40 !important; }
+html[data-theme='dark'] .bg-white, html[data-theme='dark'] .bg-white\/90 { background-color: #19353a !important; }
+html[data-theme='dark'] .bg-green-100, html[data-theme='dark'] .bg-blue-100, html[data-theme='dark'] .bg-orange-100, html[data-theme='dark'] .bg-red-100 { filter: brightness(.72) saturate(.9); color: #f1f5f9; }
+html[data-theme='dark'] .border-gray-300, html[data-theme='dark'] .border-gray-200 { border-color: #42676b !important; }
+html[data-theme='dark'] .calculator-section-card > h2 { border-color: #35666a; }
+html[data-theme='dark'] .character-exp-actions, html[data-theme='dark'] .character-exp-reminder { background: #19383c; border-color: #35666a; }
+html[data-theme='dark'] .character-exp-speedup-label, html[data-theme='dark'] .character-exp-result-row, html[data-theme='dark'] .character-exp-summary-table dt { color: #b7c8d4; }
+html[data-theme='dark'] .character-exp-speedup-results { background: rgba(24, 65, 65, .7); border-color: #35666a; }
+html[data-theme='dark'] .character-exp-speedup-result-value, html[data-theme='dark'] .character-exp-summary-title, html[data-theme='dark'] .character-exp-summary-table dd { color: #f1f5f9; }
+html[data-theme='dark'] .result-item { background: #3b3021; }
+html[data-theme='dark'] .info-item { background: #173d3c; }
+html[data-theme='dark'] .cost-item { background: #3c371e; }
+html[data-theme='dark'] .theme-toggle { background: #21494d; color: #d9fffa; border: 1px solid #4c9190; }
+html[data-theme='dark'] .theme-toggle:hover, html[data-theme='dark'] .theme-toggle:focus-visible { background: #2d6264; outline: 2px solid #72ded1; outline-offset: 2px; }
+html[data-theme='dark'] .app-loading-overlay { background: linear-gradient(135deg, rgba(10, 29, 33, .97), rgba(18, 55, 57, .97)); }
+html[data-theme='dark'] .app-loading-panel { background: rgba(20, 42, 47, .96); color: #dbeafe; border-color: #3c8e89; }
+html[data-theme='dark'] .app-loading-title { color: #7de0d5; }
+html[data-theme='dark'] .app-loading-message { color: #b8c8d2; }
+html[data-theme='dark'] .app-loading-progress { background: #28565b; }
+html[data-theme='dark'] .custom-scrollbar::-webkit-scrollbar-track { background: #19383c; }
+html[data-theme='dark'] .custom-scrollbar::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #397c7e 0%, #2b6267 100%); }

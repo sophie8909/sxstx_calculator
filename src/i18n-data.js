@@ -826,6 +826,9 @@ export const I18N_DICTIONARIES = {
 };
 
 const EN_TRANSLATIONS = {
+  theme_dark_label: { 'zh-Hant': '夜間模式', 'zh-Hans': '夜间模式', en: 'Dark mode' },
+  theme_light_label: { 'zh-Hant': '日間模式', 'zh-Hans': '日间模式', en: 'Light mode' },
+  theme_toggle_title: { 'zh-Hant': '切換夜間模式', 'zh-Hans': '切换夜间模式', en: 'Toggle dark mode' },
   actual_exp: { en: 'Actual EXP' },
   alert_local_data_cleared: { en: 'Saved data on this device has been cleared. The page will reload.' },
   calendar_event_details: { en: 'This event was created from your current calculation. Estimated upgrade time: {upgradeTime}. Reminder lead time: {notifyMinutes} minutes.' },
