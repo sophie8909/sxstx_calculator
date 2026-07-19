@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
   <!-- Google tag (gtag.js) -->
@@ -93,7 +93,7 @@
   </div>
   <div class="app-layout">
     <nav id="section-side-nav" class="section-side-nav" aria-label="區塊導覽" data-i18n-aria-label="side_nav_aria">
-      <p class="section-side-nav-title" data-i18n="side_nav_title">快速導覽</p>
+      <p class="section-side-nav-title" data-title-icon="list" data-i18n="side_nav_title">快速導覽</p>
       <a href="#target-time-card" data-i18n="side_nav_time">時間</a>
       <a href="#primordial-star-card" data-i18n="side_nav_primordial">原初</a>
       <a href="#target-levels-card" data-i18n="side_nav_target">目標</a>
@@ -245,7 +245,7 @@
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Target time field -->
         <div>
-          <h3 class="text-lg font-semibold mb-2" data-i18n="target_time_title">目標時間</h3>
+          <h3 class="text-lg font-semibold mb-2" data-title-icon="calendar-clock" data-i18n="target_time_title">目標時間</h3>
 
           <div class="flex flex-col lg:flex-row lg:items-center gap-3 w-full">
 
@@ -265,7 +265,7 @@
 
         <!-- Current time display -->
         <div>
-          <h3 class="text-lg font-semibold mb-2" data-i18n="current_time_title">現在時間</h3>
+          <h3 class="text-lg font-semibold mb-2" data-title-icon="clock" data-i18n="current_time_title">現在時間</h3>
           <div id="current-time-display"
               class="text-center bg-gray-900/50 p-2 rounded min-h-[42px] flex items-center justify-center text-[#e2e8f0] w-full break-words">
           </div>
@@ -273,7 +273,7 @@
       </div>
 
       <div id="dungeon-power-panel" class="hidden mt-4 border-t border-[#cde5e8] pt-4">
-        <h3 id="dungeon-power-title" class="text-lg font-semibold mb-3"><span data-i18n="dungeon_power_title">副本戰力需求</span><span id="dungeon-power-level-limit"></span></h3>
+        <h3 id="dungeon-power-title" class="text-lg font-semibold mb-3"><span data-title-icon="swords" data-i18n="dungeon_power_title">副本戰力需求</span><span id="dungeon-power-level-limit"></span></h3>
         <div id="dungeon-power-fields" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3"></div>
       </div>
 
@@ -281,10 +281,10 @@
 
     <!-- Primordial star section -->
     <div id="primordial-star-card" class="card rounded-lg p-4 shadow-lg mb-4 w-full page-section">
-      <h3 class="text-xl font-bold text-center mb-4" data-i18n="primordial_star_title">原初之星 (累計)</h3>
+      <h3 class="text-xl font-bold text-center mb-4" data-title-icon="sparkles" data-i18n="primordial_star_title">原初之星 (累計)</h3>
       <div id="primordial-star-cumulative" class=""></div>
       <div id="primordial-recommendation-panel" class="mt-4 border-t border-[#cde5e8] pt-4">
-        <h4 class="text-lg font-semibold text-center mb-3" data-i18n="primordial_recommendation_title">累計原初推薦</h4>
+        <h4 class="text-lg font-semibold text-center mb-3" data-title-icon="sparkles" data-i18n="primordial_recommendation_title">累計原初推薦</h4>
         <div id="primordial-recommendation-fields" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
       </div>
     </div>
@@ -292,7 +292,7 @@
 
     <!-- Target level section -->
     <div id="target-levels-card" class="card rounded-lg p-4 shadow-lg mb-4 w-full page-section">
-      <h3 class="text-xl font-bold text-center mb-4" data-i18n="target_levels_title">目標等級 (共鳴)</h3>
+      <h3 class="text-xl font-bold text-center mb-4" data-title-icon="target" data-i18n="target_levels_title">目標等級 (共鳴)</h3>
       <div class="flex justify-center mb-4">
         <label class="flex flex-col md:flex-row md:items-center gap-2 text-sm font-semibold">
           <span data-i18n="recommendation_type_label">推薦檔位</span>
@@ -314,7 +314,7 @@
       <!-- Character EXP section -->
       <div id="character-exp-card" class="card calculator-section-card character-exp-card rounded-lg p-4 shadow-lg flex flex-col min-h-0">
         <h2 class="text-2xl font-bold border-b sticky top-0 z-10 px-4 py-2 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
-          <span data-i18n="section_role_exp">角色經驗</span>
+          <span data-title-icon="user-round-plus" data-i18n="section_role_exp">角色經驗</span>
         </h2>
         <div class="overflow-y-auto custom-scrollbar min-h-0 responsive-scroll tooltip-safe-scroll">
           <div id="char-bed-inputs" class="space-y-3"></div>
@@ -322,7 +322,7 @@
       </div>
 
       <div id="exp-required-inline-card" class="card rounded-lg p-4 shadow-lg w-full page-section hidden">
-        <h3 class="text-xl font-bold text-center mb-4" data-i18n="exp_required_form_title">升級所需經驗填寫</h3>
+        <h3 class="text-xl font-bold text-center mb-4" data-title-icon="file-pen" data-i18n="exp_required_form_title">升級所需經驗填寫</h3>
         <p class="text-sm text-slate-600 text-center mb-4" data-i18n="exp_required_form_intro">請填寫從該等級升到下一級所需的總經驗，不是扣除目前持有經驗後，您個人還缺少的經驗。</p>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
@@ -358,7 +358,7 @@
       <!-- Relic section -->
       <div id="relic-card" class="card rounded-lg p-4 shadow-lg mb-6 w-full page-section relative">
         <h3 class="text-xl font-bold text-center mb-4">
-          <span data-i18n="relic_distribution_title">遺物等級分布</span> <span id="relic-total-display" class="text-sm font-normal text-gray-400">(0/20)</span>
+          <span data-title-icon="gem" data-i18n="relic_distribution_title">遺物等級分布</span> <span id="relic-total-display" class="text-sm font-normal text-gray-400">(0/20)</span>
         </h3>
         <div class="absolute right-4 top-4">
           <div class="inline-flex overflow-hidden rounded-full border border-[#9ed6d8] bg-[#eefafa] p-0.5 shadow-sm" role="group" aria-label="遺物輸入模式" data-i18n-aria-label="relic_input_mode">
@@ -375,7 +375,7 @@
 
         <div id="skill-card" class="card calculator-section-card rounded-lg p-4 shadow-lg flex flex-col min-h-0">
           <h2 class="text-2xl font-bold border-b sticky top-0 z-10 px-4 py-2 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
-            <span data-i18n="section_skill">技能等級</span>
+            <span data-title-icon="comet" data-i18n="section_skill">技能等級</span>
           </h2>
           <div class="overflow-y-auto custom-scrollbar min-h-0 responsive-scroll tooltip-safe-scroll">
             <div id="skill-inputs" class="space-y-4"></div>
@@ -387,7 +387,7 @@
     <div class="main-grid-column">
       <div id="equipment-card" class="card calculator-section-card rounded-lg p-4 shadow-lg flex flex-col min-h-0">
           <h2 class="text-2xl font-bold border-b sticky top-0 z-10 px-4 py-2 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
-            <span data-i18n="section_equip">裝備等級</span>
+            <span data-title-icon="shield" data-i18n="section_equip">裝備等級</span>
           </h2>
           <div class="overflow-y-auto custom-scrollbar min-h-0 responsive-scroll tooltip-safe-scroll">
             <div id="equip-inputs" class="space-y-4"></div>
@@ -397,7 +397,7 @@
       <!-- Pet section -->
       <div id="pet-card" class="card calculator-section-card rounded-lg p-4 shadow-lg flex flex-col min-h-0">
         <h2 class="text-2xl font-bold border-b sticky top-0 z-10 px-4 py-2 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
-          <span data-i18n="section_pet">寵物等級</span>
+          <span data-title-icon="paw-print" data-i18n="section_pet">寵物等級</span>
         </h2>
         <div class="overflow-y-auto custom-scrollbar min-h-0 responsive-scroll tooltip-safe-scroll">
           <div id="pet-inputs" class="space-y-3"></div>
@@ -410,7 +410,7 @@
       <!-- Production section -->
       <div id="production-card" class="card calculator-section-card rounded-lg p-4 shadow-lg flex flex-col min-h-0">
         <h2 class="text-2xl font-bold border-b sticky top-0 z-10 px-4 py-2 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
-          <span data-i18n="section_cart">推車時產</span>
+          <span data-title-icon="shopping-cart" data-i18n="section_cart">推車時產</span>
         </h2>
         <div class="overflow-y-auto custom-scrollbar min-h-0 responsive-scroll tooltip-safe-scroll">
           <div id="production-inputs" class="space-y-4 mb-4"></div>
@@ -423,7 +423,7 @@
       <!-- Material sources section -->
       <div id="owned-materials-card" class="card calculator-section-card rounded-lg p-4 shadow-lg flex flex-col min-h-0">
         <h2 class="text-2xl font-bold border-b pb-3 sticky top-0 z-10 px-6 py-3 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
-          <span data-i18n="section_owned_materials">目前持有素材</span>
+          <span data-title-icon="package" data-i18n="section_owned_materials">目前持有素材</span>
         </h2>
         <div class="overflow-y-auto custom-scrollbar min-h-0 responsive-scroll tooltip-safe-scroll">
           <div id="owned-materials" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-3"></div>
@@ -433,7 +433,7 @@
       <!-- Results section -->
       <div id="results-card" class="card calculator-section-card rounded-lg p-4 shadow-lg flex flex-col min-h-0">
         <h2 class="text-2xl font-bold border-b pb-3 sticky top-0 z-10 px-6 py-3 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
-          <span data-i18n="section_summary">結果總覽</span>
+          <span data-title-icon="clipboard-check" data-i18n="section_summary">結果總覽</span>
         </h2>
         <div class="overflow-y-auto custom-scrollbar min-h-0 responsive-scroll tooltip-safe-scroll">
           <div id="results" class="space-y-3 pt-2"></div>
@@ -450,11 +450,11 @@
   <div id="fragment-calculator-panel" class="hidden">
     <div class="card rounded-xl p-0 shadow-lg mb-6 w-full">
       <div class="border-b sticky top-0 z-10 px-4 py-2 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
-        <h2 class="text-2xl font-bold" data-i18n="fragment_calculator_title">碎片神鑄石計算機</h2>
+        <h2 class="text-2xl font-bold" data-title-icon="hammer" data-i18n="fragment_calculator_title">碎片神鑄石計算機</h2>
       </div>
       <div class="p-4 space-y-4">
         <div class="border-b border-[#cde5e8] pb-4 space-y-3">
-          <h3 class="text-xl font-bold" data-i18n="equipment_season_score_title">裝備賽季分數</h3>
+          <h3 class="text-xl font-bold" data-title-icon="medal" data-i18n="equipment_season_score_title">裝備賽季分數</h3>
           <div id="equipment-season-score-fields" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             <label class="block min-w-0">
               <span class="block text-sm font-semibold mb-1">
@@ -561,7 +561,7 @@
   <div id="gift-calculator-panel" class="hidden">
     <div class="card rounded-xl p-0 shadow-lg mb-6 w-full">
       <div class="border-b sticky top-0 z-10 px-4 py-2 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
-        <h2 class="text-2xl font-bold" data-i18n="gift_calculator_title">禮物計算機</h2>
+        <h2 class="text-2xl font-bold" data-title-icon="gift" data-i18n="gift_calculator_title">禮物計算機</h2>
       </div>
       <div class="p-4 space-y-4">
         <div id="gift-calculator-status" class="text-sm text-slate-600" data-i18n="gift_loading">正在載入禮物資料...</div>
@@ -592,12 +592,12 @@
         </div>
 
         <div>
-          <h3 class="text-lg font-bold mb-3" data-i18n="gift_kingdom_coins_title">持有國度幣</h3>
+          <h3 class="text-lg font-bold mb-3" data-title-icon="coins" data-i18n="gift_kingdom_coins_title">持有國度幣</h3>
           <div id="gift-kingdom-coins" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
         </div>
 
         <div>
-          <h3 class="text-lg font-bold mb-3" data-i18n="gift_owned_gifts_title">當前持有禮物數</h3>
+          <h3 class="text-lg font-bold mb-3" data-title-icon="boxes" data-i18n="gift_owned_gifts_title">當前持有禮物數</h3>
           <div id="gift-owned-gifts" class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-4"></div>
         </div>
 
@@ -606,12 +606,12 @@
         <div id="gift-calculator-result" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"></div>
 
         <div class="border-t border-[#cde5e8] pt-4 space-y-3">
-          <h3 class="text-xl font-bold" data-i18n="gift_purchase_plan_title">建議方案</h3>
+          <h3 class="text-xl font-bold" data-title-icon="lightbulb" data-i18n="gift_purchase_plan_title">建議方案</h3>
           <div id="gift-purchase-table"></div>
         </div>
 
         <div class="border-t border-[#cde5e8] pt-4 space-y-3">
-          <h3 class="text-xl font-bold" data-i18n="gift_comparison_title">禮物參考資料</h3>
+          <h3 class="text-xl font-bold" data-title-icon="book-open" data-i18n="gift_comparison_title">禮物參考資料</h3>
           <div id="gift-comparison-table"></div>
         </div>
       </div>
@@ -621,7 +621,7 @@
   <div id="target-time-form-panel" class="hidden">
     <div class="card rounded-xl p-0 shadow-lg mb-6 w-full">
       <div class="border-b sticky top-0 z-10 px-4 py-2 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
-        <h2 class="text-2xl font-bold" data-i18n="relay_form_title">目標時間填寫</h2>
+        <h2 class="text-2xl font-bold" data-title-icon="send" data-i18n="relay_form_title">目標時間填寫</h2>
       </div>
       <div class="p-4 space-y-4">
         <p class="text-sm text-slate-600 leading-relaxed" data-i18n="relay_form_intro">

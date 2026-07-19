@@ -1125,3 +1125,24 @@ html[data-theme='dark'] .app-loading-message { color: #b8c8d2; }
 html[data-theme='dark'] .app-loading-progress { background: #28565b; }
 html[data-theme='dark'] .custom-scrollbar::-webkit-scrollbar-track { background: #19383c; }
 html[data-theme='dark'] .custom-scrollbar::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #397c7e 0%, #2b6267 100%); }
+
+.title-icon {
+  display: inline-flex;
+  width: 1.15em;
+  height: 1.15em;
+  margin-inline-end: .4em;
+  vertical-align: -.15em;
+  color: #0f766e;
+}
+
+.title-icon svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+html[data-theme='dark'] .title-icon { color: #7de0d5; }
