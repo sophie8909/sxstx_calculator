@@ -1,4 +1,4 @@
-﻿// controller.js
+// controller.js
 
 import {
   state,
@@ -1640,24 +1640,7 @@ function bindTooltipLayers() {
 }
 
 function applyMobileSectionOrder() {
-  const main = document.getElementById('primary-content-grid');
-  const targetTimeCard = document.getElementById('target-time-card');
-  const targetLevelsCard = document.getElementById('target-levels-card');
-  if (!main || !targetTimeCard || !targetLevelsCard) return;
-
-  const parent = main.parentElement;
-  if (!parent) return;
-
-  if (window.innerWidth <= 767) {
-    if (main.previousElementSibling !== null) {
-      parent.insertBefore(main, targetTimeCard);
-    }
-    return;
-  }
-
-  if (main.previousElementSibling !== targetLevelsCard) {
-    parent.insertBefore(main, targetLevelsCard.nextSibling);
-  }
+  // Keep the source order identical on mobile and desktop.
 }
 
 function bindTargetTimeFormToggle() {
