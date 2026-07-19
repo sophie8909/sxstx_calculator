@@ -1167,15 +1167,20 @@ function usesLargeExpUnit() {
   return (getSelectedSeason()?.season || 0) >= 4;
 }
 
+function getOwnedExpUnitDivisor() {
+  if (getCurrentLanguage() === 'en') return usesLargeExpUnit() ? 1000000 : 1000;
+  return usesLargeExpUnit() ? 100000000 : 10000;
+}
+
 function readCurrentExpInput() {
   const rawInput = document.getElementById('owned-exp-wan')?.value?.trim() || '';
   const parsedValue = parseExperienceInput(rawInput);
-  const absoluteValue = convertExperienceToAbsolute(parsedValue, usesLargeExpUnit());
+  const absoluteValue = convertExperienceToAbsolute(parsedValue, usesLargeExpUnit(), getOwnedExpUnitDivisor());
   return { rawInput, parsedValue, absoluteValue };
 }
 
 function convertExpToOwnedInputUnit(expValue) {
-  const divisor = usesLargeExpUnit() ? 100000000 : 10000;
+  const divisor = getOwnedExpUnitDivisor();
   const value = Math.max(0, Number(expValue) || 0) / divisor;
   return Number.isInteger(value) ? String(value) : String(Math.round(value * 100) / 100);
 }

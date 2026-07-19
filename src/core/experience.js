@@ -9,9 +9,13 @@ export function parseExperienceInput(rawInput) {
   return Number.isFinite(value) ? Math.max(0, value) : NaN;
 }
 
-export function convertExperienceToAbsolute(parsedValue, useLargeUnit) {
+export function convertExperienceToAbsolute(parsedValue, useLargeUnit, unitDivisor = null) {
   if (!Number.isFinite(parsedValue)) return NaN;
-  const multiplier = useLargeUnit ? LARGE_EXP_UNIT : SMALL_EXP_UNIT;
+  const multiplier = Number.isFinite(unitDivisor)
+    ? unitDivisor
+    : useLargeUnit
+      ? LARGE_EXP_UNIT
+      : SMALL_EXP_UNIT;
   return Math.round(Math.max(0, parsedValue) * multiplier);
 }
 
