@@ -36,4 +36,11 @@ function addTitleIcons() {
   });
 }
 
-document.addEventListener('DOMContentLoaded', addTitleIcons);
+const iconObserver = new MutationObserver(() => addTitleIcons());
+
+document.addEventListener('DOMContentLoaded', () => {
+  addTitleIcons();
+  iconObserver.observe(document.body, { childList: true, subtree: true });
+});
+
+window.addEventListener('languagechange', addTitleIcons);
