@@ -3,6 +3,7 @@ import './theme.js';
 import './title-icons.js';
 import { initLanguage, applyStaticTranslations, t } from './i18n-inline.js';
 import { fetchTextWithCache } from './services/dataCache.js';
+import { loadServers } from './services/dataService.js';
 
 const SEASON_START_CATEGORY = '【賽季開始】';
 const SEASON_END_CATEGORY = '【賽季結束】';
@@ -129,24 +130,17 @@ function mergeServerOptions(serverNames) {
 }
 
 async function fetchServerOptionsFromSheet() {
-  const url = `https://docs.google.com/spreadsheets/d/${TIME_PRESETS_SHEET.id}/export?format=csv&gid=${TIME_PRESETS_SHEET.gid}`;
+  if (serverRowsCache) return serverRowsCache;
   try {
-    const text = await fetchTextWithCache('google-sheet:time-presets', url);
-    const lines = text.trim().split('\n');
-    const headers = lines[0].split(',').map((value) => value.trim().toLowerCase());
-    const serverIndex = headers.indexOf('server_name');
-    if (serverIndex < 0) return FALLBACK_SERVERS.slice();
-
-    const servers = [];
-    for (let index = 1; index < lines.length; index += 1) {
-      const columns = lines[index].split(',').map((value) => value.trim());
-      const server = normalizeServerName(columns[serverIndex] || '');
-      if (server) servers.push(server);
-    }
-    return mergeServerOptions(servers);
+    const rows = await loadServers();
+    serverRowsCache = rows
+      .map((row) => ({ name: normalizeServerName(row.server_name), number: String(row.server_id || '').trim() }))
+      .filter((row) => row.name && row.number)
+      .sort((a, b) => Number(a.number) - Number(b.number));
+    return serverRowsCache;
   } catch (error) {
     console.warn('[form relay] failed to fetch servers, using fallback', error);
-    return FALLBACK_SERVERS.slice();
+    return FALLBACK_SERVERS.map((name) => ({ name, number: '' }));
   }
 }
 
@@ -288,6 +282,7 @@ function getRelayFormState() {
   const serverSelect = document.getElementById('relay-server-name');
   const serverManualInput = document.getElementById('relay-server-name-manual');
   const serverManualWrap = document.getElementById('relay-server-manual-wrap');
+  const serverNumberInput = document.getElementById('relay-server-number');
   const seasonSelect = document.getElementById('relay-season');
   const categorySelect = document.getElementById('relay-description-category');
   const descriptionInput = document.getElementById('relay-description');
@@ -299,6 +294,7 @@ function getRelayFormState() {
     selectedServer: serverSelect?.value || '',
     manualServer: serverManualInput?.value || '',
     isManual: serverManualWrap ? !serverManualWrap.classList.contains('hidden') : false,
+    serverNumber: serverNumberInput?.value || '',
     season: seasonSelect?.value || '',
     category: categorySelect?.value || '',
     description: descriptionInput?.value || '',
@@ -321,10 +317,18 @@ function fillServerOptions(servers) {
 
   servers.forEach((server) => {
     const option = document.createElement('option');
-    option.value = server;
-    option.textContent = server;
+    option.value = server.name;
+    option.textContent = server.number ? `${server.number} - ${server.name}` : server.name;
+    option.dataset.serverNumber = server.number || '';
     select.appendChild(option);
   });
+}
+
+function syncSelectedServerNumber() {
+  const select = document.getElementById('relay-server-name');
+  const input = document.getElementById('relay-server-number');
+  if (!select || !input) return;
+  input.value = select.selectedOptions[0]?.dataset.serverNumber || '';
 }
 
 function getTodayDateString() {
@@ -351,6 +355,7 @@ function applyInitialContext() {
       if (serverManualInput) serverManualInput.value = '';
       if (serverManualWrap) serverManualWrap.classList.add('hidden');
       if (serverManualToggle) serverManualToggle.textContent = t('relay_server_manual_toggle');
+      syncSelectedServerNumber();
     } else {
       serverSelect.value = '';
       serverSelect.disabled = true;
@@ -371,6 +376,7 @@ function restoreRelayFormState(savedState) {
   const serverSelect = document.getElementById('relay-server-name');
   const serverManualInput = document.getElementById('relay-server-name-manual');
   const serverManualWrap = document.getElementById('relay-server-manual-wrap');
+  const serverNumberInput = document.getElementById('relay-server-number');
   const seasonSelect = document.getElementById('relay-season');
   const categorySelect = document.getElementById('relay-description-category');
   const descriptionInput = document.getElementById('relay-description');
@@ -392,6 +398,7 @@ function restoreRelayFormState(savedState) {
     }
   }
 
+  if (serverNumberInput && savedState.serverNumber) serverNumberInput.value = savedState.serverNumber;
   if (seasonSelect && savedState.season) seasonSelect.value = savedState.season;
   if (categorySelect) categorySelect.value = savedState.category || '';
   if (descriptionInput) descriptionInput.value = savedState.description || '';
@@ -565,17 +572,19 @@ function applyRelayTranslations() {
 function submitRelayForm() {
   const serverSelect = document.getElementById('relay-server-name');
   const serverManualInput = document.getElementById('relay-server-name-manual');
+  const serverNumberInput = document.getElementById('relay-server-number');
   const selectedServer = serverSelect?.value || '';
   const serverName = normalizeServerName(
     !selectedServer ? serverManualInput?.value : selectedServer
   );
+  const serverNumber = String(serverNumberInput?.value || '').trim();
   const season = document.getElementById('relay-season')?.value || '';
   const date = document.getElementById('relay-date')?.value || '';
   const descriptionCategory = document.getElementById('relay-description-category')?.value || '';
   const descriptionBody = document.getElementById('relay-description')?.value.trim() || '';
   const description = buildSubmittedDescription(descriptionCategory, descriptionBody);
 
-  if (!serverName || !season || !date || !description) {
+  if (!serverName || !serverNumber || !season || !date || !description) {
     showFeedback(t('relay_validation_required'), 'error');
     return;
   }
@@ -589,7 +598,7 @@ function submitRelayForm() {
   document.getElementById('field-server-name').value = serverName;
   document.getElementById('field-server-name-other').value = '';
   document.getElementById('field-season').value = season;
-  document.getElementById('field-description').value = description;
+  document.getElementById('field-description').value = `[Server ${serverNumber}] ${description}`;
   document.getElementById('field-time-year').value = year;
   document.getElementById('field-time-month').value = String(Number(month));
   document.getElementById('field-time-day').value = String(Number(day));
@@ -703,6 +712,7 @@ async function init() {
   });
   window.addEventListener('expRequiredFormCollapse', collapseExpRequiredForm);
   document.getElementById('relay-server-manual-toggle')?.addEventListener('click', syncManualServerVisibility);
+  document.getElementById('relay-server-name')?.addEventListener('change', syncSelectedServerNumber);
   document.getElementById('relay-description-category')?.addEventListener('change', applyCategoryDescriptionLock);
   document.getElementById('relay-season')?.addEventListener('change', () => {
     Promise.all([fillDungeonOptions(), fillRelicSeriesOptions()]).then(applyCategoryDescriptionLock);

@@ -539,11 +539,35 @@ function getEffectiveServerGroup(server, selectedSeason) {
   if (!server) return '';
 
   const key = getEffectiveMergeKey(server, selectedSeason);
-  return key === 'single' ? server.server_short : (server[key] || server.server_short);
+  if (key === 'single') return server.server_short;
+
+  const prefix = server.server_id.slice(0, 5);
+  if (key === 'merge_16') return prefix;
+
+  const groupSize = Number(key.replace('merge_', ''));
+  const sequence = Number(server.server_id.slice(-2));
+  if (!Number.isFinite(groupSize) || !Number.isFinite(sequence) || sequence < 1) {
+    return server.server_short;
+  }
+
+  const start = Math.floor((sequence - 1) / groupSize) * groupSize + 1;
+  return prefix + ':' + start + '-' + (start + groupSize - 1);
 }
 
 function getServerRowsInGroup(groupKey) {
   if (!serverRowsCache || !groupKey) return [];
+  const rangedGroup = groupKey.match(/^(\d{5}):(\d+)-(\d+)$/);
+  if (rangedGroup) {
+    const [, prefix, start, end] = rangedGroup;
+    return serverRowsCache.filter((server) => {
+      if (!server.server_id.startsWith(prefix)) return false;
+      const sequence = Number(server.server_id.slice(-2));
+      return sequence >= Number(start) && sequence <= Number(end);
+    });
+  }
+  if (/^\d{5}$/.test(groupKey)) {
+    return serverRowsCache.filter((server) => server.server_id.startsWith(groupKey));
+  }
 
   const range = parseServerRange(groupKey);
   if (range.length === 0) return serverRowsCache.filter((server) => server.server_short === groupKey);
@@ -1469,6 +1493,7 @@ async function fetchServerRows() {
         current_state: normalizeMergeState(cols.current_state),
       }))
       .filter((server) => server.server_id && server.server_name);
+    serverRowsCache.sort((a, b) => Number(a.server_id) - Number(b.server_id));
     return serverRowsCache;
   } catch (err) {
     console.error('伺服器資料載入失敗', err);
@@ -2903,7 +2928,7 @@ async function initServerSelector(containers) {
   servers.forEach((server) => {
     const opt = document.createElement('option');
     opt.value = server.server_name;
-    opt.textContent = server.server_name;
+    opt.textContent = `${server.server_id} - ${server.server_name}`;
     opt.dataset.serverId = server.server_id;
     serverSel.appendChild(opt);
   });

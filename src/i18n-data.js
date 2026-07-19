@@ -659,6 +659,14 @@ export const I18N_DICTIONARIES = {
     "zh-Hant": "伺服器 / 界域",
     "zh-Hans": "服务器 / 界域"
   },
+  "relay_server_number_label": {
+    "zh-Hant": "\u4f3a\u670d\u5668\u7de8\u865f",
+    "zh-Hans": "\u670d\u52a1\u5668\u7f16\u53f7"
+  },
+  "relay_server_number_placeholder": {
+    "zh-Hant": "\u4f8b\u5982 6000101",
+    "zh-Hans": "\u4f8b\u5982 6000101"
+  },
   "relay_server_placeholder": {
     "zh-Hant": "請選擇界域",
     "zh-Hans": "请选择界域"
@@ -1001,6 +1009,8 @@ const EN_TRANSLATIONS = {
   relay_form_close: { en: 'Back to calculator' },
   relay_form_intro: { en: 'Submissions are sent directly back to the Google Form. The server list uses known realms first, and you can enter a new merged-server name manually.' },
   relay_server_label: { en: 'Server / Realm' },
+  relay_server_number_label: { en: 'Server number' },
+  relay_server_number_placeholder: { en: 'For example, 6000101' },
   relay_server_placeholder: { en: 'Choose a realm' },
   relay_server_manual_toggle: { en: 'Enter manually' },
   relay_server_use_list: { en: 'Use list' },
@@ -1028,7 +1038,7 @@ const EN_TRANSLATIONS = {
   relay_open_google_form: { en: 'Open original Google Form' },
   relay_submit_pending: { en: 'Submitting. A success message will appear shortly.' },
   relay_submit_success: { en: 'Submitted to Google Form. Thanks for adding target time data.' },
-  relay_validation_required: { en: 'Fill in server, season, target date, and description first.' },
+  relay_validation_required: { en: 'Fill in server number, server, season, target date, and description first.' },
   relay_validation_date: { en: 'Target date format is invalid.' },
   exp_required_form_title: { en: 'Required EXP Form' },
   exp_required_form_intro: { en: 'Enter the total EXP required to advance from this level to the next, not the amount you personally still need after subtracting your current EXP.' },
