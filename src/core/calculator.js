@@ -31,18 +31,22 @@ export function calculateSeasonScore(targets, seasonScore, seasonId) {
   if (targets.character > seasonLevel) {
     score += (targets.character - seasonLevel) * cfg.character_level_score;
   }
-  if (targets.equipment_resonance > seasonLevel) {
-    score += (targets.equipment_resonance - seasonLevel) * cfg.equipment_level_score * 5;
-  }
-  if (targets.skill_resonance > seasonLevel) {
-    score += (targets.skill_resonance - seasonLevel) * cfg.skill_level_score * 8;
-  }
-  if (targets.pet_resonance > seasonLevel) {
-    score += (targets.pet_resonance - seasonLevel) * cfg.pet_level_score * 4;
-  }
-  if (targets.relic_resonance > seasonLevel / 10) {
-    score += (targets.relic_resonance - seasonLevel / 10) * cfg.relic_level_score * 20;
-  }
+  const equipmentLevels = targets.equipment ? Object.values(targets.equipment) : Array(5).fill(targets.equipment_resonance);
+  const skillLevels = targets.skills ? Object.values(targets.skills) : Array(8).fill(targets.skill_resonance);
+  const petLevels = targets.pets ? Object.values(targets.pets) : Array(4).fill(targets.pet_resonance);
+  const relicLevels = targets.relics || Array(20).fill(targets.relic_resonance);
+  equipmentLevels.forEach((level) => {
+    if (level > seasonLevel) score += (level - seasonLevel) * cfg.equipment_level_score;
+  });
+  skillLevels.forEach((level) => {
+    if (level > seasonLevel) score += (level - seasonLevel) * cfg.skill_level_score;
+  });
+  petLevels.forEach((level) => {
+    if (level > seasonLevel) score += (level - seasonLevel) * cfg.pet_level_score;
+  });
+  relicLevels.forEach((level) => {
+    if (level > seasonLevel / 10) score += (level - seasonLevel / 10) * cfg.relic_level_score;
+  });
 
   return score;
 }
@@ -249,9 +253,9 @@ export function computeEtaToTargetLevel({
 
 function getTargetForCategory(categoryId, targets) {
   if (categoryId === 'character') return targets.character || 0;
-  if (categoryId.startsWith('equipment_')) return targets.equipment_resonance || 0;
-  if (categoryId.startsWith('skill_')) return targets.skill_resonance || 0;
-  if (categoryId.startsWith('pet')) return targets.pet_resonance || 0;
+  if (categoryId.startsWith('equipment_')) return targets.equipment?.[categoryId] || 0;
+  if (categoryId.startsWith('skill_')) return targets.skills?.[categoryId] || 0;
+  if (categoryId.startsWith('pet')) return targets.pets?.[categoryId] || 0;
   return 0;
 }
 
@@ -340,19 +344,23 @@ export function calculateUpgradeResults(input, context) {
   const primordialStarTotal = (primordial.accumulated || 0) + primordialStar;
 
   let relicCount = 0;
+  const currentRelicLevels = [];
   relicDistribution.forEach(({ level, count }) => {
     const currentLevel = Number(level) || 0;
     if (count > 0) hasInput = true;
     relicCount += count;
+    for (let index = 0; index < count; index += 1) currentRelicLevels.push(currentLevel);
+  });
+  currentRelicLevels.sort((a, b) => a - b);
+  currentRelicLevels.forEach((currentLevel, index) => {
+    const requestedTarget = targets.relics?.[index];
+    if (requestedTarget === null || requestedTarget === undefined) return;
+    const targetLevel = Math.max(currentLevel, requestedTarget);
+    if (targetLevel <= currentLevel) return;
 
-    for (let index = 0; index < count; index += 1) {
-      const targetLevel = Math.max(currentLevel, targets.relic_resonance || 0);
-      if (targetLevel <= currentLevel) continue;
-
-      const { materials: delta, estimatedRanges } = getCostDelta(cumulativeCostData.relic, currentLevel, targetLevel);
-      addMaterialDelta(required, delta);
-      mergeEstimateHints(estimated, delta, estimatedRanges);
-    }
+    const { materials: delta, estimatedRanges } = getCostDelta(cumulativeCostData.relic, currentLevel, targetLevel);
+    addMaterialDelta(required, delta);
+    mergeEstimateHints(estimated, delta, estimatedRanges);
   });
   if (relicCount > 0 && relicCount !== relicCountRequired) hasError = true;
 

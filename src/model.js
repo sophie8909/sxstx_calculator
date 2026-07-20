@@ -19,6 +19,7 @@ import {
   getSpeedupHoursForHours as getSpeedupHoursForHoursFromState,
 } from './core/calculator.js';
 import { t } from './i18n-inline.js';
+import { normalizeTargetValues } from './core/targetLayouts.js';
 
 export const MAX_LEVEL = 200;
 export const STORAGE_KEY = 'sxstxCalculatorData';
@@ -509,10 +510,15 @@ export function computeAll(containers) {
   const readInteger = (id) => parseInt(document.getElementById(id)?.value, 10) || 0;
   const readFloat = (id) => parseFloat(document.getElementById(id)?.value) || 0;
 
-  const targets = {};
-  targetLevelConfig.forEach((target) => {
-    targets[target.id] = readInteger('target-' + target.id);
+  const targetValues = {};
+  document.querySelectorAll('[id^="target-"]').forEach((input) => {
+    targetValues[input.id] = input.value;
   });
+  const targets = normalizeTargetValues(
+    targetValues,
+    document.getElementById('target-level-layout-mode')?.value || 'compact',
+    document.getElementById('target-relic-layout-mode')?.value || 'element'
+  );
 
   const categoryCurrentLevels = {};
   categories.forEach((category) => {

@@ -31,6 +31,7 @@ import {
   renderTargetEtaText,
   renderMaterialSource,
   renderRelicDistribution,
+  renderTargetLevels,
 } from './view.js';
 import { applyStaticTranslations, getCurrentLanguage, initLanguage, t } from '../i18n-inline.js';
 import { findMissingUpgradeLevel } from '../core/upgradeCost.js';
@@ -41,6 +42,7 @@ import {
 } from '../core/experience.js';
 import { loadServers } from '../services/dataService.js';
 import { CACHE_FALLBACK_EVENT, CACHE_UPDATED_EVENT, fetchTextWithCache } from '../services/dataCache.js';
+import { convertTargetLayout, convertRelicLayout } from '../core/targetLayouts.js';
 
 /* ============================================================
  * Google Sheet published CSV settings.
@@ -1168,6 +1170,19 @@ async function applyTargetRecommendation(type) {
     const input = document.getElementById(inputId);
     const value = recommendation[field];
     if (input && value !== '') input.value = value;
+  });
+  const detailedIds = {
+    equipment_level: ['target-equipment_main_weapon', 'target-equipment_off_weapon', 'target-equipment_helmet', 'target-equipment_armor', 'target-equipment_boots'],
+    skill_level: ['target-skill_combat1', 'target-skill_combat2', 'target-skill_combat3', 'target-skill_combat4', 'target-skill_arcane1', 'target-skill_arcane2', 'target-skill_arcane3', 'target-skill_arcane4'],
+    pet_level: ['target-pet1', 'target-pet2', 'target-pet3', 'target-pet4'],
+    relic_level: document.getElementById('target-relic-layout-mode')?.value === 'individual'
+      ? Array.from({ length: 20 }, (_, index) => 'target-relic-' + (index + 1))
+      : Array.from({ length: 5 }, (_, index) => 'target-relic-element-' + (index + 1)),
+  };
+  Object.entries(detailedIds).forEach(([field, ids]) => {
+    const value = recommendation[field];
+    if (value === '') return;
+    ids.forEach((id) => { const input = document.getElementById(id); if (input) input.value = value; });
   });
 }
 
@@ -2851,6 +2866,46 @@ async function initDungeonFragmentYield(saved = {}) {
   updateDungeonFragmentYield();
 }
 
+function readTargetDomValues() {
+  const values = {};
+  document.querySelectorAll('[id^="target-"]').forEach((input) => { values[input.id] = input.value; });
+  return values;
+}
+
+function applyTargetDomValues(values) {
+  Object.entries(values).forEach(([id, value]) => {
+    const input = document.getElementById(id);
+    if (input) input.value = value;
+  });
+}
+
+function switchTargetLayout(containers, nextMode) {
+  const layoutSelect = document.getElementById('target-level-layout-mode');
+  const currentMode = layoutSelect?.value || 'compact';
+  if (!layoutSelect || currentMode === nextMode) return;
+  const relicMode = document.getElementById('target-relic-layout-mode')?.value || 'element';
+  const values = convertTargetLayout(readTargetDomValues(), currentMode, nextMode, relicMode);
+  applyTargetDomValues(values);
+  layoutSelect.value = nextMode;
+  saveAllInputs();
+  renderTargetLevels(containers.targetLevels);
+  loadAllInputs(['season-select']);
+  triggerRecalculate(containers);
+}
+
+function switchTargetRelicLayout(containers, nextMode) {
+  const relicSelect = document.getElementById('target-relic-layout-mode');
+  const currentMode = relicSelect?.value || 'element';
+  if (!relicSelect || currentMode === nextMode) return;
+  const values = convertRelicLayout(readTargetDomValues(), currentMode, nextMode);
+  applyTargetDomValues(values);
+  relicSelect.value = nextMode;
+  saveAllInputs();
+  renderTargetLevels(containers.targetLevels);
+  loadAllInputs(['season-select']);
+  triggerRecalculate(containers);
+}
+
 function markTargetRecommendationCustom(target) {
   if (!target?.id || !target.id.startsWith('target-')) return;
   if (target.id === 'target-character') target.removeAttribute('data-dungeon-auto-level');
@@ -3374,6 +3429,18 @@ function bindGlobalHandlers(containers) {
       updateFragmentFeeRates();
       updateFragmentCalculator();
       saveAllInputs();
+      return;
+    }
+
+    const targetLayoutButton = e.target.closest('.target-layout-mode-btn');
+    if (targetLayoutButton) {
+      switchTargetLayout(containers, targetLayoutButton.dataset.mode);
+      return;
+    }
+
+    const targetRelicButton = e.target.closest('.target-relic-mode-btn');
+    if (targetRelicButton) {
+      switchTargetRelicLayout(containers, targetRelicButton.dataset.mode);
       return;
     }
 

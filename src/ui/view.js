@@ -1,5 +1,6 @@
 ﻿import { el, fmt } from '../utils/format.js';
 import { getCurrentLanguage, t } from '../i18n-inline.js';
+import { EQUIPMENT_TARGET_IDS, SKILL_TARGET_IDS, PET_TARGET_IDS, ELEMENT_TARGET_IDS, RELIC_TARGET_IDS } from '../core/targetLayouts.js';
 import {
   categories,
   seasonOptions,
@@ -183,37 +184,37 @@ export function renderPrimordialStarCumulative(container) {
 }
 
 export function renderTargetLevels(container) {
-  container.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4';
+  const saved = JSON.parse(localStorage.getItem('sxstxCalculatorData') || '{}');
+  const layoutMode = saved['target-level-layout-mode'] || 'compact';
+  const relicMode = saved['target-relic-layout-mode'] || 'element';
+  container.className = 'space-y-4';
   container.innerHTML = '';
-
-  targetLevelConfig.forEach((target) => {
-    const badge =
-      target.id === 'character'
-        ? `<div id="target-char-reachable-level" class="text-xs text-gray-500 mt-1">${t('reachable_label', { value: '--' })}</div>`
-        : '';
-
-    const isReadOnly = target.readonly === true;
-    const group = createInputGroup(
-      `target-${target.id}`,
-      getTargetLabel(target.id),
-      isReadOnly ? t('readonly_badge') : t('target_placeholder'),
-      false,
-      badge
-    );
-    const label = group.querySelector('label');
-    label.classList.add('whitespace-nowrap');
-
-    if (isReadOnly) {
-      const input = group.querySelector('input');
-      input.disabled = true;
-      input.setAttribute('aria-readonly', 'true');
-      label.insertAdjacentHTML('beforeend', getReadonlyBadgeHtml());
-    }
-
-    container.appendChild(group);
-  });
+  const selector = el('div', ['target-layout-selector', 'hidden', 'md:flex', 'justify-center']);
+  selector.setAttribute('role', 'group'); selector.setAttribute('aria-label', t('target_layout_mode_aria'));
+  const layoutSelect = el('select', ['hidden']); layoutSelect.id = 'target-level-layout-mode'; ['compact', 'detailed'].forEach((mode) => { const option = el('option'); option.value = mode; option.textContent = t('target_layout_' + mode); layoutSelect.appendChild(option); }); layoutSelect.value = layoutMode; container.appendChild(layoutSelect);
+  ['compact', 'detailed'].forEach((mode) => { const button = el('button', ['target-layout-mode-btn', 'rounded-full', 'px-3', 'py-1', 'text-sm', 'font-semibold']); button.type = 'button'; button.dataset.mode = mode; button.textContent = t('target_layout_' + mode); button.setAttribute('aria-pressed', String(layoutMode === mode)); selector.appendChild(button); });
+  container.appendChild(selector);
+  const makeGroup = (id, label, readOnly = false, extra = '') => { const group = createInputGroup(id, label, readOnly ? t('readonly_badge') : t('target_placeholder'), false, extra); const input = group.querySelector('input'); if (readOnly) { input.disabled = true; input.setAttribute('aria-readonly', 'true'); group.querySelector('label').insertAdjacentHTML('beforeend', getReadonlyBadgeHtml()); } return group; };
+  const common = el('div', ['grid', 'grid-cols-1', 'md:grid-cols-2']);
+  common.appendChild(makeGroup('target-character', getTargetLabel('character'), false, '<div id=\"target-char-reachable-level\" class=\"text-xs text-gray-500 mt-1\">' + t('reachable_label', { value: '--' }) + '</div>'));
+  common.appendChild(makeGroup('target-primordial_star', getTargetLabel('primordial_star'), true));
+  container.appendChild(common);
+  const compact = el('div', ['target-layout-compact', 'grid', 'grid-cols-1', 'md:grid-cols-2', 'lg:grid-cols-4', 'gap-4']); compact.classList.toggle('hidden', layoutMode !== 'compact');
+  [['target-equipment_resonance', 'equipment_resonance'], ['target-skill_resonance', 'skill_resonance'], ['target-pet_resonance', 'pet_resonance'], ['target-relic_resonance', 'relic_resonance']].forEach(([id, label]) => compact.appendChild(makeGroup(id, getTargetLabel(label))));
+  container.appendChild(compact);
+  const detailed = el('div', ['target-layout-detailed', 'space-y-4']); detailed.classList.toggle('hidden', layoutMode !== 'detailed');
+  const addSection = (title, ids, labelFn, classes = ['grid', 'grid-cols-2', 'md:grid-cols-4', 'xl:grid-cols-5', 'gap-3']) => { const section = el('section', ['space-y-2']); const heading = el('h4', ['text-sm', 'font-bold']); heading.textContent = title; const grid = el('div', classes); ids.forEach((id) => grid.appendChild(makeGroup(id, labelFn(id)))); section.append(heading, grid); detailed.appendChild(section); };
+  addSection(t('target_equipment_detailed_title'), EQUIPMENT_TARGET_IDS, (id) => t('equipment_slot_' + id.replace('target-equipment_', '')));
+  const skillSection = el('section', ['space-y-2']); const skillHeading = el('h4', ['text-sm', 'font-bold']); skillHeading.textContent = t('target_skill_detailed_title'); const skillGroups = [['target_skill_combat', SKILL_TARGET_IDS.slice(0, 4)], ['target_skill_arcane', SKILL_TARGET_IDS.slice(4)]]; skillGroups.forEach(([titleKey, ids]) => { const group = el('div', ['space-y-1']); const heading = el('div', ['text-xs', 'font-semibold', 'text-slate-600']); heading.textContent = t(titleKey); const grid = el('div', ['grid', 'grid-cols-2', 'md:grid-cols-4', 'gap-3']); ids.forEach((id) => grid.appendChild(makeGroup(id, t('category_' + id.replace('target-', ''))))); group.append(heading, grid); skillSection.appendChild(group); }); detailed.appendChild(skillSection);
+  addSection(t('target_pet_detailed_title'), PET_TARGET_IDS, (id) => t('category_' + id.replace('target-', '')), ['grid', 'grid-cols-2', 'md:grid-cols-4', 'gap-3']);
+  addSection(t('target_relic_detailed_title'), [], () => '');
+  const relicSection = detailed.lastElementChild; const relicModeWrap = el('div', ['flex', 'justify-center', 'mb-2']); const relicModeSelect = el('select', ['hidden']); relicModeSelect.id = 'target-relic-layout-mode'; [['element', 'target_relic_mode_element'], ['individual', 'target_relic_mode_individual']].forEach(([value, key]) => { const option = el('option'); option.value = value; option.textContent = t(key); relicModeSelect.appendChild(option); }); relicModeSelect.value = saved['target-relic-layout-mode'] || 'element'; relicModeWrap.appendChild(relicModeSelect); const modeButtons = el('div', ['inline-flex', 'overflow-hidden', 'rounded-full', 'border', 'border-[#9ed6d8]', 'bg-[#eefafa]', 'p-0.5']); [['element', 'target_relic_mode_element'], ['individual', 'target_relic_mode_individual']].forEach(([value, key]) => { const button = el('button', ['target-relic-mode-btn', 'rounded-full', 'px-3', 'py-1', 'text-sm', 'font-semibold']); button.type = 'button'; button.dataset.mode = value; button.textContent = t(key); button.setAttribute('aria-pressed', String(relicModeSelect.value === value)); modeButtons.appendChild(button); }); relicModeWrap.appendChild(modeButtons); relicSection.appendChild(relicModeWrap);
+  const relicElementGrid = el('div', ['target-relic-elements', 'grid', 'grid-cols-2', 'md:grid-cols-5', 'gap-3']); ELEMENT_TARGET_IDS.forEach((id, index) => relicElementGrid.appendChild(makeGroup(id, t('target_element_resonance', { index: index + 1 })))); relicSection.appendChild(relicElementGrid);
+  const relicIndividualGrid = el('div', ['target-relic-individuals', 'hidden', 'grid', 'grid-cols-2', 'md:grid-cols-4', 'xl:grid-cols-5', 'gap-3']); RELIC_TARGET_IDS.forEach((id, index) => relicIndividualGrid.appendChild(makeGroup(id, t('target_relic_number', { index: index + 1 })))); relicSection.appendChild(relicIndividualGrid);
+  const hint = el('p', ['text-xs', 'text-slate-500']); hint.id = 'target-relic-pairing-hint'; hint.textContent = t('target_relic_pairing_hint'); relicSection.appendChild(hint);
+  container.appendChild(detailed);
+  const syncRelicMode = () => { const current = relicModeSelect.value; relicElementGrid.classList.toggle('hidden', current !== 'element'); relicIndividualGrid.classList.toggle('hidden', current !== 'individual'); modeButtons.querySelectorAll('button').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.mode === current))); }; syncRelicMode();
 }
-
 export function renderMaterials(container) {
   const order = ['rola', 'stoneOre', 'essence', 'sand', 'freezeDried'];
   container.innerHTML = '';
