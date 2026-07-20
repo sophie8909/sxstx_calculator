@@ -45,11 +45,6 @@ function updateThemeControl(preference) {
     Array.from(select.options).forEach((option) => {
       option.textContent = THEME_EMOJIS[option.value] + ' ' + labels[option.value];
     });
-    const icon = select.parentElement?.querySelector('[data-theme-select-icon]');
-    if (icon) {
-      icon.textContent = THEME_EMOJIS[preference];
-      icon.setAttribute('title', labels[preference]);
-    }
   });
 }
 
