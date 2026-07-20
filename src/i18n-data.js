@@ -851,6 +851,8 @@ const EN_TRANSLATIONS = {
   theme_dark_label: { 'zh-Hant': '夜間模式', 'zh-Hans': '夜间模式', en: 'Dark mode' },
   theme_light_label: { 'zh-Hant': '日間模式', 'zh-Hans': '日间模式', en: 'Light mode' },
   theme_toggle_title: { 'zh-Hant': '切換夜間模式', 'zh-Hans': '切换夜间模式', en: 'Toggle dark mode' },
+  theme_select_title: { 'zh-Hant': '\u5207\u63db\u4e3b\u984c\u6a21\u5f0f', 'zh-Hans': '\u5207\u6362\u4e3b\u9898\u6a21\u5f0f', en: 'Select theme mode' },
+  theme_system_label: { 'zh-Hant': '\u7cfb\u7d71\u8a2d\u5b9a', 'zh-Hans': '\u7cfb\u7edf\u8bbe\u5b9a', en: 'System settings' },
   actual_exp: { en: 'Actual EXP' },
   alert_local_data_cleared: { en: 'Saved data on this device has been cleared. The page will reload.' },
   calendar_event_details: { en: 'This event was created from your current calculation. Estimated upgrade time: {upgradeTime}. Reminder lead time: {notifyMinutes} minutes.' },
