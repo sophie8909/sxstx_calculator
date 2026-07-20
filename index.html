@@ -644,7 +644,7 @@
             </div>
             <div>
             <label for="relay-server-number" class="block font-semibold mb-2" data-i18n="relay_server_number_label">Server number</label>
-            <input id="relay-server-number" type="text" inputmode="numeric" pattern="[0-9]+" class="input-field rounded p-3 w-full" required data-i18n-placeholder="relay_server_number_placeholder" placeholder="For example, 6000101" />
+            <input id="relay-server-number" type="text" inputmode="numeric" pattern="[0-9]{7}" maxlength="7" class="input-field rounded p-3 w-full" required data-i18n-placeholder="relay_server_number_placeholder" placeholder="For example, 6000101" />
           </div>
           <div id="relay-server-manual-wrap" class="hidden mt-3">
               <input
@@ -743,6 +743,7 @@
   >
     <input type="hidden" name="entry.1531554423" id="field-server-name" />
     <input type="hidden" name="entry.1531554423.other_option_response" id="field-server-name-other" />
+    <input type="hidden" name="entry.1115677081" id="field-server-number" />
     <input type="hidden" name="entry.1118699589" id="field-season" />
     <input type="hidden" name="entry.570931091" id="field-description" />
     <input type="hidden" name="entry.2132984809_month" id="field-time-month" />

@@ -584,7 +584,7 @@ function submitRelayForm() {
   const descriptionBody = document.getElementById('relay-description')?.value.trim() || '';
   const description = buildSubmittedDescription(descriptionCategory, descriptionBody);
 
-  if (!serverName || !serverNumber || !season || !date || !description) {
+  if (!serverName || !/^\d{7}$/.test(serverNumber) || !season || !date || !description) {
     showFeedback(t('relay_validation_required'), 'error');
     return;
   }
@@ -597,8 +597,9 @@ function submitRelayForm() {
 
   document.getElementById('field-server-name').value = serverName;
   document.getElementById('field-server-name-other').value = '';
+  document.getElementById('field-server-number').value = serverNumber;
   document.getElementById('field-season').value = season;
-  document.getElementById('field-description').value = `[Server ${serverNumber}] ${description}`;
+  document.getElementById('field-description').value = description;
   document.getElementById('field-time-year').value = year;
   document.getElementById('field-time-month').value = String(Number(month));
   document.getElementById('field-time-day').value = String(Number(day));
