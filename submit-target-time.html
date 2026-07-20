@@ -136,6 +136,22 @@
       </div>
 
       <div id="relay-feedback" class="hidden mt-4 rounded-lg border px-4 py-3 text-sm"></div>
+      <section id="relay-success-panel" class="hidden mt-5 rounded-2xl border-2 border-emerald-300 bg-emerald-50 p-5 text-emerald-950 shadow-lg" role="status" aria-live="polite">
+        <div class="flex items-start gap-3">
+          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-2xl font-bold text-white" aria-hidden="true">✓</div>
+          <div class="min-w-0 flex-1">
+            <h2 class="text-xl font-bold">送出成功！</h2>
+            <p class="mt-1 text-sm">資料已傳送至 Google 表單，謝謝你的補充。</p>
+            <dl class="mt-4 grid gap-2 text-sm sm:grid-cols-2">
+              <div><dt class="font-semibold">伺服器</dt><dd id="relay-success-server"></dd></div>
+              <div><dt class="font-semibold">伺服器編號</dt><dd id="relay-success-number"></dd></div>
+              <div><dt class="font-semibold">賽季</dt><dd id="relay-success-season"></dd></div>
+              <div><dt class="font-semibold">目標日期</dt><dd id="relay-success-date"></dd></div>
+            </dl>
+            <button id="relay-success-reset" type="button" class="mt-5 rounded-lg bg-emerald-700 px-4 py-2 font-semibold text-white transition hover:bg-emerald-800">繼續填寫</button>
+          </div>
+        </div>
+      </section>
     </main>
   </div>
 

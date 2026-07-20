@@ -28,9 +28,11 @@ const RELIC_SERIES_SHEET = { id: '1boxKipNVI-tCaJEaX-AoOTijEgKcxKfilhbtxkLbX-E',
 
 const FALLBACK_SERVERS = ['台港澳'];
 const EXP_REQUIRED_SUBMIT_TIMEOUT_MS = 15000;
+let serverRowsCache = null;
 let dungeonNameRowsCache = null;
 let relicSeriesNamesCache = null;
 let expRequiredSubmitTimer = null;
+let pendingRelaySummary = null;
 
 function getInitialContext() {
   const params = new URLSearchParams(window.location.search);
@@ -240,6 +242,21 @@ function showFeedback(message, type = 'info') {
   }
 }
 
+function showRelaySuccessSummary({ serverName, serverNumber, season, date }) {
+  const panel = document.getElementById('relay-success-panel');
+  if (!panel) return;
+
+  document.getElementById('relay-success-server').textContent = serverName;
+  document.getElementById('relay-success-number').textContent = serverNumber;
+  document.getElementById('relay-success-season').textContent = season;
+  document.getElementById('relay-success-date').textContent = date;
+  panel.classList.remove('hidden');
+  panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function hideRelaySuccessSummary() {
+  document.getElementById('relay-success-panel')?.classList.add('hidden');
+}
 function showExpRequiredFeedback(message, type = 'info') {
   const feedback = document.getElementById('exp-required-feedback');
   if (!feedback) return;
@@ -609,6 +626,7 @@ function submitRelayForm() {
     document.getElementById('field-server-name-other').value = serverName;
   }
 
+  pendingRelaySummary = { serverName, serverNumber, season, date };
   window.__relaySubmitted = true;
   document.getElementById('google-form-relay').submit();
   showFeedback(t('relay_submit_pending'), 'info');
@@ -707,6 +725,7 @@ async function init() {
   applyCategoryDescriptionLock();
 
   submitButton?.addEventListener('click', submitRelayForm);
+  document.getElementById('relay-success-reset')?.addEventListener('click', hideRelaySuccessSummary);
   document.getElementById('exp-required-submit-btn')?.addEventListener('click', submitExpRequiredForm);
   window.addEventListener('expRequiredFormPrefill', (event) => {
     applyExpRequiredPrefill(event.detail || {});
@@ -729,6 +748,7 @@ async function init() {
     if (!window.__relaySubmitted) return;
 
     showFeedback(t('relay_submit_success'), 'success');
+    if (pendingRelaySummary) showRelaySuccessSummary(pendingRelaySummary);
     document.getElementById('relay-description').value = '';
     applyCategoryDescriptionLock();
     window.__relaySubmitted = false;
