@@ -1,4 +1,4 @@
-﻿// model.js
+// model.js
 
 import { getGoogleSheetCsvUrl, loadUpgradeCostTablesForSeason, clearDataServiceMemoryCache } from './services/dataService.js';
 import { fetchTextWithCache } from './services/dataCache.js';
@@ -9,6 +9,7 @@ import {
 } from './core/upgradeCost.js';
 import {
   calculateSeasonScore as calculateSeasonScoreFromData,
+  calculateSeasonScoreBreakdown,
   calculateUpgradeResults,
   computeEtaToNextLevel as computeEtaToNextLevelFromData,
   computeEtaToTargetLevel as computeEtaToTargetLevelFromData,
@@ -601,6 +602,20 @@ export function computeAll(containers) {
     reachableEl.textContent = t('reachable_label', { value });
   }
 
+  const scoreBreakdown = calculateSeasonScoreBreakdown(targets, state.seasonScore, state.seasonId);
+  document.querySelectorAll('[data-target-score-for]').forEach((element) => {
+    const key = element.dataset.targetScoreFor || '';
+    let score = 0;
+    if (key.startsWith('equipment_')) score = scoreBreakdown.equipment[key] || 0;
+    else if (key.startsWith('skill_')) score = scoreBreakdown.skills[key] || 0;
+    else if (key.startsWith('pet')) score = scoreBreakdown.pets[key] || 0;
+    else if (key.startsWith('relic_')) score = scoreBreakdown.relics[key] || 0;
+    else if (key.startsWith('relic-element-')) {
+      const index = Number(key.replace('relic-element-', ''));
+      score = [0, 1, 2, 3].reduce((sum, offset) => sum + (scoreBreakdown.relics[`relic_${(index - 1) * 4 + offset + 1}`] || 0), 0);
+    }
+    element.textContent = t('target_individual_score', { score });
+  });
   const primordialStarInput = document.getElementById('target-primordial_star');
   if (primordialStarInput) primordialStarInput.value = result.derived?.primordialStar || 0;
 

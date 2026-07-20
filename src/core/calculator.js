@@ -21,34 +21,37 @@ function mergeEstimateHints(target, materials, estimatedRanges) {
   });
 }
 
-export function calculateSeasonScore(targets, seasonScore, seasonId) {
+function scoreLevel(level, threshold, multiplier) {
+  const value = Number(level);
+  if (!Number.isFinite(value) || value <= threshold) return 0;
+  return (value - threshold) * multiplier;
+}
+
+export function calculateSeasonScoreBreakdown(targets, seasonScore, seasonId) {
   const cfg = seasonScore?.[seasonId];
-  if (!cfg) return 0;
-
+  if (!cfg) return { character: 0, equipment: {}, skills: {}, pets: {}, relics: {}, total: 0 };
   const seasonLevel = cfg.season_level || 100;
-  let score = 0;
+  const equipmentLevels = targets.equipment ? Object.entries(targets.equipment) : Array.from({ length: 5 }, (_, index) => [`equipment_${index + 1}`, targets.equipment_resonance]);
+  const skillLevels = targets.skills ? Object.entries(targets.skills) : Array.from({ length: 8 }, (_, index) => [`skill_${index + 1}`, targets.skill_resonance]);
+  const petLevels = targets.pets ? Object.entries(targets.pets) : Array.from({ length: 4 }, (_, index) => [`pet_${index + 1}`, targets.pet_resonance]);
+  const relicLevels = (targets.relics || Array(20).fill(targets.relic_resonance)).map((level, index) => [`relic_${index + 1}`, level]);
+  const breakdown = {
+    character: scoreLevel(targets.character, seasonLevel, cfg.character_level_score),
+    equipment: Object.fromEntries(equipmentLevels.map(([id, level]) => [id, scoreLevel(level, seasonLevel, cfg.equipment_level_score)])),
+    skills: Object.fromEntries(skillLevels.map(([id, level]) => [id, scoreLevel(level, seasonLevel, cfg.skill_level_score)])),
+    pets: Object.fromEntries(petLevels.map(([id, level]) => [id, scoreLevel(level, seasonLevel, cfg.pet_level_score)])),
+    relics: Object.fromEntries(relicLevels.map(([id, level]) => [id, scoreLevel(level, seasonLevel / 10, cfg.relic_level_score)])),
+  };
+  breakdown.total = breakdown.character
+    + Object.values(breakdown.equipment).reduce((sum, value) => sum + value, 0)
+    + Object.values(breakdown.skills).reduce((sum, value) => sum + value, 0)
+    + Object.values(breakdown.pets).reduce((sum, value) => sum + value, 0)
+    + Object.values(breakdown.relics).reduce((sum, value) => sum + value, 0);
+  return breakdown;
+}
 
-  if (targets.character > seasonLevel) {
-    score += (targets.character - seasonLevel) * cfg.character_level_score;
-  }
-  const equipmentLevels = targets.equipment ? Object.values(targets.equipment) : Array(5).fill(targets.equipment_resonance);
-  const skillLevels = targets.skills ? Object.values(targets.skills) : Array(8).fill(targets.skill_resonance);
-  const petLevels = targets.pets ? Object.values(targets.pets) : Array(4).fill(targets.pet_resonance);
-  const relicLevels = targets.relics || Array(20).fill(targets.relic_resonance);
-  equipmentLevels.forEach((level) => {
-    if (level > seasonLevel) score += (level - seasonLevel) * cfg.equipment_level_score;
-  });
-  skillLevels.forEach((level) => {
-    if (level > seasonLevel) score += (level - seasonLevel) * cfg.skill_level_score;
-  });
-  petLevels.forEach((level) => {
-    if (level > seasonLevel) score += (level - seasonLevel) * cfg.pet_level_score;
-  });
-  relicLevels.forEach((level) => {
-    if (level > seasonLevel / 10) score += (level - seasonLevel / 10) * cfg.relic_level_score;
-  });
-
-  return score;
+export function calculateSeasonScore(targets, seasonScore, seasonId) {
+  return calculateSeasonScoreBreakdown(targets, seasonScore, seasonId).total;
 }
 
 export function convertPrimordialStar(score, seasonScore, seasonId) {
