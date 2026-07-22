@@ -1197,3 +1197,38 @@ html[data-theme='dark'] .theme-select option {
   background: #172f34;
   color: #e2e8f0;
 }
+
+/* Dark-mode result cards: keep status colors dark and text readable. */
+html[data-theme='dark'] #results .bg-green-100,
+html[data-theme='dark'] #results .bg-blue-100,
+html[data-theme='dark'] #results .bg-orange-100,
+html[data-theme='dark'] #results .bg-red-100 {
+  color: #f1f5f9;
+  filter: none;
+}
+html[data-theme='dark'] #results .bg-green-100 {
+  background: #173f3b !important;
+  border-color: #3f9d8d !important;
+}
+html[data-theme='dark'] #results .bg-blue-100 {
+  background: #183d56 !important;
+  border-color: #4b9ac4 !important;
+}
+html[data-theme='dark'] #results .bg-orange-100 {
+  background: #4a321c !important;
+  border-color: #c88b3a !important;
+}
+html[data-theme='dark'] #results .bg-red-100 {
+  background: #4a242b !important;
+  border-color: #d66b78 !important;
+}
+html[data-theme='dark'] #results .text-slate-700 { color: #e8f1f2 !important; }
+html[data-theme='dark'] #results .text-red-700 { color: #ffb4bd !important; }
+html[data-theme='dark'] #results .text-emerald-700 { color: #8ff0c3 !important; }
+html[data-theme='dark'] #results .text-amber-700 { color: #ffd28a !important; }
+html[data-theme='dark'] #results .bg-green-100:hover,
+html[data-theme='dark'] #results .bg-blue-100:hover,
+html[data-theme='dark'] #results .bg-orange-100:hover,
+html[data-theme='dark'] #results .bg-red-100:hover {
+  filter: brightness(1.12);
+}
