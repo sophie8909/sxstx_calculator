@@ -483,6 +483,10 @@ export const I18N_DICTIONARIES = {
     "zh-Hant": "加速套用到目標時間：+{hours} 小時",
     "zh-Hans": "加速套用到目标时间：+{hours} 小时"
   },
+  "big_mine_settings_title": {
+    "zh-Hant": "大礦收益設定",
+    "zh-Hans": "大矿收益设置"
+  },
   "big_mine_total_gain_header": {
     "zh-Hant": "大礦後總量",
     "zh-Hans": "大矿后总量"
@@ -502,6 +506,10 @@ export const I18N_DICTIONARIES = {
   "store_source_title": {
     "zh-Hant": "商店購買",
     "zh-Hans": "商店购买"
+  },
+  "store_total_gain_title": {
+    "zh-Hant": "商店總收益",
+    "zh-Hans": "商店总收益"
   },
   "summary_deficit": {
     "zh-Hant": "缺口",
@@ -993,11 +1001,13 @@ const EN_TRANSLATIONS = {
   speedup_settings_tooltip: { en: 'Daily free acceleration and acceleration stones apply to time-based bed EXP and material yield.' },
   speedup_stone_count: { en: 'Acceleration stone count' },
   speedup_target_time: { en: 'Acceleration applied to target time: +{hours} hours' },
+  big_mine_settings_title: { en: 'Big mine yield settings' },
   big_mine_total_gain_header: { en: 'Total after big mine' },
   daily_store_price_total: { en: 'Daily sale price total' },
   daily_store_slots_header: { en: 'Daily slots' },
   store_resource_price_header: { en: 'Price (10K)' },
   store_source_title: { en: 'Shop purchase' },
+  store_total_gain_title: { en: 'Shop total value' },
   summary_deficit: { en: 'Gap' },
   summary_done: { en: '0, enough' },
   summary_gain: { en: 'Gain' },

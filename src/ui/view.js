@@ -575,6 +575,8 @@ export function renderMaterialSource(containers) {
     avgHeaderKey: 'bond_base_dispatch_reward_header',
   });
   const storeHtml = renderMaterialSourceTable('store', t('store_source_title'), sourceMaterials.store, dailyDefaults, avgDefaults, rolaCostDefaults, { showAvg: false });
+  const mineSettingsHtml = renderExploreBigMineSettings();
+  const storeSummaryHtml = renderStoreSummary();
 
   wrapper.innerHTML = `
     <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-3 mb-4">
@@ -595,12 +597,50 @@ export function renderMaterialSource(containers) {
       ${exploreHtml}
       ${storeHtml}
       ${bondHtml}
+      ${mineSettingsHtml}
+      ${storeSummaryHtml}
     </div>
   `;
 
   const daysLabel = wrapper.querySelector('span.font-semibold');
   appendTooltip(daysLabel, getTooltipText('days-remaining'));
 
+}
+
+function renderExploreBigMineSettings() {
+  return `
+    <section class="material-source-section material-source-secondary-panel material-source-panel--mine">
+      <h4 class="font-semibold text-center">${t('big_mine_settings_title')}</h4>
+      <div class="material-source-secondary-content">
+        <label class="material-source-toggle p-2 text-sm">
+          <input
+            id="explore-big-mine-enabled"
+            type="checkbox"
+            class="material-source-input"
+            data-source="explore"
+            data-material="bigMine"
+            data-role="enabled"
+          />
+          <span>${t('include_big_mine_gain')}</span>
+        </label>
+        <div class="mt-3 text-xs text-slate-600">${t('explore_big_mine_rule', {
+          bonus: (STAMINA_BIG_MINE_RATE * 100).toFixed(2),
+        })}</div>
+      </div>
+    </section>
+  `;
+}
+
+function renderStoreSummary() {
+  return `
+    <section class="material-source-section material-source-secondary-panel material-source-panel--store-summary">
+      <h4 class="font-semibold text-center">${t('store_total_gain_title')}</h4>
+      <div class="material-source-secondary-content material-source-summary-values text-sm">
+        <div class="text-right">${t('daily_store_price_total')} <span id="store-price-daily-total">0</span></div>
+        <div class="text-right">${t('total_store_price')} <span id="store-price-period-total">0</span></div>
+      </div>
+    </section>
+  `;
 }
 
 function renderMaterialSourceTable(source, title, materialList, dailyDefaults, avgDefaults, rolaCostDefaults, options) {
@@ -617,34 +657,6 @@ function renderMaterialSourceTable(source, title, materialList, dailyDefaults, a
       ? `<th>${t('material_header')}</th><th>${t('daily_purchase_header')}</th><th>${t('store_resource_price_header')}</th><th>${t('avg_gain_header')}</th><th>${t('total_gain_header')}</th>`
       : `<th>${t('material_header')}</th><th>${t('daily_purchase_header')}</th><th>${t('rola_cost_header')}</th><th>${t('total_gain_header')}</th>`;
 
-  const storeSummary =
-    isStore
-      ? `
-        <div class="mt-3 p-2 bg-gray-50 rounded border text-sm space-y-1">
-          <div class="text-right">${t('daily_store_price_total')} <span id="store-price-daily-total">0</span></div>
-          <div class="text-right">${t('total_store_price')} <span id="store-price-period-total">0</span></div>
-        </div>
-      `
-      : '';
-  const exploreSummary =
-    source === 'explore'
-      ? `
-        <label class="material-source-toggle mt-3 p-2 bg-gray-50 rounded border text-sm">
-          <input
-            id="explore-big-mine-enabled"
-            type="checkbox"
-            class="material-source-input"
-            data-source="explore"
-            data-material="bigMine"
-            data-role="enabled"
-          />
-          <span>${t('include_big_mine_gain')}</span>
-        </label>
-        <div class="mt-2 text-xs text-slate-600">${t('explore_big_mine_rule', {
-          bonus: (STAMINA_BIG_MINE_RATE * 100).toFixed(2),
-        })}</div>
-      `
-      : '';
 
   const rows = materialList
     .map((mat) => {
@@ -750,8 +762,6 @@ function renderMaterialSourceTable(source, title, materialList, dailyDefaults, a
           </tbody>
         </table>
       </div>
-      ${exploreSummary}
-      ${storeSummary}
     </section>
   `;
 }

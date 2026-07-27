@@ -696,15 +696,34 @@ body.app-loading .app-loading-overlay {
 .material-source-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
   gap: 1rem;
 }
 
 .material-source-section {
   min-width: 0;
+  height: 100%;
 }
 
-.material-source-panel--bond {
-  grid-column: 1 / -1;
+.material-source-secondary-panel {
+  display: flex;
+  min-height: 9rem;
+  flex-direction: column;
+  padding: .75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: .375rem;
+  background: #f9fafb;
+}
+
+.material-source-secondary-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.material-source-summary-values {
+  gap: .5rem;
 }
 
 .material-source-table-wrap {
@@ -729,9 +748,6 @@ body.app-loading .app-loading-overlay {
   min-height: 2.5rem;
 }
 
-.material-source-panel--bond .material-source-input {
-  width: min(100%, 12rem);
-}
 
 .material-source-toggle {
   display: flex;
@@ -1051,6 +1067,36 @@ main a[data-i18n='relay_open_google_form'] {
 @media (min-width: 1280px) {
   .material-source-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .material-source-panel--dungeon {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .material-source-panel--explore {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .material-source-panel--store {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .material-source-panel--bond {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .material-source-panel--mine {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .material-source-panel--store-summary {
+    grid-column: 3;
+    grid-row: 2;
   }
 }
 
