@@ -1,4 +1,6 @@
 import { I18N_DICTIONARIES } from './i18n-data.js';
+import { WORLD_RALLY_I18N } from './i18n-world-rally.js';
+import { WORLD_RALLY_STATE_I18N } from './i18n-world-rally-state.js';
 
 export const LANGUAGE_STORAGE_KEY = 'sxstx_ui_language';
 
@@ -19,7 +21,7 @@ function detectDefaultLanguage() {
 async function loadDictionaries() {
   if (Object.keys(dictionaries).length > 0) return dictionaries;
 
-  dictionaries = I18N_DICTIONARIES;
+  dictionaries = { ...I18N_DICTIONARIES, ...WORLD_RALLY_I18N, ...WORLD_RALLY_STATE_I18N };
   return dictionaries;
 }
 

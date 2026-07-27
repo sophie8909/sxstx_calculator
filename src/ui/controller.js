@@ -43,6 +43,10 @@ import {
 import { loadServers } from '../services/dataService.js';
 import { CACHE_FALLBACK_EVENT, CACHE_UPDATED_EVENT, fetchTextWithCache } from '../services/dataCache.js';
 import { convertTargetLayout, convertRelicLayout } from '../core/targetLayouts.js';
+import {
+  createRallyResult,
+  parsePlayerNumber,
+} from '../core/serverWorlds.js';
 
 /* ============================================================
  * Google Sheet published CSV settings.
@@ -52,7 +56,6 @@ const TIME_PRESETS_SHEET = {
   id: '1boxKipNVI-tCaJEaX-AoOTijEgKcxKfilhbtxkLbX-E',
   gid: '859085671',
 };
-const PLAYER_CODE_PATTERN = /^\d{12}$/;
 const seasonMergeMap = {
   s1: 'merge_2',
   s2: 'merge_4',
@@ -222,6 +225,7 @@ let serverRowsCache = null;
 let equipmentSeasonScoreRows = [];
 let equipmentRatingThresholds = {};
 let equipmentSeasonScoreDataPromise = null;
+let renderWorldRallyFromGlobalState = () => {};
 const ACTIVE_PAGE_STORAGE_KEY = 'sxstxCalculatorActivePage';
 const CACHE_REFRESH_DEBOUNCE_MS = 250;
 let cacheRefreshTimer = null;
@@ -581,10 +585,6 @@ function getServerRowsInGroup(groupKey) {
 function getServerByName(name) {
   const normalizedName = normalizeServerName(name);
   return (serverRowsCache || []).find((server) => normalizeServerName(server.server_name) === normalizedName) || null;
-}
-
-function getServerById(serverId) {
-  return (serverRowsCache || []).find((server) => server.server_id === String(serverId || '').trim()) || null;
 }
 
 function getSelectedServerRow() {
@@ -1507,7 +1507,7 @@ async function fetchServerRows() {
         merge_16: String(cols.merge_16 || '').trim(),
         current_state: normalizeMergeState(cols.current_state),
       }))
-      .filter((server) => server.server_id && server.server_name);
+      .filter((server) => server.server_id);
     serverRowsCache.sort((a, b) => Number(a.server_id) - Number(b.server_id));
     return serverRowsCache;
   } catch (err) {
@@ -1693,11 +1693,12 @@ function bindTargetTimeFormToggle() {
   const calculatorPageContent = document.getElementById('calculator-page-content');
   const fragmentCalculatorPanel = document.getElementById('fragment-calculator-panel');
   const giftCalculatorPanel = document.getElementById('gift-calculator-panel');
+  const worldRallyPanel = document.getElementById('world-rally-panel');
   const targetTimeFormPanel = document.getElementById('target-time-form-panel');
   const sectionSideNav = document.getElementById('section-side-nav');
   const appLayout = document.querySelector('.app-layout');
 
-  if (!navButtons.length || !calculatorPageContent || !fragmentCalculatorPanel || !giftCalculatorPanel || !targetTimeFormPanel) return;
+  if (!navButtons.length || !calculatorPageContent || !fragmentCalculatorPanel || !giftCalculatorPanel || !worldRallyPanel || !targetTimeFormPanel) return;
 
   const scrollToToggle = () => {
     const firstButton = navButtons[0];
@@ -1709,6 +1710,7 @@ function bindTargetTimeFormToggle() {
     primordial: calculatorPageContent,
     fragment: fragmentCalculatorPanel,
     gift: giftCalculatorPanel,
+    'world-rally': worldRallyPanel,
     'target-time-form': targetTimeFormPanel,
   };
 
@@ -1717,6 +1719,7 @@ function bindTargetTimeFormToggle() {
     Object.entries(panels).forEach(([key, panel]) => {
       panel.classList.toggle('hidden', key !== targetPage);
     });
+    if (targetPage === 'world-rally') renderWorldRallyFromGlobalState();
 
     navButtons.forEach((button) => {
       const active = button.dataset.page === targetPage;
@@ -3023,20 +3026,18 @@ async function initServerSelector(containers) {
       return;
     }
 
-    if (!PLAYER_CODE_PATTERN.test(playerCode)) {
-      if (playerError) playerError.textContent = t('player_code_invalid');
-      return;
-    }
-
-    const serverId = playerCode.slice(0, 7);
-    const server = getServerById(serverId);
-    if (!server) {
-      if (playerError) playerError.textContent = t('player_code_server_not_found');
+    const parsedPlayer = parsePlayerNumber(playerCode, serverRowsCache);
+    if (!parsedPlayer.ok) {
+      if (playerError) {
+        playerError.textContent = parsedPlayer.error === 'server_not_found'
+          ? t('player_code_server_not_found')
+          : t('player_code_invalid');
+      }
       return;
     }
 
     if (playerError) playerError.textContent = '';
-    await applyServer(server.server_name, true);
+    await applyServer(parsedPlayer.server.server_name, true);
   };
 
   if (savedServer && [...serverSel.options].some(o => o.value === savedServer)) {
@@ -3046,7 +3047,7 @@ async function initServerSelector(containers) {
     state.serverName = serverSel.value;
   }
 
-  if (savedPlayerCode && PLAYER_CODE_PATTERN.test(savedPlayerCode)) {
+  if (savedPlayerCode && parsePlayerNumber(savedPlayerCode, serverRowsCache).ok) {
     await applyPlayerCode();
   }
 
@@ -3066,6 +3067,102 @@ async function initServerSelector(containers) {
       applyPlayerCode();
     });
   }
+}
+
+async function initWorldRally() {
+  const playerInput = document.getElementById('player-code-input');
+  const seasonSelect = document.getElementById('season-select');
+  const panel = document.getElementById('world-rally-panel');
+  const resultElement = document.getElementById('world-rally-result');
+  if (!playerInput || !seasonSelect || !panel || !resultElement) return;
+
+  await fetchServerRows();
+
+  const renderMessage = (message, className = 'world-rally-state') => {
+    resultElement.replaceChildren();
+    const paragraph = document.createElement('p');
+    paragraph.className = className;
+    paragraph.textContent = message;
+    resultElement.appendChild(paragraph);
+  };
+
+  renderWorldRallyFromGlobalState = () => {
+    resultElement.replaceChildren();
+
+    const playerNumber = playerInput.value.trim();
+    if (!playerNumber) {
+      renderMessage(t('world_rally_empty_prompt'));
+      return;
+    }
+
+    const parsedPlayer = parsePlayerNumber(playerNumber, serverRowsCache);
+    if (!parsedPlayer.ok) {
+      const globalError = document.getElementById('player-code-error')?.textContent.trim();
+      renderMessage(globalError || t(
+        parsedPlayer.error === 'server_not_found'
+          ? 'player_code_server_not_found'
+          : 'player_code_invalid'
+      ), 'world-rally-state world-rally-state-error');
+      return;
+    }
+
+    const selectedSeason = seasonOptions.find((season) => season.id === seasonSelect.value);
+    const seasonNumber = Number(selectedSeason?.season);
+    if (!Number.isInteger(seasonNumber) || seasonNumber < 4) {
+      renderMessage(t('world_rally_before_s4'));
+      return;
+    }
+
+    const rallySeason = seasonNumber === 4 ? 's4' : 's5';
+    const currentResult = createRallyResult(parsedPlayer, rallySeason, serverRowsCache);
+    const summary = document.createElement('div');
+    summary.className = 'world-rally-summary';
+    const currentServer = document.createElement('p');
+    currentServer.textContent = t('world_rally_current_server', {
+      realm: currentResult.realm,
+      world: currentResult.entries.find((entry) => entry.isCurrent)?.world ?? '',
+    });
+    const season = document.createElement('p');
+    season.textContent = t('world_rally_season_result', {
+      season: selectedSeason.name,
+    });
+    const rallyLabel = document.createElement('p');
+    rallyLabel.className = 'font-semibold';
+    rallyLabel.textContent = t('world_rally_result_label');
+    summary.append(currentServer, season, rallyLabel);
+
+    const list = document.createElement('ul');
+    list.className = 'world-rally-server-list';
+    currentResult.entries.forEach((entry) => {
+      const item = document.createElement('li');
+      item.dataset.serverId = entry.serverId;
+      item.className = entry.isCurrent ? 'world-rally-server current-server' : 'world-rally-server';
+
+      const label = document.createElement('span');
+      label.textContent = entry.label;
+      item.appendChild(label);
+      if (entry.isCurrent) {
+        const indicator = document.createElement('strong');
+        indicator.className = 'current-server-indicator';
+        indicator.textContent = t('world_rally_current_indicator');
+        item.appendChild(indicator);
+      }
+      list.appendChild(item);
+    });
+
+    const note = document.createElement('p');
+    note.className = 'world-rally-note';
+    note.textContent = t('world_rally_same_realm_note');
+    resultElement.append(summary, list, note);
+  };
+
+  const renderWhenActive = () => {
+    if (!panel.classList.contains('hidden')) renderWorldRallyFromGlobalState();
+  };
+
+  playerInput.addEventListener('input', renderWhenActive);
+  seasonSelect.addEventListener('change', renderWhenActive);
+  if (!panel.classList.contains('hidden')) renderWorldRallyFromGlobalState();
 }
 
 async function initTargetTimeControls(containers) {
@@ -3660,6 +3757,7 @@ async function init() {
 
   await handleSeasonChange(containers);
   updateTargetTimeFormDefaults();
+  await initWorldRally();
   updateRelicModeButtons();
   await renderPrimordialRecommendations();
   updateFragmentFeeRates();
@@ -3697,6 +3795,7 @@ async function init() {
     initDungeonFragmentYield(JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'));
     renderGiftCalculator(JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'));
     updateTargetTimeFormDefaults();
+    renderWorldRallyFromGlobalState();
     refreshTargetTimeLanguage();
     renderMaterialSource(containers);
     loadAllInputs(['season-select']);

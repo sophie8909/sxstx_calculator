@@ -68,6 +68,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet" />
 
   <link rel="stylesheet" href="./css/style.css" type="text/css" />
+  <link rel="stylesheet" href="./css/world-rally.css" type="text/css" />
 </head>
 
 <body class="p-3 md:p-4 lg:p-6 compact app-loading" aria-busy="true">
@@ -150,6 +151,14 @@
         data-i18n="nav_gift_calculator"
       >
         禮物計算機
+      </button>
+      <button
+        type="button"
+        class="calculator-nav-btn bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg text-sm"
+        data-page="world-rally"
+        data-i18n="nav_world_rally"
+      >
+        世界集結查詢
       </button>
       <button
         id="open-target-time-form-btn"
@@ -615,6 +624,26 @@
         <div class="border-t border-[#cde5e8] pt-4 space-y-3">
           <h3 class="text-xl font-bold" data-title-icon="book-open" data-i18n="gift_comparison_title">禮物參考資料</h3>
           <div id="gift-comparison-table"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="world-rally-panel" class="hidden">
+    <div class="card rounded-xl p-0 shadow-lg mb-6 w-full">
+      <div class="border-b sticky top-0 z-10 px-4 py-2 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
+        <h2 class="text-2xl font-bold" data-title-icon="globe-2" data-i18n="world_rally_title">世界集結查詢</h2>
+      </div>
+      <div class="p-4 space-y-4">
+        <p class="text-sm text-slate-600 leading-relaxed" data-i18n="world_rally_intro">
+          輸入玩家編號並選擇賽季，查詢目前界域內的世界集結伺服器。
+        </p>
+        <div
+          id="world-rally-result"
+          class="world-rally-result"
+          aria-live="polite"
+        >
+          <p data-i18n="world_rally_empty_prompt">請先在上方輸入玩家編號。</p>
         </div>
       </div>
     </div>
