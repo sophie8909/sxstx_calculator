@@ -3256,10 +3256,12 @@ function updateMaterialSourceRow(source, material) {
 function updateAllMaterialSources() {
   const dungeonMats = ['stone', 'essence', 'sand', 'rola'];
   const exploreMats = ['stone', 'essence', 'sand', 'rola'];
+  const bondMats = ['freeze_dried'];
   const storeMats = ['stone', 'essence', 'sand', 'freeze_dried']; 
 
   dungeonMats.forEach((m) => updateMaterialSourceRow('dungeon', m));
   exploreMats.forEach((m) => updateMaterialSourceRow('explore', m));
+  bondMats.forEach((m) => updateMaterialSourceRow('bond', m));
   storeMats.forEach((m) => updateMaterialSourceRow('store', m)); 
 
   updateStoreSummaries(); 

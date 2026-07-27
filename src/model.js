@@ -177,6 +177,9 @@ export const MATERIAL_DISPLAY_NAMES = {
 const MATERIAL_DAILY_DEFAULTS = {
   dungeon: {},
   explore: {},
+  bond: {
+    freeze_dried: 4,
+  },
   store: {},
 };
 
@@ -209,16 +212,19 @@ export const state = {
   materialAvgDefaults: {
     dungeon: {},
     explore: {},
+    bond: {},
     store: {},
   },
   materialRolaCostDefaults: {
     dungeon: {},
     explore: {},
+    bond: {},
     store: {},
   },
   materialPowerCostDefaults: {
     dungeon: {},
     explore: {},
+    bond: {},
     store: {},
   },
 };
@@ -360,16 +366,19 @@ export async function loadMaterialAvgDefaults() {
   const avgDefaults = {
     dungeon: {},
     explore: {},
+    bond: {},
     store: {},
   };
   const rolaCostDefaults = {
     dungeon: {},
     explore: {},
+    bond: {},
     store: {},
   };
   const powerCostDefaults = {
     dungeon: {},
     explore: {},
+    bond: {},
     store: {},
   };
 
@@ -385,6 +394,7 @@ export async function loadMaterialAvgDefaults() {
     console.log('[data load] processing material avg defaults for type:', type, byMat);
     if (type === 'dungeon') targetSource = 'dungeon';
     else if (type === 'explore') targetSource = 'explore';
+    else if (type === 'bond') targetSource = 'bond';
     else if (type === 'store') targetSource = 'store';
 
     if (!targetSource) return;
@@ -418,11 +428,11 @@ export async function loadMaterialAvgDefaults() {
 
 export function getMaterialSourceConfig() {
   const avgDefaults =
-    state.materialAvgDefaults || { dungeon: {}, explore: {}, store: {} };
+    state.materialAvgDefaults || { dungeon: {}, explore: {}, bond: {}, store: {} };
   const rolaCostDefaults =
-    state.materialRolaCostDefaults || { dungeon: {}, explore: {}, store: {} };
+    state.materialRolaCostDefaults || { dungeon: {}, explore: {}, bond: {}, store: {} };
   const powerCostDefaults =
-    state.materialPowerCostDefaults || { dungeon: {}, explore: {}, store: {} };
+    state.materialPowerCostDefaults || { dungeon: {}, explore: {}, bond: {}, store: {} };
 
   return {
     displayNames: MATERIAL_DISPLAY_NAMES,
@@ -433,6 +443,7 @@ export function getMaterialSourceConfig() {
     sourceMaterials: {
       dungeon: ['stone', 'essence', 'sand', 'rola'],
       explore: ['stone', 'essence', 'sand', 'rola'],
+      bond: ['freeze_dried'],
       store: ['stone', 'essence', 'sand', 'freeze_dried'],
     },
   };

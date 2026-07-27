@@ -155,6 +155,14 @@ export const I18N_DICTIONARIES = {
     "zh-Hant": "每日次數",
     "zh-Hans": "每日次数"
   },
+  "bond_base_dispatch_reward_header": {
+    "zh-Hant": "基礎委派獎勵",
+    "zh-Hans": "基础委派奖励"
+  },
+  "bond_source_title": {
+    "zh-Hant": "羈絆冒險",
+    "zh-Hans": "羁绊冒险"
+  },
   "days_remaining_label": {
     "zh-Hant": "剩餘天數：",
     "zh-Hans": "剩余天数："
@@ -896,6 +904,8 @@ const EN_TRANSLATIONS = {
   custom_target_time: { en: 'Custom time' },
   daily_purchase_header: { en: 'Daily purchase' },
   daily_runs_header: { en: 'Daily runs' },
+  bond_base_dispatch_reward_header: { en: 'Base dispatch reward' },
+  bond_source_title: { en: 'Bond Adventure' },
   days_remaining_label: { en: 'Days left:' },
   dungeon_source_title: { en: 'Material Dungeon' },
   enable_notify: { en: 'Add next-level calendar' },

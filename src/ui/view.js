@@ -570,6 +570,10 @@ export function renderMaterialSource(containers) {
 
   const dungeonHtml = renderMaterialSourceTable('dungeon', t('dungeon_source_title'), sourceMaterials.dungeon, dailyDefaults, avgDefaults, rolaCostDefaults, { showAvg: true });
   const exploreHtml = renderMaterialSourceTable('explore', t('explore_source_title'), sourceMaterials.explore, dailyDefaults, avgDefaults, rolaCostDefaults, { showAvg: true });
+  const bondHtml = renderMaterialSourceTable('bond', t('bond_source_title'), sourceMaterials.bond, dailyDefaults, avgDefaults, rolaCostDefaults, {
+    showAvg: true,
+    avgHeaderKey: 'bond_base_dispatch_reward_header',
+  });
   const storeHtml = renderMaterialSourceTable('store', t('store_source_title'), sourceMaterials.store, dailyDefaults, avgDefaults, rolaCostDefaults, { showAvg: false });
 
   wrapper.innerHTML = `
@@ -586,9 +590,10 @@ export function renderMaterialSource(containers) {
       </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
       ${dungeonHtml}
       ${exploreHtml}
+      ${bondHtml}
       ${storeHtml}
     </div>
   `;
@@ -600,13 +605,14 @@ export function renderMaterialSource(containers) {
 
 function renderMaterialSourceTable(source, title, materialList, dailyDefaults, avgDefaults, rolaCostDefaults, options) {
   const showAvg = options.showAvg;
+  const avgHeader = t(options.avgHeaderKey || 'avg_gain_header');
   const isStore = source === 'store';
   const dailyBySource = dailyDefaults[source] || {};
   const avgBySource = avgDefaults[source] || {};
   const rolaCostBySource = rolaCostDefaults[source] || {};
 
   const headerCols = showAvg
-    ? `<th>${t('material_header')}</th><th>${t('daily_runs_header')}</th><th>${t('avg_gain_header')}</th><th>${t('total_gain_header')}</th>`
+    ? `<th>${t('material_header')}</th><th>${t('daily_runs_header')}</th><th>${avgHeader}</th><th>${t('total_gain_header')}</th>`
     : isStore
       ? `<th>${t('material_header')}</th><th>${t('daily_purchase_header')}</th><th>${t('store_resource_price_header')}</th><th>${t('avg_gain_header')}</th><th>${t('total_gain_header')}</th>`
       : `<th>${t('material_header')}</th><th>${t('daily_purchase_header')}</th><th>${t('rola_cost_header')}</th><th>${t('total_gain_header')}</th>`;
