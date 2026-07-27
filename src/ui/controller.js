@@ -3028,11 +3028,11 @@ async function initServerSelector(containers) {
 
     const parsedPlayer = parsePlayerNumber(playerCode, serverRowsCache);
     if (!parsedPlayer.ok) {
-      if (playerError) {
-        playerError.textContent = parsedPlayer.error === 'server_not_found'
-          ? t('player_code_server_not_found')
-          : t('player_code_invalid');
-      }
+      if (playerError) playerError.textContent = t('player_code_invalid');
+      return;
+    }
+    if (!parsedPlayer.server) {
+      if (playerError) playerError.textContent = t('player_code_server_not_found');
       return;
     }
 
@@ -3047,7 +3047,8 @@ async function initServerSelector(containers) {
     state.serverName = serverSel.value;
   }
 
-  if (savedPlayerCode && parsePlayerNumber(savedPlayerCode, serverRowsCache).ok) {
+  const savedPlayer = parsePlayerNumber(savedPlayerCode, serverRowsCache);
+  if (savedPlayerCode && savedPlayer.ok && savedPlayer.server) {
     await applyPlayerCode();
   }
 
@@ -3072,9 +3073,10 @@ async function initServerSelector(containers) {
 async function initWorldRally() {
   const playerInput = document.getElementById('player-code-input');
   const seasonSelect = document.getElementById('season-select');
+  const serverSelect = document.getElementById('server-select');
   const panel = document.getElementById('world-rally-panel');
   const resultElement = document.getElementById('world-rally-result');
-  if (!playerInput || !seasonSelect || !panel || !resultElement) return;
+  if (!playerInput || !seasonSelect || !serverSelect || !panel || !resultElement) return;
 
   await fetchServerRows();
 
@@ -3089,12 +3091,15 @@ async function initWorldRally() {
   renderWorldRallyFromGlobalState = () => {
     resultElement.replaceChildren();
 
-    const playerNumber = playerInput.value.trim();
-    if (!playerNumber) {
+    const enteredPlayerNumber = playerInput.value.trim();
+    const selectedOption = serverSelect.options[serverSelect.selectedIndex];
+    const selectedServerId = selectedOption?.dataset.serverId || '';
+    if (!enteredPlayerNumber && !selectedServerId) {
       renderMessage(t('world_rally_empty_prompt'));
       return;
     }
 
+    const playerNumber = enteredPlayerNumber || `${selectedServerId}00000`;
     const parsedPlayer = parsePlayerNumber(playerNumber, serverRowsCache);
     if (!parsedPlayer.ok) {
       const globalError = document.getElementById('player-code-error')?.textContent.trim();
@@ -3162,6 +3167,7 @@ async function initWorldRally() {
 
   playerInput.addEventListener('input', renderWhenActive);
   seasonSelect.addEventListener('change', renderWhenActive);
+  serverSelect.addEventListener('change', renderWhenActive);
   if (!panel.classList.contains('hidden')) renderWorldRallyFromGlobalState();
 }
 

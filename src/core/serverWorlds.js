@@ -19,6 +19,9 @@ export function buildServerId(realmCode, world) {
 
 export function findServerById(serverRows, serverId) {
   const canonicalServerId = String(serverId ?? '').trim();
+  if (serverRows instanceof Map) {
+    return serverRows.get(canonicalServerId) || null;
+  }
   return (serverRows || []).find(
     (server) => String(server?.server_id ?? '').trim() === canonicalServerId
   ) || null;
@@ -56,14 +59,7 @@ export function parsePlayerNumber(playerNumber, serverRows) {
   }
 
   const server = findServerById(serverRows, serverId);
-  if (!server) {
-    return { ok: false, error: 'server_not_found' };
-  }
-
-  const realm = String(server.realm_id ?? '').trim() || realmCode.slice(3);
-  if (!realm) {
-    return { ok: false, error: 'realm_not_found' };
-  }
+  const realm = String(server?.realm_id ?? '').trim() || realmCode.slice(3);
 
   return {
     ok: true,

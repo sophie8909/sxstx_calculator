@@ -1,6 +1,8 @@
 import { fetchJsonWithCache, fetchTextWithCache } from './dataCache.js';
+import { mergeCanonicalServerRows, normalizeSubmittedServerRows } from '../core/serverData.js';
 
 let generatedDataPromise = null;
+let canonicalServerRowsPromise = null;
 
 const GENERATED_DATA_PATH = 'data/generated/upgrade-costs.json';
 const GOOGLE_SHEET_ID = '1boxKipNVI-tCaJEaX-AoOTijEgKcxKfilhbtxkLbX-E';
@@ -11,6 +13,7 @@ const UPGRADE_COST_SHEETS = {
   relic: 1548103854,
   pet: 1910677696,
 };
+const CANONICAL_SERVER_SHEET_GID = 1981289603;
 const sheetRowsCache = new Map();
 
 export function getGoogleSheetCsvUrl(gid) {
@@ -113,6 +116,7 @@ async function loadGeneratedData() {
 
 export function clearDataServiceMemoryCache() {
   generatedDataPromise = null;
+  canonicalServerRowsPromise = null;
   sheetRowsCache.clear();
 }
 
@@ -158,7 +162,33 @@ export async function loadUpgradeCostTablesForSeason(season) {
   };
 }
 
+async function loadCanonicalServerRows() {
+  if (!canonicalServerRowsPromise) {
+    canonicalServerRowsPromise = fetchTextWithCache(
+      `google-sheet:${CANONICAL_SERVER_SHEET_GID}`,
+      getGoogleSheetCsvUrl(CANONICAL_SERVER_SHEET_GID)
+    ).then((text) => {
+      const rows = parseCsvRows(text);
+      const headers = (rows.shift() || []).map(normalizeHeader);
+      const idIndex = headers.indexOf('伺服器編號');
+      const nameIndex = headers.indexOf('伺服器名稱');
+      if (idIndex < 0 || nameIndex < 0) throw new Error('Canonical server sheet headers are invalid.');
+      return normalizeSubmittedServerRows(rows.map((row) => ({
+        server_id: row[idIndex],
+        server_name: row[nameIndex],
+      }))).rows;
+    });
+  }
+  return canonicalServerRowsPromise;
+}
+
 export async function loadServers() {
   const data = await loadGeneratedData();
-  return data.tables?.servers?.rows || [];
+  const localRows = data.tables?.servers?.rows || [];
+  try {
+    return mergeCanonicalServerRows(localRows, await loadCanonicalServerRows());
+  } catch (error) {
+    console.warn('[server data] canonical sheet unavailable; using local fallback', error);
+    return localRows;
+  }
 }
