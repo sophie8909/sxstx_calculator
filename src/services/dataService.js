@@ -1,8 +1,13 @@
 import { fetchJsonWithCache, fetchTextWithCache } from './dataCache.js';
-import { mergeCanonicalServerRows, normalizeSubmittedServerRows } from '../core/serverData.js';
+import {
+  mergeCanonicalServerRows,
+  mergeServerRows,
+  normalizeSubmittedServerRows,
+} from '../core/serverData.js';
 
 let generatedDataPromise = null;
 let canonicalServerRowsPromise = null;
+let submittedServerRowsPromise = null;
 
 const GENERATED_DATA_PATH = 'data/generated/upgrade-costs.json';
 const GOOGLE_SHEET_ID = '1boxKipNVI-tCaJEaX-AoOTijEgKcxKfilhbtxkLbX-E';
@@ -14,6 +19,7 @@ const UPGRADE_COST_SHEETS = {
   pet: 1910677696,
 };
 const CANONICAL_SERVER_SHEET_GID = 1981289603;
+const SUBMITTED_SERVER_SHEET_GID = 859085671;
 const sheetRowsCache = new Map();
 
 export function getGoogleSheetCsvUrl(gid) {
@@ -117,6 +123,7 @@ async function loadGeneratedData() {
 export function clearDataServiceMemoryCache() {
   generatedDataPromise = null;
   canonicalServerRowsPromise = null;
+  submittedServerRowsPromise = null;
   sheetRowsCache.clear();
 }
 
@@ -182,13 +189,46 @@ async function loadCanonicalServerRows() {
   return canonicalServerRowsPromise;
 }
 
+async function loadSubmittedServerRows() {
+  if (!submittedServerRowsPromise) {
+    submittedServerRowsPromise = fetchTextWithCache(
+      `google-sheet:server-submissions:${SUBMITTED_SERVER_SHEET_GID}`,
+      getGoogleSheetCsvUrl(SUBMITTED_SERVER_SHEET_GID)
+    ).then((text) => {
+      const rows = parseCsvRows(text);
+      const headers = (rows.shift() || []).map(normalizeHeader);
+      const timestampIndex = headers.indexOf('時間戳記');
+      const idIndex = headers.indexOf('伺服器編號');
+      const nameIndex = headers.indexOf('server_name');
+      if (timestampIndex < 0 || idIndex < 0 || nameIndex < 0) {
+        throw new Error('Submitted server sheet headers are invalid.');
+      }
+      return normalizeSubmittedServerRows(rows.map((row) => ({
+        timestamp: row[timestampIndex],
+        server_id: row[idIndex],
+        server_name: row[nameIndex],
+      }))).rows;
+    });
+  }
+  return submittedServerRowsPromise;
+}
+
 export async function loadServers() {
   const data = await loadGeneratedData();
   const localRows = data.tables?.servers?.rows || [];
-  try {
-    return mergeCanonicalServerRows(localRows, await loadCanonicalServerRows());
-  } catch (error) {
-    console.warn('[server data] canonical sheet unavailable; using local fallback', error);
-    return localRows;
-  }
+  const [submittedRows, canonicalRows] = await Promise.all([
+    loadSubmittedServerRows().catch((error) => {
+      console.warn('[server data] submitted server sheet unavailable', error);
+      return [];
+    }),
+    loadCanonicalServerRows().catch((error) => {
+      console.warn('[server data] canonical server sheet unavailable', error);
+      return [];
+    }),
+  ]);
+
+  return mergeCanonicalServerRows(
+    mergeServerRows(localRows, submittedRows),
+    canonicalRows
+  );
 }
