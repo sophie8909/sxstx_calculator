@@ -4,6 +4,7 @@ import './title-icons.js';
 import { initLanguage, applyStaticTranslations, t } from './i18n-inline.js';
 import { fetchTextWithCache } from './services/dataCache.js';
 import { loadServers } from './services/dataService.js';
+import { readToolFromLocation } from './app/router.js';
 
 const SEASON_START_CATEGORY = '【賽季開始】';
 const SEASON_END_CATEGORY = '【賽季結束】';
@@ -170,7 +171,7 @@ async function fetchDungeonNameRows() {
 
 async function fetchRelicSeriesNames() {
   if (relicSeriesNamesCache) return relicSeriesNamesCache;
-  const url = 'https://docs.google.com/spreadsheets/d/' + RELIC_SERIES_SHEET.id + '/gviz/tq?tqx=out:csv&gid=' + RELIC_SERIES_SHEET.gid;
+  const url = 'https://docs.google.com/spreadsheets/d/' + RELIC_SERIES_SHEET.id + '/export?format=csv&gid=' + RELIC_SERIES_SHEET.gid;
   try {
     const rows = parseCsvRows(await fetchTextWithCache('google-sheet:relic-series-v2', url));
     const [seasonCell, kingdomCell, relicCell] = rows[0] || [];
@@ -778,4 +779,19 @@ async function init() {
   window.__relayServers = servers;
 }
 
-document.addEventListener('DOMContentLoaded', init);
+let relayInitialized = false;
+async function initializeContributionWhenActive(tool = readToolFromLocation()) {
+  if (tool !== 'contribution' || relayInitialized) return;
+  relayInitialized = true;
+  try {
+    await init();
+  } catch (error) {
+    relayInitialized = false;
+    console.error('[contribution initialization]', error);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => initializeContributionWhenActive());
+window.addEventListener('sxstx:tool-change', (event) => {
+  initializeContributionWhenActive(event.detail?.tool);
+});

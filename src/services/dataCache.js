@@ -1,8 +1,18 @@
 const CACHE_PREFIX = 'sxstxRemoteDataCache:';
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const CACHE_FALLBACK_EVENT = 'sxstx:data-cache-fallback';
 const CACHE_UPDATED_EVENT = 'sxstx:data-cache-updated';
-const pendingRefreshes = new Map();
+export const DEFAULT_REQUEST_TIMEOUT_MS = 12_000;
+
+const pendingRequests = new Map();
+
+export class RemoteDataError extends Error {
+  constructor(message, metadata = {}, options = {}) {
+    super(message, options);
+    this.name = 'RemoteDataError';
+    Object.assign(this, metadata);
+  }
+}
 
 function getStorageKey(cacheKey) {
   return `${CACHE_PREFIX}${cacheKey}`;
@@ -23,7 +33,7 @@ function readCache(cacheKey) {
     const raw = localStorage.getItem(getStorageKey(cacheKey));
     if (!raw) return null;
     const entry = JSON.parse(raw);
-    if (!entry || entry.version !== CACHE_VERSION || typeof entry.data !== 'string') return null;
+    if (!entry || !['v1', CACHE_VERSION].includes(entry.version) || typeof entry.data !== 'string') return null;
     return entry;
   } catch (error) {
     console.warn('[data cache] failed to read cache', cacheKey, error);
@@ -31,9 +41,23 @@ function readCache(cacheKey) {
   }
 }
 
-function writeCache(cacheKey, data) {
+function removeCache(cacheKey) {
+  if (!canUseStorage()) return;
+  try {
+    localStorage.removeItem(getStorageKey(cacheKey));
+  } catch (error) {
+    console.warn('[data cache] failed to remove invalid cache', cacheKey, error);
+  }
+}
+
+function writeCache(cacheKey, data, signature) {
   if (!canUseStorage()) return null;
-  const entry = { version: CACHE_VERSION, updatedAt: new Date().toISOString(), data };
+  const entry = {
+    version: CACHE_VERSION,
+    updatedAt: new Date().toISOString(),
+    signature: signature || data,
+    data,
+  };
   try {
     localStorage.setItem(getStorageKey(cacheKey), JSON.stringify(entry));
     return entry;
@@ -43,38 +67,148 @@ function writeCache(cacheKey, data) {
   }
 }
 
-async function fetchRemoteText(cacheKey, url) {
-  const previous = readCache(cacheKey);
-  const response = await fetch(url, { cache: 'no-store' });
-  if (!response.ok) throw new Error(`fetch failed: ${response.status}`);
-  const text = await response.text();
-  writeCache(cacheKey, text);
-  return { text, changed: previous ? previous.data !== text : false };
+function createError(code, message, metadata, cause) {
+  return new RemoteDataError(message, { code, ...metadata }, cause ? { cause } : undefined);
 }
 
-function refreshInBackground(cacheKey, url) {
-  if (pendingRefreshes.has(cacheKey)) return pendingRefreshes.get(cacheKey);
-  const refresh = fetchRemoteText(cacheKey, url)
+function inferGid(url) {
+  try {
+    return new URL(url).searchParams.get('gid') || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function validateGenericResponse(text, contentType, metadata) {
+  const trimmed = String(text || '').trim();
+  const lowerContentType = String(contentType || '').toLowerCase();
+  if (!trimmed) {
+    throw createError('sheet_empty', `${metadata.sheet || 'Google Sheet'} returned an empty response`, metadata);
+  }
+  if (
+    lowerContentType.includes('text/html')
+    || /^\s*<!doctype html/i.test(trimmed)
+    || /^\s*<html[\s>]/i.test(trimmed)
+    || /accounts\.google\.com\/servicelogin/i.test(trimmed)
+  ) {
+    throw createError('sheet_invalid_content_type', `${metadata.sheet || 'Google Sheet'} returned HTML instead of CSV`, {
+      ...metadata,
+      contentType,
+    });
+  }
+}
+
+async function fetchRemoteText(cacheKey, url, options) {
+  if (pendingRequests.has(cacheKey)) return pendingRequests.get(cacheKey);
+
+  const {
+    timeoutMs = DEFAULT_REQUEST_TIMEOUT_MS,
+    validate,
+    metadata: suppliedMetadata = {},
+  } = options;
+  const metadata = { gid: inferGid(url), ...suppliedMetadata, url };
+  const request = (async () => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      let response;
+      try {
+        response = await fetch(url, { cache: 'no-store', signal: controller.signal });
+      } catch (error) {
+        if (error?.name === 'AbortError' || controller.signal.aborted) {
+          throw createError('sheet_timeout', `${metadata.sheet || 'Google Sheet'} timed out after ${timeoutMs}ms`, {
+            ...metadata,
+            timeoutMs,
+          }, error);
+        }
+        throw createError('sheet_network_failure', `${metadata.sheet || 'Google Sheet'} could not be reached`, metadata, error);
+      }
+
+      if (!response.ok) {
+        throw createError('sheet_http_failure', `${metadata.sheet || 'Google Sheet'} returned HTTP ${response.status}`, {
+          ...metadata,
+          status: response.status,
+        });
+      }
+
+      const contentType = response.headers?.get?.('content-type') || '';
+      let text;
+      try {
+        text = await response.text();
+      } catch (error) {
+        if (error?.name === 'AbortError' || controller.signal.aborted) {
+          throw createError('sheet_timeout', `${metadata.sheet || 'Google Sheet'} timed out after ${timeoutMs}ms`, {
+            ...metadata,
+            timeoutMs,
+          }, error);
+        }
+        throw createError('sheet_network_failure', `${metadata.sheet || 'Google Sheet'} response was interrupted`, metadata, error);
+      }
+      validateGenericResponse(text, contentType, metadata);
+
+      let validation = null;
+      if (validate) {
+        try {
+          validation = await validate(text, { contentType, response, metadata });
+        } catch (error) {
+          if (error?.code) throw error;
+          throw createError('sheet_invalid_csv', `${metadata.sheet || 'Google Sheet'} returned invalid CSV`, metadata, error);
+        }
+      }
+
+      const previous = readCache(cacheKey);
+      const signature = validation?.signature || text;
+      const previousSignature = previous?.signature || previous?.data;
+      writeCache(cacheKey, text, signature);
+      return {
+        text,
+        changed: Boolean(previous && previousSignature !== signature),
+      };
+    } finally {
+      clearTimeout(timer);
+    }
+  })().finally(() => pendingRequests.delete(cacheKey));
+
+  pendingRequests.set(cacheKey, request);
+  return request;
+}
+
+function refreshInBackground(cacheKey, url, options) {
+  return fetchRemoteText(cacheKey, url, options)
     .then((result) => {
-      if (result.changed) emitCacheEvent(CACHE_UPDATED_EVENT, { cacheKey, url });
+      if (result.changed) {
+        emitCacheEvent(CACHE_UPDATED_EVENT, { cacheKey, url, ...options.metadata });
+      }
       return result.text;
     })
     .catch((error) => {
-      emitCacheEvent(CACHE_FALLBACK_EVENT, { cacheKey, url, error: error.message });
+      emitCacheEvent(CACHE_FALLBACK_EVENT, {
+        cacheKey,
+        url,
+        ...options.metadata,
+        code: error.code,
+        error: error.message,
+      });
       throw error;
-    })
-    .finally(() => pendingRefreshes.delete(cacheKey));
-  pendingRefreshes.set(cacheKey, refresh);
-  return refresh;
+    });
 }
 
-export async function fetchTextWithCache(cacheKey, url, { refresh = false } = {}) {
+export async function fetchTextWithCache(cacheKey, url, options = {}) {
+  const { refresh = false, validate, ...requestOptions } = options;
   const cached = readCache(cacheKey);
+
   if (cached && !refresh) {
-    refreshInBackground(cacheKey, url).catch(() => {});
-    return cached.data;
+    try {
+      if (validate) await validate(cached.data, { cached: true, metadata: requestOptions.metadata || {} });
+      else validateGenericResponse(cached.data, '', requestOptions.metadata || {});
+      refreshInBackground(cacheKey, url, { ...requestOptions, validate }).catch(() => {});
+      return cached.data;
+    } catch {
+      removeCache(cacheKey);
+    }
   }
-  const result = await fetchRemoteText(cacheKey, url);
+
+  const result = await fetchRemoteText(cacheKey, url, { ...requestOptions, validate });
   return result.text;
 }
 
@@ -91,7 +225,11 @@ export function getCachedDataState(cacheKey) {
 }
 
 export function clearPendingDataCacheRefreshes() {
-  pendingRefreshes.clear();
+  pendingRequests.clear();
+}
+
+export function getPendingDataRequestCount() {
+  return pendingRequests.size;
 }
 
 export {

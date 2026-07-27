@@ -1,7 +1,19 @@
-import { fetchTextWithCache } from './dataCache.js';
+import { fetchTextWithCache, RemoteDataError } from './dataCache.js';
 import { getSheetDefinition, SPREADSHEET_ID } from './sheetRegistry.js';
 
 const requestCache = new Map();
+
+export class SheetDataError extends RemoteDataError {
+  constructor(code, message, definition, metadata = {}, options = {}) {
+    super(message, {
+      code,
+      sheet: definition?.title,
+      gid: definition?.gid,
+      ...metadata,
+    }, options);
+    this.name = 'SheetDataError';
+  }
+}
 
 export function getGoogleSheetCsvUrl(gid) {
   return `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=${gid}`;
@@ -11,14 +23,15 @@ export function normalizeHeader(value) {
   return String(value || '').replace(/^\uFEFF/, '').trim().toLowerCase();
 }
 
-export function parseCsvRows(text) {
+export function parseCsvRows(text, definition) {
+  const source = String(text ?? '');
   const rows = [];
   let row = [];
   let cell = '';
   let inQuotes = false;
-  for (let index = 0; index < String(text).length; index += 1) {
-    const character = text[index];
-    const nextCharacter = text[index + 1];
+  for (let index = 0; index < source.length; index += 1) {
+    const character = source[index];
+    const nextCharacter = source[index + 1];
     if (character === '"' && inQuotes && nextCharacter === '"') {
       cell += '"';
       index += 1;
@@ -37,14 +50,21 @@ export function parseCsvRows(text) {
       cell += character;
     }
   }
+  if (inQuotes) {
+    throw new SheetDataError('sheet_invalid_csv', `${definition?.title || 'Google Sheet'} contains an unterminated quoted field`, definition);
+  }
   row.push(cell);
   if (row.some((value) => String(value).trim() !== '')) rows.push(row);
+  if (!rows.length) {
+    throw new SheetDataError('sheet_empty', `${definition?.title || 'Google Sheet'} contains no rows`, definition);
+  }
   return rows;
 }
 
 function parseCell(value) {
   const text = String(value ?? '').trim();
   if (text === '') return '';
+  if (/^(?:true|false)$/i.test(text)) return text.toLowerCase() === 'true';
   const numeric = text.replace(/,/g, '');
   if (!/^[+-]?(?:\d+|\d*\.\d+)$/.test(numeric)) return text;
   const number = Number(numeric);
@@ -67,13 +87,35 @@ export function validateSheetHeaders(headers, definition) {
     ));
   });
   if (missing.length) {
-    throw new Error(`${definition.title} is missing required headers: ${missing.join(', ')}`);
+    throw new SheetDataError(
+      'sheet_missing_headers',
+      `${definition.title} is missing required headers: ${missing.join(', ')}`,
+      definition,
+      { missingHeaders: missing }
+    );
   }
   return normalized;
 }
 
-function rowsToObjects(csvRows, definition) {
-  const [rawHeaders = [], ...dataRows] = csvRows;
+function findHeaderRowIndex(csvRows, definition) {
+  if (!(definition.requiredHeaders || []).length) return 0;
+  return csvRows.findIndex((row) => {
+    try {
+      validateSheetHeaders(row, definition);
+      return true;
+    } catch {
+      return false;
+    }
+  });
+}
+
+export function rowsToObjects(csvRows, definition) {
+  const headerIndex = findHeaderRowIndex(csvRows, definition);
+  if (headerIndex < 0) {
+    validateSheetHeaders(csvRows[0] || [], definition);
+  }
+  const rawHeaders = csvRows[headerIndex] || [];
+  const dataRows = csvRows.slice(headerIndex + 1);
   const headers = validateSheetHeaders(rawHeaders, definition);
   const aliasFields = Object.keys(definition.aliases || {});
   return dataRows.map((row) => {
@@ -91,27 +133,38 @@ function rowsToObjects(csvRows, definition) {
   });
 }
 
-export function clearDataServiceMemoryCache() {
-  requestCache.clear();
+function validateSheetText(text, definition) {
+  const objects = rowsToObjects(parseCsvRows(text, definition), definition);
+  return { signature: JSON.stringify(objects) };
 }
 
-export function loadSheet(sheetKey, { refresh = false } = {}) {
+export function clearDataServiceMemoryCache(gid) {
+  if (gid === undefined || gid === null) requestCache.clear();
+  else requestCache.delete(Number(gid));
+}
+
+export function loadSheet(sheetKey, { refresh = false, timeoutMs } = {}) {
   const definition = getSheetDefinition(sheetKey);
   if (refresh) requestCache.delete(definition.gid);
   if (!requestCache.has(definition.gid)) {
     const request = fetchTextWithCache(
       `google-sheet:${definition.gid}`,
       getGoogleSheetCsvUrl(definition.gid),
-      { refresh }
-    ).then((text) => rowsToObjects(parseCsvRows(text), definition));
+      {
+        refresh,
+        timeoutMs,
+        metadata: { sheetKey, sheet: definition.title, gid: definition.gid },
+        validate: (text) => validateSheetText(text, definition),
+      }
+    ).then((text) => rowsToObjects(parseCsvRows(text, definition), definition));
     requestCache.set(definition.gid, request);
     request.catch(() => requestCache.delete(definition.gid));
   }
   return requestCache.get(definition.gid);
 }
 
-export function refreshSheet(sheetKey) {
-  return loadSheet(sheetKey, { refresh: true });
+export function refreshSheet(sheetKey, options = {}) {
+  return loadSheet(sheetKey, { ...options, refresh: true });
 }
 
 const UPGRADE_SHEET_KEYS = Object.freeze({
@@ -160,10 +213,10 @@ export async function loadServers() {
     .sort((left, right) => Number(left.server_id) - Number(right.server_id));
 }
 
-export function loadRallyRules() {
-  return loadSheet('rallyRules');
+export function loadRallyRules(options) {
+  return loadSheet('rallyRules', options);
 }
 
-export function loadGameSettings() {
-  return loadSheet('gameSettings');
+export function loadGameSettings(options) {
+  return loadSheet('gameSettings', options);
 }

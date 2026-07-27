@@ -47,7 +47,8 @@ import {
   parsePlayerNumber,
 } from '../core/serverWorlds.js';
 import { createWorldRallyViewModel } from '../features/world-rally/model.js';
-import { normalizeTool } from '../app/router.js';
+import { normalizeTool, readToolFromLocation } from '../app/router.js';
+import { renderBootstrapError, runShellBootstrap } from '../app/bootstrap.js';
 import { createGlobalStore } from '../app/store.js';
 
 export const globalStore = createGlobalStore();
@@ -75,37 +76,6 @@ const mergePriority = {
 };
 let isAppLoading = true;
 let hasCompletedInitialLoad = false;
-const LOADING_DISABLED_ATTR = 'data-loading-disabled';
-
-function setAppLoading(loading) {
-  isAppLoading = loading;
-  document.body.classList.toggle('app-loading', loading);
-  document.body.setAttribute('aria-busy', loading ? 'true' : 'false');
-
-  const loadingMessage = document.getElementById('app-loading-message');
-  if (loadingMessage) loadingMessage.textContent = t('loading_app_data');
-
-  const appShell = document.querySelector('.app-shell');
-  if (appShell) {
-    appShell.inert = loading;
-    appShell.setAttribute('aria-hidden', loading ? 'true' : 'false');
-  }
-
-  document.querySelectorAll('button, input, select, textarea').forEach((control) => {
-    if (loading) {
-      if (!control.disabled) {
-        control.disabled = true;
-        control.setAttribute(LOADING_DISABLED_ATTR, '1');
-      }
-      return;
-    }
-
-    if (control.getAttribute(LOADING_DISABLED_ATTR) === '1') {
-      control.disabled = false;
-      control.removeAttribute(LOADING_DISABLED_ATTR);
-    }
-  });
-}
 
 const SEASON_START_CATEGORY = '【賽季開始】';
 const SEASON_END_CATEGORY = '【賽季結束】';
@@ -214,9 +184,6 @@ let equipmentRatingThresholds = {};
 let equipmentSeasonScoreDataPromise = null;
 let renderWorldRallyFromGlobalState = () => {};
 const ACTIVE_PAGE_STORAGE_KEY = 'sxstxCalculatorActivePage';
-const CACHE_REFRESH_DEBOUNCE_MS = 250;
-let cacheRefreshTimer = null;
-let appContainers = null;
 
 const liveOwnedExpState = {
   signature: '',
@@ -868,7 +835,8 @@ async function fetchFragmentRows() {
     );
   } catch (err) {
     console.warn('[fragment calculator] fetch failed', err);
-    fragmentRowsCache = [];
+    fragmentRowsCache = null;
+    throw err;
   }
 
   return fragmentRowsCache;
@@ -1083,7 +1051,8 @@ async function fetchGiftCalculatorRows() {
     );
   } catch (err) {
     console.warn('[gift calculator] fetch failed', err);
-    giftRowsCache = [];
+    giftRowsCache = null;
+    throw err;
   }
 
   return giftRowsCache;
@@ -1375,22 +1344,16 @@ function setGlobalDataStatus(status, message) {
 }
 
 function bindDataCacheHandlers(containers) {
-  window.addEventListener(CACHE_FALLBACK_EVENT, () => {
+  window.addEventListener(CACHE_FALLBACK_EVENT, (event) => {
     state.cacheFallback = true;
-    setGlobalDataStatus('stale', 'Offline: showing cached Google data.');
-    if (containers?.results) triggerRecalculate(containers);
+    const sheet = event.detail?.sheet || 'Google data';
+    setGlobalDataStatus('stale', `${sheet} refresh failed; showing cached data.`);
+    if (containers?.results && globalStore.getState().activeTool === 'progression') triggerRecalculate(containers);
   });
 
-  window.addEventListener(CACHE_UPDATED_EVENT, () => {
-    setGlobalDataStatus('ready', 'Google data refreshed.');
-    clearControllerRemoteRowsCaches();
-    clearRemoteDataMemoryCaches();
-
-    if (!appContainers) return;
-    clearTimeout(cacheRefreshTimer);
-    cacheRefreshTimer = setTimeout(() => {
-      handleSeasonChange(appContainers);
-    }, CACHE_REFRESH_DEBOUNCE_MS);
+  window.addEventListener(CACHE_UPDATED_EVENT, (event) => {
+    const sheet = event.detail?.sheet || 'Google data';
+    setGlobalDataStatus('ready', `${sheet} refreshed.`);
   });
 }
 
@@ -1752,6 +1715,7 @@ function bindTargetTimeFormToggle() {
       window.history[replaceHistory ? 'replaceState' : 'pushState']({ tool }, '', `${url.pathname}${url.search}${url.hash}`);
       window.gtag?.('event', 'page_view', { page_title: `calculator:${tool}`, page_location: url.href });
     }
+    window.dispatchEvent(new CustomEvent('sxstx:tool-change', { detail: { tool: pageToTool[targetPage] } }));
     if (shouldScroll) scrollToToggle();
   };
 
@@ -3611,49 +3575,104 @@ function bindGlobalHandlers(containers) {
 }
 
 
+function getFeatureStatusTarget(tool) {
+  if (tool === 'gift') return document.getElementById('gift-calculator-status');
+  if (tool === 'world-rally') return document.getElementById('world-rally-result');
+  if (tool === 'fragment') return document.getElementById('fragment-calculator-status');
+  return document.getElementById('global-data-status');
+}
+
+function setFeatureLoading(tool) {
+  const target = getFeatureStatusTarget(tool);
+  if (!target) return;
+  if (tool === 'world-rally') target.innerHTML = '<p class="world-rally-state">Loading World Rally data...</p>';
+  else target.textContent = 'Loading feature data...';
+}
+
+function renderFeatureUnavailable(tool, error, retry) {
+  const target = getFeatureStatusTarget(tool) || document.getElementById('global-data-status');
+  if (!target) return;
+  setGlobalDataStatus('unavailable', `${error?.sheet || 'Required Google data'} is unavailable.`);
+  target.replaceChildren();
+  const message = document.createElement('span');
+  const sheet = error?.sheet ? `${error.sheet} (gid ${error.gid})` : 'Required Google data';
+  message.textContent = `${sheet} is unavailable: ${error?.message || 'Unknown error'}`;
+  target.appendChild(message);
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'data-retry-button';
+  button.textContent = 'Retry';
+  button.addEventListener('click', retry, { once: true });
+  target.appendChild(button);
+}
+
+let activeFeatureGeneration = 0;
+async function initializeActiveFeature(containers, saved = {}, { refresh = false } = {}) {
+  const tool = globalStore.getState().activeTool || readToolFromLocation();
+  const generation = ++activeFeatureGeneration;
+  setFeatureLoading(tool);
+  if (refresh) {
+    clearControllerRemoteRowsCaches();
+    clearRemoteDataMemoryCaches();
+  }
+
+  try {
+    if (tool === 'progression') {
+      await loadDataForSeason(state.seasonId);
+      if (generation !== activeFeatureGeneration) return;
+      preprocessCostData();
+      renderAll(containers);
+      bindTooltipLayers();
+      loadAllInputs(['season-select']);
+      renderRelicDistribution(containers.relicDistributionInputs);
+      restoreDungeonAutoTargetLevel();
+      updateRelicModeButtons();
+      await Promise.allSettled([
+        initEquipmentSeasonScore(saved),
+        renderPrimordialRecommendations(),
+        loadMaterialAvgDefaults(),
+      ]);
+      renderMaterialSource(containers);
+      updateRelicTotal();
+      triggerRecalculate(containers);
+    } else if (tool === 'fragment') {
+      await Promise.all([initFragmentCalculator(saved), initDungeonFragmentYield(saved)]);
+      updateFragmentFeeRates();
+      updateFragmentCalculator();
+    } else if (tool === 'gift') {
+      await renderGiftCalculator(saved);
+    } else if (tool === 'world-rally') {
+      await initServerSelector(containers);
+      await initWorldRally();
+    } else if (tool === 'contribution') {
+      const settled = await Promise.allSettled([initServerSelector(containers), initTargetTimeControls(containers)]);
+      const failed = settled.find((result) => result.status === 'rejected');
+      if (failed) throw failed.reason;
+      updateTargetTimeFormDefaults();
+    }
+    if (generation !== activeFeatureGeneration) return;
+    setGlobalDataStatus(
+      state.cacheFallback ? 'stale' : 'ready',
+      state.cacheFallback ? 'Showing cached Google data.' : 'Google data is current.'
+    );
+    hasCompletedInitialLoad = true;
+  } catch (error) {
+    if (generation !== activeFeatureGeneration) return;
+    console.error('[feature initialization]', tool, error);
+    renderFeatureUnavailable(tool, error, () => initializeActiveFeature(containers, saved, { refresh: true }));
+  }
+}
+
 async function handleSeasonChange(containers) {
   const seasonSelector = document.getElementById('season-select');
   state.seasonId = seasonSelector?.value || state.seasonId || 's2';
+  globalStore.update({ seasonId: state.seasonId });
   state.cacheFallback = false;
-  setAppLoading(true);
-  setGlobalDataStatus('loading', 'Loading Google data...');
-
-  containers.results.innerHTML =
-    `<p class="text-gray-500 text-center py-8">${t('loading_season_data')}</p>`;
-
-  try {
-    await loadDataForSeason(state.seasonId);
-    preprocessCostData();
-
-    renderAll(containers);
-    setAppLoading(true);
-    bindTooltipLayers();
-    loadAllInputs(['season-select']);
-    renderRelicDistribution(containers.relicDistributionInputs);
-    setAppLoading(true);
-    loadAllInputs(['season-select']);
-    restoreDungeonAutoTargetLevel();
-    updateRelicModeButtons();
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-    await initEquipmentSeasonScore(saved);
-    await initFragmentCalculator(saved);
-    await initDungeonFragmentYield(saved);
-    await renderGiftCalculator(saved);
-    await renderPrimordialRecommendations();
-    await applySelectedTargetRecommendationIfNeeded();
-
-    await initServerSelector(containers);
-    await initTargetTimeControls(containers);
-
-    updateRelicTotal();
-    triggerRecalculate(containers);
-    setGlobalDataStatus(state.cacheFallback ? 'stale' : 'ready', state.cacheFallback ? 'Offline: showing cached Google data.' : 'Google data is current.');
-  } catch (error) {
-    setGlobalDataStatus('unavailable', 'Google data is unavailable; calculations requiring it are disabled.');
-    throw error;
-  } finally {
-    setAppLoading(false);
-  }
+  await initializeActiveFeature(
+    containers,
+    JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'),
+    { refresh: true }
+  );
 }
 
 function openGoogleCalendarEvent({ title, details, eventTs }) {
@@ -3785,88 +3804,75 @@ async function enableNextSeasonExpHoardCalendar() {
 }
 
 async function init() {
-  await initLanguage();
-  const containers = getContainers();
-  appContainers = containers;
-  applyMobileSectionOrder();
-  renderAll(containers);
-  setAppLoading(true);
-  enhanceStaticFieldTooltips();
-  bindTooltipLayers();
-  bindGlobalHandlers(containers);
-  bindDataCacheHandlers(containers);
-  bindTargetTimeFormToggle();
+  let containers = null;
+  let saved = {};
 
-  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-  await initEquipmentSeasonScore(saved);
-  await initFragmentCalculator(saved);
-  await initDungeonFragmentYield(saved);
-  await renderGiftCalculator(saved);
+  await runShellBootstrap({
+    documentLike: document,
+    loadingMessage: t('loading_app_data'),
+    onLoadingChange(loading) {
+      isAppLoading = loading;
+    },
+    mountShell() {
+      containers = getContainers();
+      applyMobileSectionOrder();
+      renderAll(containers);
+    },
+    async restorePreferences() {
+      await initLanguage();
+      renderAll(containers);
+      enhanceStaticFieldTooltips();
+      bindTooltipLayers();
+      bindGlobalHandlers(containers);
+      bindDataCacheHandlers(containers);
+      saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      initSeasonSelector(containers, saved);
+      bindTargetTimeFormToggle();
 
-  initSeasonSelector(containers, saved);
-  setAppLoading(true);
-
-  const clearLocalDataBtn = document.getElementById('clear-local-data-btn');
-  clearLocalDataBtn?.addEventListener('click', () => {
-    if (confirm(t('confirm_clear_local_data'))) {
-      localStorage.removeItem(STORAGE_KEY);
-      alert(t('alert_local_data_cleared'));
-      location.reload();
-    }
+      const clearLocalDataBtn = document.getElementById('clear-local-data-btn');
+      clearLocalDataBtn?.addEventListener('click', () => {
+        if (confirm(t('confirm_clear_local_data'))) {
+          localStorage.removeItem(STORAGE_KEY);
+          alert(t('alert_local_data_cleared'));
+          location.reload();
+        }
+      });
+    },
+    initializeGlobalContext() {
+      globalStore.update({
+        activeTool: readToolFromLocation(),
+        seasonId: state.seasonId,
+        language: document.documentElement.lang,
+        theme: document.documentElement.dataset.theme || 'light',
+      });
+    },
+    onError(error, stage) {
+      console.error('[bootstrap]', stage, error);
+      renderBootstrapError(document, error, () => init());
+    },
+    onTimeout(error) {
+      console.error('[bootstrap watchdog]', error);
+      renderBootstrapError(document, error, () => init());
+    },
   });
-
-  await handleSeasonChange(containers);
-  updateTargetTimeFormDefaults();
-  await initWorldRally();
-  updateRelicModeButtons();
-  await renderPrimordialRecommendations();
-  updateFragmentFeeRates();
-  updateFragmentCalculator();
-
-  await loadMaterialAvgDefaults();
-  renderMaterialSource(containers);
-  loadAllInputs(['season-select']);
-  restoreDungeonAutoTargetLevel();
-  bindTooltipLayers();
-  updateDaysRemainingFromTarget();
-  updateAllMaterialSources();
-
+  if (!containers) return;
   setupAutoUpdate();
   setInterval(() => updateCurrentTime(containers.currentTimeDisplay), 1000);
   updateCurrentTime(containers.currentTimeDisplay);
-  hasCompletedInitialLoad = true;
-  window.addEventListener('languagechange', async () => {
+
+  window.addEventListener('languagechange', () => {
     applyStaticTranslations();
     refreshSeasonSelectorLabels();
     applyMobileSectionOrder();
     renderAll(containers);
-    enhanceStaticFieldTooltips();
-    bindTooltipLayers();
-    loadAllInputs(['season-select']);
-    renderRelicDistribution(containers.relicDistributionInputs);
-    loadAllInputs(['season-select']);
-    updateRelicModeButtons();
-    renderPrimordialRecommendations();
-    applySelectedTargetRecommendationIfNeeded().then(() => triggerRecalculate(containers));
-    updateFragmentFeeRates();
-    updateFragmentCalculator();
-    await initEquipmentSeasonScore(JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'));
-    initFragmentCalculator(JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'));
-    initDungeonFragmentYield(JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'));
-    renderGiftCalculator(JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'));
-    updateTargetTimeFormDefaults();
-    renderWorldRallyFromGlobalState();
-    refreshTargetTimeLanguage();
-    renderMaterialSource(containers);
-    loadAllInputs(['season-select']);
-    bindTooltipLayers();
-    updateDaysRemainingFromTarget();
-    updateAllMaterialSources();
-    updateRelicTotal();
-    triggerRecalculate(containers);
-    applyStaticTranslations();
+    initializeActiveFeature(containers, JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'));
   });
   window.addEventListener('resize', applyMobileSectionOrder, { passive: true });
+  window.addEventListener('sxstx:tool-change', () => {
+    initializeActiveFeature(containers, JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'));
+  });
+
+  initializeActiveFeature(containers, saved);
 }
 
 document.addEventListener('DOMContentLoaded', init);
