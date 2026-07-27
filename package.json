@@ -9,7 +9,7 @@
     "test:seo": "node --test tests/seo.test.js",
     "preview": "vite preview",
     "build:data": "node scripts/build-data.js",
-    "test": "node --test tests/seo.test.js tests/target-layouts.test.js tests/target-calculator.test.js"
+    "test": "node --test tests/seo.test.js tests/target-layouts.test.js tests/target-calculator.test.js tests/material-source-layout.test.js"
   },
   "devDependencies": {
     "vite": "^5.4.11"

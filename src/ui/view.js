@@ -590,11 +590,11 @@ export function renderMaterialSource(containers) {
       </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+    <div class="material-source-grid">
       ${dungeonHtml}
       ${exploreHtml}
-      ${bondHtml}
       ${storeHtml}
+      ${bondHtml}
     </div>
   `;
 
@@ -736,10 +736,10 @@ function renderMaterialSourceTable(source, title, materialList, dailyDefaults, a
     .join('');
 
   return `
-    <section class="material-source-section">
+    <section class="material-source-section material-source-panel--${source}">
       <h4 class="font-semibold mb-2 text-center">${title}</h4>
-      <div class="overflow-x-auto responsive-table">
-        <table class="material-source-table w-full ${isStore ? 'material-source-table-wide' : ''} text-sm border-collapse">
+      <div class="material-source-table-wrap responsive-table">
+        <table class="material-source-table w-full text-sm border-collapse">
           <thead>
             <tr class="border-b">
               ${headerCols}
