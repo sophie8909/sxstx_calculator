@@ -1,234 +1,169 @@
-import { fetchJsonWithCache, fetchTextWithCache } from './dataCache.js';
-import {
-  mergeCanonicalServerRows,
-  mergeServerRows,
-  normalizeSubmittedServerRows,
-} from '../core/serverData.js';
+import { fetchTextWithCache } from './dataCache.js';
+import { getSheetDefinition, SPREADSHEET_ID } from './sheetRegistry.js';
 
-let generatedDataPromise = null;
-let canonicalServerRowsPromise = null;
-let submittedServerRowsPromise = null;
-
-const GENERATED_DATA_PATH = 'data/generated/upgrade-costs.json';
-const GOOGLE_SHEET_ID = '1boxKipNVI-tCaJEaX-AoOTijEgKcxKfilhbtxkLbX-E';
-const UPGRADE_COST_SHEETS = {
-  character: 314585849,
-  equipment: 1205841685,
-  skill: 682954597,
-  relic: 1548103854,
-  pet: 1910677696,
-};
-const CANONICAL_SERVER_SHEET_GID = 1981289603;
-const SUBMITTED_SERVER_SHEET_GID = 859085671;
-const sheetRowsCache = new Map();
+const requestCache = new Map();
 
 export function getGoogleSheetCsvUrl(gid) {
-  return `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/export?format=csv&gid=${gid}`;
+  return `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=${gid}`;
 }
 
-function normalizeHeader(value) {
+export function normalizeHeader(value) {
   return String(value || '').replace(/^\uFEFF/, '').trim().toLowerCase();
 }
 
-function parseCsvRows(text) {
+export function parseCsvRows(text) {
   const rows = [];
   let row = [];
   let cell = '';
   let inQuotes = false;
-
-  for (let i = 0; i < text.length; i += 1) {
-    const char = text[i];
-    const next = text[i + 1];
-
-    if (char === '"' && inQuotes && next === '"') {
+  for (let index = 0; index < String(text).length; index += 1) {
+    const character = text[index];
+    const nextCharacter = text[index + 1];
+    if (character === '"' && inQuotes && nextCharacter === '"') {
       cell += '"';
-      i += 1;
-    } else if (char === '"') {
+      index += 1;
+    } else if (character === '"') {
       inQuotes = !inQuotes;
-    } else if (char === ',' && !inQuotes) {
+    } else if (character === ',' && !inQuotes) {
       row.push(cell);
       cell = '';
-    } else if ((char === '\n' || char === '\r') && !inQuotes) {
-      if (char === '\r' && next === '\n') i += 1;
+    } else if ((character === '\r' || character === '\n') && !inQuotes) {
+      if (character === '\r' && nextCharacter === '\n') index += 1;
       row.push(cell);
       if (row.some((value) => String(value).trim() !== '')) rows.push(row);
       row = [];
       cell = '';
     } else {
-      cell += char;
+      cell += character;
     }
   }
-
   row.push(cell);
   if (row.some((value) => String(value).trim() !== '')) rows.push(row);
   return rows;
 }
 
-function parseNumberCell(value) {
-  const raw = String(value ?? '').trim();
-  if (raw === '') return 0;
-
-  const normalized = raw.replace(/,/g, '');
-  if (!/^[+-]?(?:\d+|\d*\.\d+)$/.test(normalized)) return raw;
-
-  const number = Number(normalized);
-  return Number.isFinite(number) ? number : raw;
+function parseCell(value) {
+  const text = String(value ?? '').trim();
+  if (text === '') return '';
+  const numeric = text.replace(/,/g, '');
+  if (!/^[+-]?(?:\d+|\d*\.\d+)$/.test(numeric)) return text;
+  const number = Number(numeric);
+  return Number.isFinite(number) ? number : text;
 }
 
-function rowsToObjects(rows) {
-  const headerIndex = rows.findIndex((row) => {
-    const headers = row.map(normalizeHeader);
-    return headers.includes('level') && headers.includes('season') && headers.some((header) => header.startsWith('cost_'));
-  });
-  const headers = (rows[headerIndex >= 0 ? headerIndex : 0] || []).map(normalizeHeader);
-  const dataRows = rows.filter((_, index) => index !== (headerIndex >= 0 ? headerIndex : 0));
+function resolveAlias(headers, definition, field) {
+  const candidates = [field, ...(definition.aliases?.[field] || [])].map(normalizeHeader);
+  return candidates.find((candidate) => headers.includes(candidate)) || null;
+}
 
+export function validateSheetHeaders(headers, definition) {
+  const normalized = headers.map(normalizeHeader);
+  const missing = (definition.requiredHeaders || []).filter((header) => {
+    const canonical = normalizeHeader(header);
+    if (normalized.includes(canonical)) return false;
+    return !Object.entries(definition.aliases || {}).some(([field, aliases]) => (
+      normalizeHeader(field) === canonical
+      && aliases.some((alias) => normalized.includes(normalizeHeader(alias)))
+    ));
+  });
+  if (missing.length) {
+    throw new Error(`${definition.title} is missing required headers: ${missing.join(', ')}`);
+  }
+  return normalized;
+}
+
+function rowsToObjects(csvRows, definition) {
+  const [rawHeaders = [], ...dataRows] = csvRows;
+  const headers = validateSheetHeaders(rawHeaders, definition);
+  const aliasFields = Object.keys(definition.aliases || {});
   return dataRows.map((row) => {
     const object = {};
     headers.forEach((header, index) => {
-      object[header] = parseNumberCell(row[index]);
+      if (header) object[header] = parseCell(row[index]);
     });
+    aliasFields.forEach((field) => {
+      const sourceHeader = resolveAlias(headers, definition, field);
+      if (sourceHeader) object[field] = object[sourceHeader];
+    });
+    if (object.season !== undefined) object.season = String(object.season).trim().toLowerCase();
+    if (object.server_id !== undefined) object.server_id = String(object.server_id).trim();
     return object;
   });
 }
 
-async function fetchSheetRows(gid) {
-  if (!sheetRowsCache.has(gid)) {
-    const text = await fetchTextWithCache(`google-sheet:${gid}`, getGoogleSheetCsvUrl(gid));
-    sheetRowsCache.set(gid, rowsToObjects(parseCsvRows(text)));
-  }
-  return sheetRowsCache.get(gid);
-}
-
-function getGeneratedDataUrl() {
-  const viteBase = import.meta.env?.BASE_URL;
-  if (viteBase) {
-    return `${viteBase.replace(/\/$/, '')}/${GENERATED_DATA_PATH}`;
-  }
-  const moduleUrl = import.meta.url.split(/[?#]/)[0];
-  const sourcePath = '/src/services/dataService.js';
-  if (moduleUrl.endsWith(sourcePath)) {
-    return `${moduleUrl.slice(0, -sourcePath.length)}/${GENERATED_DATA_PATH}`;
-  }
-  return GENERATED_DATA_PATH;
-}
-
-async function loadGeneratedData() {
-  if (!generatedDataPromise) {
-    generatedDataPromise = fetchJsonWithCache('generated:upgrade-costs', getGeneratedDataUrl());
-  }
-  return generatedDataPromise;
-}
-
 export function clearDataServiceMemoryCache() {
-  generatedDataPromise = null;
-  canonicalServerRowsPromise = null;
-  submittedServerRowsPromise = null;
-  sheetRowsCache.clear();
+  requestCache.clear();
 }
 
-export async function loadAllUpgradeCosts() {
-  const data = await loadGeneratedData();
-  return data.upgradeCosts || {};
+export function loadSheet(sheetKey, { refresh = false } = {}) {
+  const definition = getSheetDefinition(sheetKey);
+  if (refresh) requestCache.delete(definition.gid);
+  if (!requestCache.has(definition.gid)) {
+    const request = fetchTextWithCache(
+      `google-sheet:${definition.gid}`,
+      getGoogleSheetCsvUrl(definition.gid),
+      { refresh }
+    ).then((text) => rowsToObjects(parseCsvRows(text), definition));
+    requestCache.set(definition.gid, request);
+    request.catch(() => requestCache.delete(definition.gid));
+  }
+  return requestCache.get(definition.gid);
 }
+
+export function refreshSheet(sheetKey) {
+  return loadSheet(sheetKey, { refresh: true });
+}
+
+const UPGRADE_SHEET_KEYS = Object.freeze({
+  character: 'characterUpgradeCosts',
+  equipment: 'equipmentUpgradeCosts',
+  skill: 'skillUpgradeCosts',
+  relic: 'relicUpgradeCosts',
+  pet: 'petUpgradeCosts',
+});
 
 export async function loadUpgradeCosts(category, season) {
-  const normalizedCategory = String(category || '').trim();
+  const sheetKey = UPGRADE_SHEET_KEYS[String(category || '').trim()];
+  if (!sheetKey) throw new RangeError(`Unknown upgrade category: ${category}`);
   const normalizedSeason = String(season || '').trim().toLowerCase();
-  const gid = UPGRADE_COST_SHEETS[normalizedCategory];
-
-  if (!gid) {
-    const allCosts = await loadAllUpgradeCosts();
-    return allCosts[normalizedCategory]?.[normalizedSeason] || [];
-  }
-
-  const rows = await fetchSheetRows(gid);
+  const rows = await loadSheet(sheetKey);
   return rows
-    .filter((row) => String(row.season || '').trim().toLowerCase() === normalizedSeason)
-    .map((row) => ({
-      ...row,
-      category: normalizedCategory,
-    }));
+    .filter((row) => row.season === normalizedSeason)
+    .map((row) => ({ ...row, category }));
 }
 
 export async function loadUpgradeCostTablesForSeason(season) {
-  const [character, equipment, skill, relic, pet] = await Promise.all([
-    loadUpgradeCosts('character', season),
-    loadUpgradeCosts('equipment', season),
-    loadUpgradeCosts('skill', season),
-    loadUpgradeCosts('relic', season),
-    loadUpgradeCosts('pet', season),
-  ]);
-
-  return {
-    characterUpgradeCosts: character,
-    equipmentUpgradeCosts: equipment,
-    skillUpgradeCosts: skill,
-    relicUpgradeCosts: relic,
-    petUpgradeCosts: pet,
-  };
-}
-
-async function loadCanonicalServerRows() {
-  if (!canonicalServerRowsPromise) {
-    canonicalServerRowsPromise = fetchTextWithCache(
-      `google-sheet:${CANONICAL_SERVER_SHEET_GID}`,
-      getGoogleSheetCsvUrl(CANONICAL_SERVER_SHEET_GID)
-    ).then((text) => {
-      const rows = parseCsvRows(text);
-      const headers = (rows.shift() || []).map(normalizeHeader);
-      const idIndex = headers.indexOf('伺服器編號');
-      const nameIndex = headers.indexOf('伺服器名稱');
-      if (idIndex < 0 || nameIndex < 0) throw new Error('Canonical server sheet headers are invalid.');
-      return normalizeSubmittedServerRows(rows.map((row) => ({
-        server_id: row[idIndex],
-        server_name: row[nameIndex],
-      }))).rows;
-    });
-  }
-  return canonicalServerRowsPromise;
-}
-
-async function loadSubmittedServerRows() {
-  if (!submittedServerRowsPromise) {
-    submittedServerRowsPromise = fetchTextWithCache(
-      `google-sheet:server-submissions:${SUBMITTED_SERVER_SHEET_GID}`,
-      getGoogleSheetCsvUrl(SUBMITTED_SERVER_SHEET_GID)
-    ).then((text) => {
-      const rows = parseCsvRows(text);
-      const headers = (rows.shift() || []).map(normalizeHeader);
-      const timestampIndex = headers.indexOf('時間戳記');
-      const idIndex = headers.indexOf('伺服器編號');
-      const nameIndex = headers.indexOf('server_name');
-      if (timestampIndex < 0 || idIndex < 0 || nameIndex < 0) {
-        throw new Error('Submitted server sheet headers are invalid.');
-      }
-      return normalizeSubmittedServerRows(rows.map((row) => ({
-        timestamp: row[timestampIndex],
-        server_id: row[idIndex],
-        server_name: row[nameIndex],
-      }))).rows;
-    });
-  }
-  return submittedServerRowsPromise;
+  const entries = await Promise.all(
+    Object.entries(UPGRADE_SHEET_KEYS).map(async ([category, sheetKey]) => {
+      const rows = await loadSheet(sheetKey);
+      return [
+        sheetKey,
+        rows
+          .filter((row) => row.season === String(season).toLowerCase())
+          .map((row) => ({ ...row, category })),
+      ];
+    })
+  );
+  return Object.fromEntries(entries);
 }
 
 export async function loadServers() {
-  const data = await loadGeneratedData();
-  const localRows = data.tables?.servers?.rows || [];
-  const [submittedRows, canonicalRows] = await Promise.all([
-    loadSubmittedServerRows().catch((error) => {
-      console.warn('[server data] submitted server sheet unavailable', error);
-      return [];
-    }),
-    loadCanonicalServerRows().catch((error) => {
-      console.warn('[server data] canonical server sheet unavailable', error);
-      return [];
-    }),
-  ]);
+  const rows = await loadSheet('servers');
+  return rows
+    .filter((row) => /^600\d{4}$/.test(row.server_id))
+    .map((row) => ({
+      ...row,
+      server_name: String(row.server_name || '').trim(),
+      server_short: String(row.server_short || row.server_id.slice(3)).padStart(4, '0'),
+      realm_id: String(row.realm_id || row.server_id.slice(3, 5)).padStart(2, '0'),
+    }))
+    .sort((left, right) => Number(left.server_id) - Number(right.server_id));
+}
 
-  return mergeCanonicalServerRows(
-    mergeServerRows(localRows, submittedRows),
-    canonicalRows
-  );
+export function loadRallyRules() {
+  return loadSheet('rallyRules');
+}
+
+export function loadGameSettings() {
+  return loadSheet('gameSettings');
 }

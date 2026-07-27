@@ -19,7 +19,7 @@ import {
   NEXT_SEASON_EXP_HOARD_REMINDER_HOURS,
   loadMaterialAvgDefaults, 
   STAMINA_BIG_MINE_EXPECTED_MULTIPLIER,
-} from '../model.js';
+} from '../features/progression/legacyAdapter.js';
 
 import {
   getContainers,
@@ -40,13 +40,17 @@ import {
   convertExperienceToAbsolute,
   parseExperienceInput,
 } from '../core/experience.js';
-import { loadServers } from '../services/dataService.js';
+import { loadRallyRules, loadServers } from '../services/dataService.js';
 import { CACHE_FALLBACK_EVENT, CACHE_UPDATED_EVENT, fetchTextWithCache } from '../services/dataCache.js';
 import { convertTargetLayout, convertRelicLayout } from '../core/targetLayouts.js';
 import {
-  createRallyResult,
   parsePlayerNumber,
 } from '../core/serverWorlds.js';
+import { createWorldRallyViewModel } from '../features/world-rally/model.js';
+import { normalizeTool } from '../app/router.js';
+import { createGlobalStore } from '../app/store.js';
+
+export const globalStore = createGlobalStore();
 
 /* ============================================================
  * Google Sheet published CSV settings.
@@ -102,23 +106,6 @@ function setAppLoading(loading) {
     }
   });
 }
-
-const TIME_PRESETS_FALLBACK = [
-  {
-    key: 's1_end',
-    season_id: 's1',
-    server_name: '台港澳',
-    label: 'S1 結束',
-    iso: '2025-10-13T08:00:00+08:00'
-  },
-  {
-    key: 's2_open',
-    season_id: 's2',
-    server_name: '台港澳',
-    label: 'S2 開始',
-    iso: '2025-11-10T08:00:00+08:00'
-  },
-];
 
 const SEASON_START_CATEGORY = '【賽季開始】';
 const SEASON_END_CATEGORY = '【賽季結束】';
@@ -892,9 +879,9 @@ function getHeaderIndex(headers, names) {
 }
 
 async function fetchGoogleSheetCsvRows(sheet) {
-  const response = await fetch(getGoogleSheetCsvUrl(sheet), { cache: 'no-store' });
-  if (!response.ok) throw new Error(`fetch failed: ${response.status}`);
-  return parseCsvRows(await response.text());
+  const gid = String(sheet?.gid || 'unknown');
+  const text = await fetchTextWithCache(`google-sheet:${gid}`, getGoogleSheetCsvUrl(sheet));
+  return parseCsvRows(text);
 }
 
 function getEquipmentDisplayNamesFromSheetRow(row, headers, groupName, columnMap) {
@@ -1379,13 +1366,23 @@ function clearControllerRemoteRowsCaches() {
   serverRowsCache = null;
 }
 
+function setGlobalDataStatus(status, message) {
+  const element = document.getElementById('global-data-status');
+  if (!element) return;
+  element.dataset.status = status;
+  element.textContent = message;
+  globalStore.update({ dataStatus: status });
+}
+
 function bindDataCacheHandlers(containers) {
   window.addEventListener(CACHE_FALLBACK_EVENT, () => {
     state.cacheFallback = true;
+    setGlobalDataStatus('stale', 'Offline: showing cached Google data.');
     if (containers?.results) triggerRecalculate(containers);
   });
 
   window.addEventListener(CACHE_UPDATED_EVENT, () => {
+    setGlobalDataStatus('ready', 'Google data refreshed.');
     clearControllerRemoteRowsCaches();
     clearRemoteDataMemoryCaches();
 
@@ -1566,8 +1563,8 @@ async function fetchTimePresetsFromSheet(dungeonPowerRows = []) {
     });
     return withGeneratedDungeonOpenTimes(withDerivedSeasonEndTimes(out), dungeonPowerRows);
   } catch (err) {
-    console.warn('[time presets] fetch failed, using fallback', err);
-    return withGeneratedDungeonOpenTimes(withDerivedSeasonEndTimes(TIME_PRESETS_FALLBACK.slice()), dungeonPowerRows);
+    console.warn('[time presets] Google data is unavailable', err);
+    return [];
   }
 }
 
@@ -1598,6 +1595,7 @@ function initSeasonSelector(containers, saved = null) {
 
   seasonSelector.addEventListener('change', async () => {
     state.seasonId = seasonSelector.value;
+    globalStore.update({ seasonId: state.seasonId });
 
     const latest = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
     latest['season-select'] = state.seasonId;
@@ -1713,9 +1711,19 @@ function bindTargetTimeFormToggle() {
     'world-rally': worldRallyPanel,
     'target-time-form': targetTimeFormPanel,
   };
+  const pageToTool = {
+    primordial: 'progression',
+    fragment: 'fragment',
+    gift: 'gift',
+    'world-rally': 'world-rally',
+    'target-time-form': 'contribution',
+  };
+  const toolToPage = Object.fromEntries(Object.entries(pageToTool).map(([page, tool]) => [tool, page]));
 
-  const showPage = (page, shouldScroll = true) => {
-    const targetPage = panels[page] ? page : 'primordial';
+  const showPage = (page, shouldScroll = true, { updateHistory = true, replaceHistory = false } = {}) => {
+    const requestedPage = panels[page] ? page : toolToPage[normalizeTool(page)];
+    const targetPage = panels[requestedPage] ? requestedPage : 'primordial';
+    globalStore.update({ activeTool: pageToTool[targetPage] });
     Object.entries(panels).forEach(([key, panel]) => {
       panel.classList.toggle('hidden', key !== targetPage);
     });
@@ -1737,14 +1745,26 @@ function bindTargetTimeFormToggle() {
     appLayout?.classList.toggle('is-focused-page', targetPage !== 'primordial');
 
     localStorage.setItem(ACTIVE_PAGE_STORAGE_KEY, targetPage);
+    if (updateHistory) {
+      const tool = pageToTool[targetPage];
+      const url = new URL(window.location.href);
+      url.searchParams.set('tool', tool);
+      window.history[replaceHistory ? 'replaceState' : 'pushState']({ tool }, '', `${url.pathname}${url.search}${url.hash}`);
+      window.gtag?.('event', 'page_view', { page_title: `calculator:${tool}`, page_location: url.href });
+    }
     if (shouldScroll) scrollToToggle();
   };
 
   navButtons.forEach((button) => {
     button.addEventListener('click', () => showPage(button.dataset.page || 'primordial'));
   });
+  window.addEventListener('popstate', () => {
+    const tool = normalizeTool(new URLSearchParams(window.location.search).get('tool'));
+    showPage(toolToPage[tool], false, { updateHistory: false });
+  });
 
-  showPage(localStorage.getItem(ACTIVE_PAGE_STORAGE_KEY) || 'primordial', false);
+  const initialTool = normalizeTool(new URLSearchParams(window.location.search).get('tool'));
+  showPage(toolToPage[initialTool], false, { replaceHistory: true });
 }
 
 function updateTargetTimeFormDefaults() {
@@ -3065,6 +3085,14 @@ async function initServerSelector(containers) {
       const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
       data['player-code-input'] = playerInput.value.trim();
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      const parsed = parsePlayerNumber(playerInput.value.trim(), serverRowsCache);
+      globalStore.update({
+        playerNumber: playerInput.value.trim(),
+        parsedServer: parsed.ok ? parsed.server : null,
+        realmCode: parsed.ok ? parsed.realmCode : '',
+        worldNumber: parsed.ok ? parsed.world : null,
+        serverName: parsed.ok ? parsed.server?.server_name || '' : '',
+      });
       applyPlayerCode();
     });
   }
@@ -3078,7 +3106,7 @@ async function initWorldRally() {
   const resultElement = document.getElementById('world-rally-result');
   if (!playerInput || !seasonSelect || !serverSelect || !panel || !resultElement) return;
 
-  await fetchServerRows();
+  const [serverRows, rallyRules] = await Promise.all([fetchServerRows(), loadRallyRules()]);
 
   const renderMessage = (message, className = 'world-rally-state') => {
     resultElement.replaceChildren();
@@ -3088,61 +3116,13 @@ async function initWorldRally() {
     resultElement.appendChild(paragraph);
   };
 
-  renderWorldRallyFromGlobalState = () => {
-    resultElement.replaceChildren();
-
-    const enteredPlayerNumber = playerInput.value.trim();
-    const selectedOption = serverSelect.options[serverSelect.selectedIndex];
-    const selectedServerId = selectedOption?.dataset.serverId || '';
-    if (!enteredPlayerNumber && !selectedServerId) {
-      renderMessage(t('world_rally_empty_prompt'));
-      return;
-    }
-
-    const playerNumber = enteredPlayerNumber || `${selectedServerId}00000`;
-    const parsedPlayer = parsePlayerNumber(playerNumber, serverRowsCache);
-    if (!parsedPlayer.ok) {
-      const globalError = document.getElementById('player-code-error')?.textContent.trim();
-      renderMessage(globalError || t(
-        parsedPlayer.error === 'server_not_found'
-          ? 'player_code_server_not_found'
-          : 'player_code_invalid'
-      ), 'world-rally-state world-rally-state-error');
-      return;
-    }
-
-    const selectedSeason = seasonOptions.find((season) => season.id === seasonSelect.value);
-    const seasonNumber = Number(selectedSeason?.season);
-    if (!Number.isInteger(seasonNumber) || seasonNumber < 4) {
-      renderMessage(t('world_rally_before_s4'));
-      return;
-    }
-
-    const rallySeason = seasonNumber === 4 ? 's4' : 's5';
-    const currentResult = createRallyResult(parsedPlayer, rallySeason, serverRowsCache);
-    const summary = document.createElement('div');
-    summary.className = 'world-rally-summary';
-    const currentServer = document.createElement('p');
-    currentServer.textContent = t('world_rally_current_server', {
-      realm: currentResult.realm,
-      world: currentResult.entries.find((entry) => entry.isCurrent)?.world ?? '',
-    });
-    const season = document.createElement('p');
-    season.textContent = t('world_rally_season_result', {
-      season: selectedSeason.name,
-    });
-    const rallyLabel = document.createElement('p');
-    rallyLabel.className = 'font-semibold';
-    rallyLabel.textContent = t('world_rally_result_label');
-    summary.append(currentServer, season, rallyLabel);
-
+  const appendEntries = (container, entries) => {
     const list = document.createElement('ul');
     list.className = 'world-rally-server-list';
-    currentResult.entries.forEach((entry) => {
+    entries.forEach((entry) => {
       const item = document.createElement('li');
       item.dataset.serverId = entry.serverId;
       item.className = entry.isCurrent ? 'world-rally-server current-server' : 'world-rally-server';
-
       const label = document.createElement('span');
       label.textContent = entry.label;
       item.appendChild(label);
@@ -3154,17 +3134,86 @@ async function initWorldRally() {
       }
       list.appendChild(item);
     });
+    container.appendChild(list);
+  };
 
-    const note = document.createElement('p');
-    note.className = 'world-rally-note';
-    note.textContent = t('world_rally_same_realm_note');
-    resultElement.append(summary, list, note);
+  renderWorldRallyFromGlobalState = () => {
+    const enteredPlayerNumber = playerInput.value.trim();
+    const selectedOption = serverSelect.options[serverSelect.selectedIndex];
+    const selectedServerId = selectedOption?.dataset.serverId || '';
+    if (!enteredPlayerNumber && !selectedServerId) {
+      renderMessage(t('world_rally_empty_prompt'));
+      return;
+    }
+
+    const playerNumber = enteredPlayerNumber || `${selectedServerId}00000`;
+    const viewModel = createWorldRallyViewModel({
+      playerNumber,
+      season: seasonSelect.value,
+      serverRows,
+      ruleRows: rallyRules,
+    });
+    if (!viewModel.playerSummary) {
+      renderMessage(t('player_code_invalid'), 'world-rally-state world-rally-state-error');
+      return;
+    }
+
+    resultElement.replaceChildren();
+    const summary = document.createElement('section');
+    summary.className = 'world-rally-section world-rally-summary';
+    const summaryHeading = document.createElement('h3');
+    summaryHeading.textContent = t('world_rally_player_summary');
+    const summaryList = document.createElement('dl');
+    summaryList.className = 'world-rally-summary-grid';
+    const fields = [
+      ['world_rally_player_number', viewModel.playerSummary.playerNumber],
+      ['world_rally_selected_season', viewModel.playerSummary.season],
+      ['world_rally_server_id', viewModel.playerSummary.serverId],
+      ['world_rally_server_name', viewModel.playerSummary.serverName || t('world_rally_unknown_server')],
+      ['world_rally_realm_code', viewModel.playerSummary.realmCode],
+      ['world_rally_world_number', viewModel.playerSummary.worldNumber],
+    ];
+    fields.forEach(([key, value]) => {
+      const wrapper = document.createElement('div');
+      const term = document.createElement('dt');
+      const description = document.createElement('dd');
+      term.textContent = t(key);
+      description.textContent = String(value);
+      wrapper.append(term, description);
+      summaryList.appendChild(wrapper);
+    });
+    summary.append(summaryHeading, summaryList);
+
+    const realm = document.createElement('section');
+    realm.className = 'world-rally-section';
+    const realmHeading = document.createElement('h3');
+    realmHeading.textContent = t('world_rally_realm_heading');
+    const realmExplanation = document.createElement('p');
+    realmExplanation.textContent = t('world_rally_realm_explanation');
+    realm.append(realmHeading, realmExplanation);
+    appendEntries(realm, viewModel.realmEntries);
+
+    const rally = document.createElement('section');
+    rally.className = 'world-rally-section';
+    const rallyHeading = document.createElement('h3');
+    rallyHeading.textContent = t('world_rally_group_heading');
+    rally.appendChild(rallyHeading);
+    if (!viewModel.enabled) {
+      const message = document.createElement('p');
+      message.className = 'world-rally-state';
+      message.textContent = viewModel.supported
+        ? t('world_rally_disabled_for_season')
+        : t('world_rally_rule_unavailable');
+      rally.appendChild(message);
+    } else {
+      appendEntries(rally, viewModel.rallyEntries);
+    }
+    resultElement.append(summary, realm, rally);
   };
 
   const renderWhenActive = () => {
     if (!panel.classList.contains('hidden')) renderWorldRallyFromGlobalState();
   };
-
   playerInput.addEventListener('input', renderWhenActive);
   seasonSelect.addEventListener('change', renderWhenActive);
   serverSelect.addEventListener('change', renderWhenActive);
@@ -3567,6 +3616,7 @@ async function handleSeasonChange(containers) {
   state.seasonId = seasonSelector?.value || state.seasonId || 's2';
   state.cacheFallback = false;
   setAppLoading(true);
+  setGlobalDataStatus('loading', 'Loading Google data...');
 
   containers.results.innerHTML =
     `<p class="text-gray-500 text-center py-8">${t('loading_season_data')}</p>`;
@@ -3597,6 +3647,10 @@ async function handleSeasonChange(containers) {
 
     updateRelicTotal();
     triggerRecalculate(containers);
+    setGlobalDataStatus(state.cacheFallback ? 'stale' : 'ready', state.cacheFallback ? 'Offline: showing cached Google data.' : 'Google data is current.');
+  } catch (error) {
+    setGlobalDataStatus('unavailable', 'Google data is unavailable; calculations requiring it are disabled.');
+    throw error;
   } finally {
     setAppLoading(false);
   }

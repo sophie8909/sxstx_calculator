@@ -1,4 +1,4 @@
-export const UNKNOWN_SERVER_NAME = '名稱未知';
+export const UNKNOWN_SERVER_NAME = '未知伺服器';
 export const SUPPORTED_RALLY_SEASONS = Object.freeze(['s4', 's5']);
 
 export function formatWorldNumber(world) {

@@ -95,8 +95,8 @@ test('rally results look up every server, preserve order, and highlight the full
 });
 
 test('missing server rows still render exact unknown labels', () => {
-  assert.equal(formatServerLabel(serverRows, '6001214'), '[6001214]名稱未知');
-  assert.equal(formatServerLabel(serverRows, '6001203'), '[6001203]名稱未知');
+  assert.equal(formatServerLabel(serverRows, '6001214'), '[6001214]未知伺服器');
+  assert.equal(formatServerLabel(serverRows, '6001203'), '[6001203]未知伺服器');
 });
 
 test('unsupported seasons and invalid worlds are rejected', () => {

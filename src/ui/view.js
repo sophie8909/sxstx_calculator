@@ -10,7 +10,7 @@ import {
   getMaterialSourceConfig,
   getAvailableRelicLevels,
   STAMINA_BIG_MINE_RATE,
-} from '../model.js';
+} from '../features/progression/legacyAdapter.js';
 
 function getLocale() {
   if (getCurrentLanguage() === 'en') return 'en-US';

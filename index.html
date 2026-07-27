@@ -59,8 +59,6 @@
   </script>
 
   <link rel="icon" type="image/png" href="./images/favicon_v1.png" />
-  <!-- Tailwind CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -179,6 +177,7 @@
     </div>
 
     <div class="selector-bar text-center mb-6 flex flex-col md:flex-row md:flex-wrap md:items-start md:justify-center gap-3">
+      <div id="global-data-status" class="global-data-status" role="status" aria-live="polite">Loading Google data...</div>
       <div class="flex flex-col min-w-0">
         <div class="flex flex-col md:flex-row md:items-center gap-2 min-h-[38px]">
           <label for="season-select" class="font-semibold whitespace-nowrap" data-i18n="season_label">賽季選項：</label>

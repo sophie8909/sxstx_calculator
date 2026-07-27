@@ -52,15 +52,15 @@ test('canonical rows override submissions while form-only server names remain av
   assert.equal(map.get('6003206').server_name, '測試');
 });
 
-test('website server-name loading combines the form and canonical server sheets', async () => {
-  const dataService = await readFile(new URL('../src/services/dataService.js', import.meta.url), 'utf8');
-  const loadServerBlock = dataService.slice(dataService.indexOf('async function loadCanonicalServerRows'));
+test('website server loading uses only the canonical server sheet', async () => {
+  const [dataService, registry] = await Promise.all([
+    readFile(new URL('../src/services/dataService.js', import.meta.url), 'utf8'),
+    readFile(new URL('../src/services/sheetRegistry.js', import.meta.url), 'utf8'),
+  ]);
 
-  assert.match(loadServerBlock, /CANONICAL_SERVER_SHEET_GID = 1981289603|CANONICAL_SERVER_SHEET_GID/);
-  assert.match(dataService, /SUBMITTED_SERVER_SHEET_GID = 859085671/);
-  assert.match(loadServerBlock, /loadSubmittedServerRows/);
-  assert.match(loadServerBlock, /mergeServerRows\(localRows, submittedRows\)/);
-  assert.match(loadServerBlock, /mergeCanonicalServerRows/);
+  assert.match(registry, /servers:[\s\S]*gid: 1981289603/);
+  assert.match(dataService, /loadSheet\('servers'\)/);
+  assert.doesNotMatch(dataService, /serverSubmissions|mergeServerRows|mergeCanonicalServerRows|data\/raw/);
 });
 
 test('World Rally falls back to the selected complete server ID when Player ID is empty', async () => {

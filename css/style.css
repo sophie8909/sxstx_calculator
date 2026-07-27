@@ -1415,3 +1415,13 @@ html[data-theme='dark'] .border-amber-300,
 html[data-theme='dark'] .border-yellow-400 {
   border-color: #c88b3a !important;
 }
+
+/* Application shell ordering keeps global context above tool navigation. */
+.app-shell { display: flex; flex-direction: column; }
+.app-shell > * { order: 3; }
+.app-shell > header { order: 0; }
+.app-shell > .selector-bar { order: 1; }
+.app-shell > .app-toolbar { order: 2; overflow-x: auto; justify-content: flex-start; scrollbar-width: thin; }
+.global-data-status { width: 100%; min-height: 1.5rem; color: #475569; font-size: 0.875rem; }
+.global-data-status[data-status='stale'], .global-data-status[data-status='unavailable'] { color: #b45309; }
+@media (min-width: 1024px) { .app-shell > .app-toolbar { justify-content: center; } }

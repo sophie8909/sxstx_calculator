@@ -1,3 +1,4 @@
+import '../css/tailwind.css';
 import './ads.js';
 import './theme.js';
 import './title-icons.js';

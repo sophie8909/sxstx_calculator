@@ -2,7 +2,6 @@ const CACHE_PREFIX = 'sxstxRemoteDataCache:';
 const CACHE_VERSION = 'v1';
 const CACHE_FALLBACK_EVENT = 'sxstx:data-cache-fallback';
 const CACHE_UPDATED_EVENT = 'sxstx:data-cache-updated';
-
 const pendingRefreshes = new Map();
 
 function getStorageKey(cacheKey) {
@@ -20,11 +19,9 @@ function emitCacheEvent(name, detail) {
 
 function readCache(cacheKey) {
   if (!canUseStorage()) return null;
-
   try {
     const raw = localStorage.getItem(getStorageKey(cacheKey));
     if (!raw) return null;
-
     const entry = JSON.parse(raw);
     if (!entry || entry.version !== CACHE_VERSION || typeof entry.data !== 'string') return null;
     return entry;
@@ -36,13 +33,7 @@ function readCache(cacheKey) {
 
 function writeCache(cacheKey, data) {
   if (!canUseStorage()) return null;
-
-  const entry = {
-    version: CACHE_VERSION,
-    updatedAt: new Date().toISOString(),
-    data,
-  };
-
+  const entry = { version: CACHE_VERSION, updatedAt: new Date().toISOString(), data };
   try {
     localStorage.setItem(getStorageKey(cacheKey), JSON.stringify(entry));
     return entry;
@@ -56,18 +47,13 @@ async function fetchRemoteText(cacheKey, url) {
   const previous = readCache(cacheKey);
   const response = await fetch(url, { cache: 'no-store' });
   if (!response.ok) throw new Error(`fetch failed: ${response.status}`);
-
   const text = await response.text();
   writeCache(cacheKey, text);
-  return {
-    text,
-    changed: previous ? previous.data !== text : false,
-  };
+  return { text, changed: previous ? previous.data !== text : false };
 }
 
 function refreshInBackground(cacheKey, url) {
   if (pendingRefreshes.has(cacheKey)) return pendingRefreshes.get(cacheKey);
-
   const refresh = fetchRemoteText(cacheKey, url)
     .then((result) => {
       if (result.changed) emitCacheEvent(CACHE_UPDATED_EVENT, { cacheKey, url });
@@ -77,29 +63,31 @@ function refreshInBackground(cacheKey, url) {
       emitCacheEvent(CACHE_FALLBACK_EVENT, { cacheKey, url, error: error.message });
       throw error;
     })
-    .finally(() => {
-      pendingRefreshes.delete(cacheKey);
-    });
-
+    .finally(() => pendingRefreshes.delete(cacheKey));
   pendingRefreshes.set(cacheKey, refresh);
   return refresh;
 }
 
-export async function fetchTextWithCache(cacheKey, url) {
+export async function fetchTextWithCache(cacheKey, url, { refresh = false } = {}) {
   const cached = readCache(cacheKey);
-
-  if (cached) {
+  if (cached && !refresh) {
     refreshInBackground(cacheKey, url).catch(() => {});
     return cached.data;
   }
-
   const result = await fetchRemoteText(cacheKey, url);
   return result.text;
 }
 
-export async function fetchJsonWithCache(cacheKey, url) {
-  const text = await fetchTextWithCache(cacheKey, url);
+export async function fetchJsonWithCache(cacheKey, url, options) {
+  const text = await fetchTextWithCache(cacheKey, url, options);
   return JSON.parse(text);
+}
+
+export function getCachedDataState(cacheKey) {
+  const entry = readCache(cacheKey);
+  return entry
+    ? { available: true, updatedAt: entry.updatedAt }
+    : { available: false, updatedAt: null };
 }
 
 export function clearPendingDataCacheRefreshes() {
