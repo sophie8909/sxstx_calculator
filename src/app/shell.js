@@ -1,5 +1,5 @@
 import { normalizeTool } from './router.js';
-import { confirmationNotice, element, emptyState, featureTabs, navButton } from '../shared/components.js';
+import { confirmationNotice, element, featureTabs, navButton } from '../shared/components.js';
 
 const COPY = {
   'zh-Hant': {
@@ -13,7 +13,7 @@ const COPY = {
     short: ['原初', '裝備', '禮物', '集結', '貢獻'],
     primordialTabs: ['原初目標推薦', '角色經驗計算', '完整素材計算'], characterTarget: '目標角色等級',
     equipmentTabs: ['裝備評分', '市場收益', '副本與資料'], giftTabs: ['好感計算', '禮物方案', '資料比較'],
-    contributionTabs: ['伺服器與時間', '升級經驗', '其他資料'],
+    contributionTabs: ['伺服器與時間'],
     applyCharacter: '套用角色目標', applyAll: '套用全部目標', characterApplied: '角色目標已帶入經驗計算。', allApplied: '全部目標已帶入素材計算。',
     unavailableTitle: '目前沒有可提交的表單', unavailableBody: '這個區段會在有已驗證的 Google 表單欄位後開放，不會建立假的提交資料。',
   },
@@ -28,7 +28,7 @@ const COPY = {
     short: ['原初', '装备', '礼物', '集结', '贡献'],
     primordialTabs: ['原初目标推荐', '角色经验计算', '完整素材计算'], characterTarget: '目标角色等级',
     equipmentTabs: ['装备评分', '市场收益', '副本与资料'], giftTabs: ['好感计算', '礼物方案', '资料比较'],
-    contributionTabs: ['服务器与时间', '升级经验', '其他资料'],
+    contributionTabs: ['服务器与时间'],
     applyCharacter: '套用角色目标', applyAll: '套用全部目标', characterApplied: '角色目标已带入经验计算。', allApplied: '全部目标已带入素材計算。',
     unavailableTitle: '目前没有可提交的表单', unavailableBody: '这个区段会在有已验证的 Google 表单字段后开放，不会建立假的提交资料。',
   },
@@ -42,7 +42,7 @@ const COPY = {
     },
     short: ['Plan', 'Gear', 'Gifts', 'Rally', 'Submit'],
     primordialTabs: ['Primordial target', 'Character experience', 'All resources'], characterTarget: 'Target character level', equipmentTabs: ['Equipment score', 'Market return', 'Dungeon data'],
-    giftTabs: ['Bond calculator', 'Gift plan', 'Reference data'], contributionTabs: ['Server & time', 'Upgrade EXP', 'Other data'],
+    giftTabs: ['Bond calculator', 'Gift plan', 'Reference data'], contributionTabs: ['Server & time'],
     applyCharacter: 'Apply character target', applyAll: 'Apply all targets', characterApplied: 'Character target applied to the experience calculator.', allApplied: 'All targets applied to the resource calculator.',
     unavailableTitle: 'No verified form is available', unavailableBody: 'This area will open when verified Google Form fields exist. No placeholder submission data is created.',
   },
@@ -57,7 +57,7 @@ Object.assign(COPY['zh-Hant'], {
   },
   short: ['原初', '裝備', '禮物', '集結', '貢獻'],
   primordialTabs: ['原初目標', '角色經驗', '完整資源'], characterTarget: '目標角色等級',
-  equipmentTabs: ['裝備評分', '市場兌換', '副本資料'], giftTabs: ['羈絆計算', '禮物規劃', '參考資料'], contributionTabs: ['伺服器與時間', '升級經驗', '其他資料'],
+  equipmentTabs: ['裝備評分', '市場兌換', '副本資料'], giftTabs: ['羈絆計算', '禮物規劃', '參考資料'], contributionTabs: ['伺服器與時間'],
   applyCharacter: '套用角色目標', applyAll: '套用所有目標', characterApplied: '角色目標已套用至經驗計算機。', allApplied: '所有目標已套用至資源計算機。',
   unavailableTitle: '目前沒有可用的已驗證表單', unavailableBody: '取得已驗證的 Google 表單欄位後才會開放此區；系統不會建立虛構的提交資料。',
 });
@@ -70,7 +70,7 @@ Object.assign(COPY['zh-Hans'], {
   },
   short: ['原初', '装备', '礼物', '集结', '贡献'],
   primordialTabs: ['原初目标', '角色经验', '完整资源'], characterTarget: '目标角色等级', equipmentTabs: ['装备评分', '市场兑换', '副本资料'],
-  giftTabs: ['羁绊计算', '礼物规划', '参考资料'], contributionTabs: ['服务器与时间', '升级经验', '其他资料'],
+  giftTabs: ['羁绊计算', '礼物规划', '参考资料'], contributionTabs: ['服务器与时间'],
   applyCharacter: '套用角色目标', applyAll: '套用所有目标', characterApplied: '角色目标已套用至经验计算机。', allApplied: '所有目标已套用至资源计算机。',
   unavailableTitle: '目前没有可用的已验证表单', unavailableBody: '取得已验证的 Google 表单字段后才会开放此区；系统不会建立虚构的提交资料。',
 });
@@ -186,13 +186,11 @@ function prepareContributionTabs(panel, copy) {
   const cardBody = panel.querySelector('.p-4.space-y-4');
   if (!cardBody) return;
   const tabs = featureTabs({ id: 'contribution-workspace', labels: [
-    { id: 'target-time', label: copy.contributionTabs[0] }, { id: 'experience', label: copy.contributionTabs[1] }, { id: 'other', label: copy.contributionTabs[2] },
+    { id: 'target-time', label: copy.contributionTabs[0] },
   ]});
   const nodes = Array.from(cardBody.children);
   cardBody.replaceChildren(tabs.tabList, ...tabs.panels);
   tabs.panels[0].append(...nodes);
-  tabs.panels[1].append(emptyState(copy.unavailableTitle, copy.unavailableBody));
-  tabs.panels[2].append(emptyState(copy.unavailableTitle, copy.unavailableBody));
 }
 
 function updateLabels(root, tool) {

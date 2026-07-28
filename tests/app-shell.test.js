@@ -64,3 +64,15 @@ test('shared controls and design tokens are centralized', async () => {
   assert.match(components, /\.btn-primary/);
   assert.match(components, /\.global-data-status/);
 });
+
+
+test('contribution workspace keeps only the server and time tab', async () => {
+  const shell = await read('src/app/shell.js');
+  const contributionBlock = shell.match(/function prepareContributionTabs[\s\S]*?\n}\n\nfunction updateLabels/)?.[0] || '';
+  assert.match(contributionBlock, /id: 'target-time'/);
+  assert.doesNotMatch(contributionBlock, /id: 'experience'|id: 'other'|unavailableTitle/);
+  assert.equal((shell.match(/contributionTabs:/g) || []).length, 5);
+  assert.doesNotMatch(shell, /contributionTabs: \[[^\]]*升級經驗/);
+  assert.doesNotMatch(shell, /contributionTabs: \[[^\]]*升级经验/);
+  assert.doesNotMatch(shell, /contributionTabs: \[[^\]]*Upgrade EXP/);
+});
