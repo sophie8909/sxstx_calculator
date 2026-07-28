@@ -1,7 +1,34 @@
 #primordial-workspace-panel-target > #primordial-star-card { margin-bottom: 0 !important; }
 #primordial-workspace-panel-target > #target-levels-card { margin-bottom: 0 !important; }
 #primordial-workspace-panel-experience #character-exp-card { width: 100%; min-height: auto; }
-#primordial-workspace-panel-resources { grid-template-columns: minmax(0, 1.65fr) minmax(300px, .85fr); align-items: start; }
-#primordial-workspace-panel-resources #target-time-card, #primordial-workspace-panel-resources #relic-card, #primordial-workspace-panel-resources #material-source-card { grid-column: 1 / -1; }
-#primordial-workspace-panel-resources #results-card { position: sticky; top: 80px; }
-@media (max-width: 900px) { #primordial-workspace-panel-resources { grid-template-columns: 1fr; } #primordial-workspace-panel-resources #results-card { position: static; } }
+#primordial-workspace-panel-resources { min-width: 0; align-items: stretch; }
+#primordial-workspace-panel-resources > #target-time-card,
+#primordial-workspace-panel-resources > #relic-card,
+#primordial-workspace-panel-resources > #material-source-card { min-width: 0; margin-bottom: 0 !important; }
+.resource-row-top,
+.resource-row-pets,
+.resource-row-summary { display: grid; min-width: 0; gap: 16px; align-items: stretch; }
+.resource-row-top { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.resource-row-pets { grid-template-columns: minmax(0, 1fr); }
+.resource-row-summary { grid-template-columns: minmax(0, 1.4fr) minmax(0, .8fr) minmax(0, .8fr); }
+.resource-calculator-card { min-width: 0; height: 100%; margin: 0 !important; }
+.resource-calculator-card > .responsive-scroll { min-width: 0; flex: 1 1 auto; }
+#primordial-workspace-panel-resources #equipment-card,
+#primordial-workspace-panel-resources #skill-card { min-height: 100%; }
+#primordial-workspace-panel-resources #pet-inputs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+#primordial-workspace-panel-resources #owned-materials-card,
+#primordial-workspace-panel-resources #production-card,
+#primordial-workspace-panel-resources #results-card { min-height: 100%; }
+#primordial-workspace-panel-resources #results-card .responsive-scroll { display: flex; flex-direction: column; }
+#primordial-workspace-panel-resources #results { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center; }
+@media (min-width: 1280px) { #primordial-workspace-panel-resources { grid-template-columns: minmax(0, 1fr); } }
+@media (min-width: 768px) and (max-width: 1279px) {
+  .resource-row-top, .resource-row-pets { grid-template-columns: minmax(0, 1fr); }
+  .resource-row-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .resource-row-summary #results-card { grid-column: 1 / -1; }
+  #primordial-workspace-panel-resources #pet-inputs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 767px) {
+  .resource-row-top, .resource-row-pets, .resource-row-summary { grid-template-columns: minmax(0, 1fr); }
+  #primordial-workspace-panel-resources #pet-inputs { grid-template-columns: minmax(0, 1fr); }
+}

@@ -84,8 +84,20 @@ function preparePrimordialTabs(panel, copy) {
     element('input', { id: 'character-exp-target', type: 'number', min: '0', step: '1', inputMode: 'numeric' }),
   ]);
   tabs.panels[1].append(experienceTarget, byId('character-exp-card'), byId('exp-required-inline-card'));
-  const resourceIds = ['target-time-card', 'relic-card', 'skill-card', 'equipment-card', 'pet-card', 'production-card', 'owned-materials-card', 'results-card', 'material-source-card'];
-  resourceIds.forEach((id) => tabs.panels[2].append(byId(id)));
+  const resourcePanel = tabs.panels[2];
+  const resourceRow = (className, ids) => {
+    const row = element('div', { className }, ids.map(byId).filter(Boolean));
+    row.querySelectorAll(':scope > .card').forEach((card) => card.classList.add('resource-calculator-card'));
+    return row;
+  };
+  resourcePanel.append(
+    byId('target-time-card'),
+    byId('relic-card'),
+    resourceRow('resource-row-top', ['equipment-card', 'skill-card']),
+    resourceRow('resource-row-pets', ['pet-card']),
+    resourceRow('resource-row-summary', ['owned-materials-card', 'production-card', 'results-card']),
+    byId('material-source-card'),
+  );
 
   const actions = element('div', { className: 'transfer-actions' });
   const characterButton = element('button', { type: 'button', className: 'btn-secondary', text: copy.applyCharacter });
