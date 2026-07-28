@@ -41,7 +41,7 @@ test('World Rally ViewModel lists the realm, unknown names, current server, and 
   });
   assert.deepEqual(ready.realmEntries.map((entry) => entry.serverId), ['6002601', '6002602', '6002616']);
   assert.equal(ready.realmEntries[0].isCurrent, true);
-  assert.equal(ready.realmEntries[1].label, '[6002602]未知伺服器');
+  assert.equal(ready.realmEntries[1].label, '[6002602] 未知伺服器');
   assert.deepEqual(ready.rallyEntries.map((entry) => entry.serverId), ['6002601', '6002616']);
 
   const disabled = createWorldRallyViewModel({

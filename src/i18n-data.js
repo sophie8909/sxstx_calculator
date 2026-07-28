@@ -435,6 +435,9 @@ export const I18N_DICTIONARIES = {
     "zh-Hant": "玩家編號：",
     "zh-Hans": "玩家编号："
   },
+  "server_select_placeholder": { "zh-Hant": "請選擇伺服器", "zh-Hans": "请选择服务器" },
+  "server_unknown_name": { "zh-Hant": "未知伺服器", "zh-Hans": "未知服务器" },
+  "player_code_incomplete": { "zh-Hant": "請補齊玩家編號的後 5 碼", "zh-Hans": "请补齐玩家编号的后 5 码" },
   "server_tooltip": {
     "zh-Hant": "選擇界域後，目標時間預設值會依該界域資料切換。",
     "zh-Hans": "选择界域后，目标时间预设值会依该界域资料切换。"
@@ -989,6 +992,9 @@ const EN_TRANSLATIONS = {
   job_fighter: { 'zh-Hant': '鬥士', 'zh-Hans': '斗士', en: 'Fighter' },
   job_knight: { 'zh-Hant': '騎士', 'zh-Hans': '骑士', en: 'Knight' },
   player_code_placeholder: { 'zh-Hant': '請輸入 12 碼玩家編號', 'zh-Hans': '请输入 12 码玩家编号', en: 'Enter 12-digit Player ID' },
+  server_select_placeholder: { en: 'Choose a server' },
+  server_unknown_name: { en: 'Unknown server' },
+  player_code_incomplete: { en: 'Enter the final five player digits' },
   server_tooltip: { en: 'After choosing a realm, target time presets switch to that realm data.' },
   source_material_essence: { en: 'Battle Essence' },
   source_material_freeze_dried: { en: 'Pet Freeze-Dried Food' },

@@ -68,11 +68,11 @@ test('canonical player parsing returns realm and world without global normalizat
   const realm35 = parsePlayerNumber('600351012345', serverRows);
   assert.deepEqual(
     { realm: realm12.realm, realmCode: realm12.realmCode, world: realm12.world },
-    { realm: '12', realmCode: '60012', world: 2 }
+    { realm: '12', realmCode: '60012', world: '02' }
   );
   assert.deepEqual(
     { realm: realm35.realm, realmCode: realm35.realmCode, world: realm35.world },
-    { realm: '35', realmCode: '60035', world: 10 }
+    { realm: '35', realmCode: '60035', world: '10' }
   );
   assert.equal(parsePlayerNumber('600121712345', serverRows).error, 'world_out_of_range');
   assert.equal(parsePlayerNumber('60012021234', serverRows).error, 'invalid_player_number');
@@ -89,14 +89,13 @@ test('rally results look up every server, preserve order, and highlight the full
   );
   assert.deepEqual(
     result.entries.map((entry) => entry.label),
-    ['[6001201]晨曦之城', '[6001216]星海之境', `[6001202]${UNKNOWN_SERVER_NAME}`, '[6001215]永夜王庭']
+    ['[6001201] 晨曦之城', '[6001216] 星海之境', `[6001202] ${UNKNOWN_SERVER_NAME}`, '[6001215] 永夜王庭']
   );
   assert.deepEqual(result.entries.filter((entry) => entry.isCurrent).map((entry) => entry.serverId), ['6001215']);
 });
-
 test('missing server rows still render exact unknown labels', () => {
-  assert.equal(formatServerLabel(serverRows, '6001214'), '[6001214]未知伺服器');
-  assert.equal(formatServerLabel(serverRows, '6001203'), '[6001203]未知伺服器');
+  assert.equal(formatServerLabel(serverRows, '6001214'), '[6001214] 未知伺服器');
+  assert.equal(formatServerLabel(serverRows, '6001203'), '[6001203] 未知伺服器');
 });
 
 test('unsupported seasons and invalid worlds are rejected', () => {

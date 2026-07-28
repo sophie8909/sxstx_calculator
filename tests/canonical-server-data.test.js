@@ -31,7 +31,8 @@ test('valid player IDs remain parseable when a server name is not loaded yet', (
   const parsed = parsePlayerNumber('600291512345', []);
   assert.equal(parsed.ok, true);
   assert.equal(parsed.realmCode, '60029');
-  assert.equal(parsed.world, 15);
+  assert.equal(parsed.world, '15');
+  assert.equal(parsed.playerSuffix, '12345');
   assert.equal(parsed.server, null);
 });
 
@@ -63,10 +64,10 @@ test('website server loading uses only the canonical server sheet', async () => 
   assert.doesNotMatch(dataService, /serverSubmissions|mergeServerRows|mergeCanonicalServerRows|data\/raw/);
 });
 
-test('World Rally falls back to the selected complete server ID when Player ID is empty', async () => {
+test('World Rally reads the shared global context instead of fabricating a player suffix', async () => {
   const controller = await readFile(new URL('../src/ui/controller.js', import.meta.url), 'utf8');
 
-  assert.match(controller, /selectedOption\?\.dataset\.serverId/);
-  assert.match(controller, /enteredPlayerNumber \|\| `\$\{selectedServerId\}00000`/);
-  assert.match(controller, /serverSelect\.addEventListener\('change', renderWhenActive\)/);
+  assert.match(controller, /globalStore\.getState\(\)/);
+  assert.match(controller, /serverId: context\.serverId/);
+  assert.doesNotMatch(controller, /enteredPlayerNumber \|\| \$\{selectedServerId\}00000/);
 });

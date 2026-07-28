@@ -24,7 +24,7 @@ test('World Rally renders on activation and attaches one reactive listener per g
   assert.match(controller, /if \(targetPage === 'world-rally'\) renderWorldRallyFromGlobalState\(\)/);
   assert.match(controller, /document\.getElementById\('player-code-input'\)/);
   assert.match(controller, /document\.getElementById\('season-select'\)/);
-  assert.equal(count(controller, /playerInput\.addEventListener\('input', renderWhenActive\)/g), 1);
+  assert.equal(count(controller, /window\.addEventListener\('sxstx:global-context-change', renderWhenActive\)/g), 1);
   assert.equal(count(controller, /seasonSelect\.addEventListener\('change', renderWhenActive\)/g), 1);
 });
 

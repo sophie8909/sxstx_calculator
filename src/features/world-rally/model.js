@@ -1,5 +1,6 @@
 import {
   buildServerId,
+  deriveServerContext,
   formatServerLabel,
   parsePlayerNumber,
 } from '../../core/serverWorlds.js';
@@ -33,13 +34,15 @@ export function calculateRallyWorldsFromRule(rule, world) {
   throw new RangeError('Unsupported World Rally strategy.');
 }
 
-export function createWorldRallyViewModel({ playerNumber, season, serverRows, ruleRows }) {
-  const player = parsePlayerNumber(playerNumber, serverRows);
+export function createWorldRallyViewModel({ playerNumber = '', serverId = '', season, serverRows, ruleRows }) {
+  const player = playerNumber
+    ? parsePlayerNumber(playerNumber, serverRows)
+    : deriveServerContext(serverId, serverRows);
   if (!player.ok) return { supported: false, enabled: false, statusKey: player.error };
 
   const rule = ruleRows.map(normalizeRallyRule).find((item) => item.season === season.toLowerCase());
   const playerSummary = {
-    playerNumber,
+    playerNumber: playerNumber || '',
     season: season.toUpperCase(),
     serverId: player.serverId,
     serverName: player.server?.server_name || '',

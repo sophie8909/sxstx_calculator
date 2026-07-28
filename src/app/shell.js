@@ -1,5 +1,4 @@
 import { normalizeTool } from './router.js';
-import { parsePlayerNumber } from '../core/serverWorlds.js';
 import { confirmationNotice, element, emptyState, featureTabs, navButton } from '../shared/components.js';
 
 const COPY = {
@@ -196,10 +195,9 @@ function updateLabels(root, tool) {
   root.querySelector('.context-toggle strong').textContent = copy.context;
   root.querySelector('.context-toggle small').textContent = copy.contextHint;
   const summary = root.querySelector('.context-summary');
-  summary.querySelector(':scope > span').textContent = copy.server;
+  summary.querySelector(':scope > span').textContent = copy.realm;
   const summaryLabels = summary.querySelectorAll('small span');
-  if (summaryLabels[0]) summaryLabels[0].textContent = copy.realm;
-  if (summaryLabels[1]) summaryLabels[1].textContent = copy.world;
+  if (summaryLabels[0]) summaryLabels[0].textContent = copy.world;
   root.querySelectorAll('.empty-state').forEach((state) => {
     state.querySelector('h3').textContent = copy.unavailableTitle;
     state.querySelector('p').textContent = copy.unavailableBody;
@@ -245,7 +243,7 @@ function mountAppShell() {
     <button type="button" class="context-toggle" aria-expanded="false"><span><strong>${copy.context}</strong><small>${copy.contextHint}</small></span><span aria-hidden="true">v</span></button>
     <div class="context-grid">
       <div id="context-season" class="context-field"></div><div id="context-player" class="context-field"></div>
-      <div class="context-summary"><span>${copy.server}</span><strong id="context-server-value">${copy.unknown}</strong><small><span>${copy.realm}</span> <b id="context-realm-value">--</b> | <span>${copy.world}</span> <b id="context-world-value">--</b></small></div>
+      <div class="context-summary"><span>${copy.realm}</span><strong id="context-realm-value">--</strong><small><span>${copy.world}</span> <b id="context-world-value">--</b></small></div>
       <div id="context-status" class="context-status"></div>
     </div>`;
   const featureHeader = element('div', { className: 'feature-toolbar' }, [element('div', { id: 'feature-settings', 'data-feature-settings': '' })]);
@@ -288,19 +286,12 @@ function mountAppShell() {
     const expanded = context.classList.toggle('is-expanded');
     toggle.setAttribute('aria-expanded', String(expanded));
   });
-
-  const refreshContext = () => {
-    const player = document.getElementById('player-code-input')?.value || '';
-    const parsed = parsePlayerNumber(player, []);
-    const selectedServer = document.getElementById('server-select')?.selectedOptions?.[0]?.textContent?.trim();
-    root.querySelector('#context-server-value').textContent = selectedServer || (parsed.ok ? parsed.serverId : copy.unknown);
-    root.querySelector('#context-realm-value').textContent = parsed.ok ? parsed.realmCode : '--';
-    root.querySelector('#context-world-value').textContent = parsed.ok ? String(parsed.world).padStart(2, '0') : '--';
+  const renderContext = (context = {}) => {
+    root.querySelector('#context-realm-value').textContent = context.realmCode || '--';
+    root.querySelector('#context-world-value').textContent = context.world || '--';
   };
-  document.getElementById('player-code-input')?.addEventListener('input', refreshContext);
-  document.getElementById('server-select')?.addEventListener('change', refreshContext);
-  new MutationObserver(refreshContext).observe(document.getElementById('server-select'), { childList: true, subtree: true });
-  refreshContext();
+  window.addEventListener('sxstx:global-context-change', (event) => renderContext(event.detail || {}));
+  renderContext();
 
   const initial = normalizeTool(new URLSearchParams(location.search).get('tool'));
   updateLabels(root, initial);

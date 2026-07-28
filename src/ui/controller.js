@@ -44,7 +44,13 @@ import { loadRallyRules, loadServers } from '../services/dataService.js';
 import { CACHE_FALLBACK_EVENT, CACHE_UPDATED_EVENT, fetchTextWithCache } from '../services/dataCache.js';
 import { convertTargetLayout, convertRelicLayout } from '../core/targetLayouts.js';
 import {
+  buildPlayerNumber,
+  deriveServerContext,
+  extractPlayerSuffix,
+  findServerById,
+  normalizePlayerNumber,
   parsePlayerNumber,
+  resolvePlayerContext,
 } from '../core/serverWorlds.js';
 import { createWorldRallyViewModel } from '../features/world-rally/model.js';
 import { normalizeTool, readToolFromLocation } from '../app/router.js';
@@ -1741,9 +1747,12 @@ function updateTargetTimeFormDefaults() {
   const serverSelector = document.getElementById('server-select');
   if (serverSelect && serverSelector?.value) {
     const targetServer = serverSelector.value;
-    const hasOption = Array.from(serverSelect.options).some((option) => option.value === targetServer);
-    if (hasOption) {
-      serverSelect.value = targetServer;
+    const targetOption = serverSelector.selectedOptions?.[0];
+    const matchingOption = Array.from(serverSelect.options).find((option) =>
+      option.value === targetServer || option.dataset.serverNumber === targetServer || option.dataset.serverId === targetServer
+    );
+    if (matchingOption) {
+      serverSelect.value = matchingOption.value;
       if (serverManualInput) serverManualInput.value = '';
       if (serverManualWrap) serverManualWrap.classList.add('hidden');
       if (serverManualToggle) serverManualToggle.textContent = t('relay_server_manual_toggle');
@@ -2959,109 +2968,136 @@ function renderDungeonPowerPanel(preset, dungeonPowerRows) {
   panel.classList.remove('hidden');
 }
 
-async function initServerSelector(containers) {
-  const serverSel = document.getElementById('server-select');
+async function initGlobalContext(containers, saved = {}) {
+  const serverSelect = document.getElementById('server-select');
   const playerInput = document.getElementById('player-code-input');
   const playerError = document.getElementById('player-code-error');
-  if (!serverSel) return;
+  if (!serverSelect || !playerInput) return;
 
   const servers = await fetchServerRows();
-  serverSel.innerHTML = '';
+  const savedPlayerNumber = normalizePlayerNumber(saved.playerNumber || saved['player-code-input'] || '');
+  const savedServerValue = String(saved.serverId || saved['server-select'] || saved.serverName || '').trim();
+  const savedServer = findServerById(servers, savedServerValue)
+    || servers.find((server) => server.server_name === savedServerValue)
+    || null;
+  let syncGeneration = 0;
+
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.disabled = true;
+  placeholder.textContent = t('server_select_placeholder');
+  serverSelect.replaceChildren(placeholder);
   servers.forEach((server) => {
-    const opt = document.createElement('option');
-    opt.value = server.server_name;
-    opt.textContent = `${server.server_id} - ${server.server_name}`;
-    opt.dataset.serverId = server.server_id;
-    serverSel.appendChild(opt);
+    const option = document.createElement('option');
+    option.value = String(server.server_id);
+    option.dataset.serverId = String(server.server_id);
+    option.dataset.serverName = server.server_name;
+    option.textContent = `[${server.server_id}] ${server.server_name || t('server_unknown_name')}`;
+    serverSelect.appendChild(option);
   });
 
-  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-  const savedServer = saved['server-select'];
-  const savedPlayerCode = saved['player-code-input'] || '';
-  if (playerInput) playerInput.value = savedPlayerCode;
-
-  const applyServer = async (serverName, persist = true) => {
-    if (!serverName || ![...serverSel.options].some((option) => option.value === serverName)) return;
-
-    serverSel.value = serverName;
-    state.serverName = serverName;
-
-    if (persist) {
-      const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-      data['server-select'] = serverName;
-      if (playerInput) data['player-code-input'] = playerInput.value || '';
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  const ensureServerOption = (serverId, serverName) => {
+    if (!serverId) return null;
+    let option = [...serverSelect.options].find((candidate) => candidate.value === serverId);
+    if (!option) {
+      option = document.createElement('option');
+      option.value = serverId;
+      option.dataset.serverId = serverId;
+      option.dataset.serverName = serverName || t('server_unknown_name');
+      option.textContent = `[${serverId}] ${option.dataset.serverName}`;
+      serverSelect.appendChild(option);
     }
-
-    await initTargetTimeControls(containers);
-    triggerRecalculate(containers);
-    updateTargetTimeFormDefaults();
+    return option;
   };
 
-  const applyPlayerCode = async () => {
-    if (!playerInput) return;
-
-    const playerCode = playerInput.value.trim();
-    if (!playerCode) {
-      if (playerError) playerError.textContent = '';
-      const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-      data['player-code-input'] = '';
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-      return;
-    }
-
-    const parsedPlayer = parsePlayerNumber(playerCode, serverRowsCache);
-    if (!parsedPlayer.ok) {
-      if (playerError) playerError.textContent = t('player_code_invalid');
-      return;
-    }
-    if (!parsedPlayer.server) {
-      if (playerError) playerError.textContent = t('player_code_server_not_found');
-      return;
-    }
-
-    if (playerError) playerError.textContent = '';
-    await applyServer(parsedPlayer.server.server_name, true);
+  const persistLegacyCompatibility = (context) => {
+    const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    data['player-code-input'] = context.playerNumber;
+    data['server-select'] = context.serverId;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   };
 
-  if (savedServer && [...serverSel.options].some(o => o.value === savedServer)) {
-    await applyServer(savedServer, false);
-  } else {
-    serverSel.selectedIndex = 0;
-    state.serverName = serverSel.value;
-  }
+  const notifyContext = (context, source, previous) => {
+    const changed = ['playerNumber', 'playerSuffix', 'serverId', 'serverName', 'realmCode', 'realm', 'world']
+      .some((key) => previous[key] !== context[key]);
+    if (!changed) return false;
+    Object.assign(state, {
+      playerNumber: context.playerNumber,
+      playerSuffix: context.playerSuffix,
+      serverName: context.serverName,
+      realmCode: context.realmCode,
+      worldNumber: context.worldNumber,
+    });
+    globalStore.update({ ...context, parsedServer: context.server });
+    window.dispatchEvent(new CustomEvent('sxstx:global-context-change', { detail: { ...context, source } }));
+    return true;
+  };
 
-  const savedPlayer = parsePlayerNumber(savedPlayerCode, serverRowsCache);
-  if (savedPlayerCode && savedPlayer.ok && savedPlayer.server) {
-    await applyPlayerCode();
-  }
+  const syncContext = async (source, inputValue, requestedServerId = '') => {
+    const generation = ++syncGeneration;
+    const previous = globalStore.getState();
+    const normalizedInput = normalizePlayerNumber(inputValue);
+    const next = resolvePlayerContext({
+      source,
+      playerNumber: normalizedInput,
+      serverId: requestedServerId,
+      serverRows: servers,
+      unknownName: t('server_unknown_name'),
+    });
+    playerInput.value = source === 'server-select' && next.playerNumber !== normalizedInput
+      ? next.playerNumber
+      : inputValue;
+    if (next.serverId) {
+      ensureServerOption(next.serverId, next.serverName);
+      serverSelect.value = next.serverId;
+    } else {
+      serverSelect.value = '';
+    }
 
-  if (serverSel.dataset.serverBound !== '1') {
-    serverSel.dataset.serverBound = '1';
-    serverSel.addEventListener('change', () => {
-      applyServer(serverSel.value, true);
+    if (playerError) {
+      playerError.textContent = normalizedInput && !/^\d{12}$/.test(normalizedInput)
+        ? t('player_code_invalid')
+        : '';
+    }
+
+    const didChange = notifyContext(next, source, previous);
+    if (didChange) persistLegacyCompatibility(next);
+    if (generation !== syncGeneration || !didChange) return;
+
+    if (source !== 'initial-load' && next.serverId !== previous.serverId) {
+      await initTargetTimeControls(containers);
+      triggerRecalculate(containers);
+      updateTargetTimeFormDefaults();
+    }
+  };
+
+  if (savedPlayerNumber) playerInput.value = savedPlayerNumber;
+  if (serverSelect.dataset.serverBound !== '1') {
+    serverSelect.dataset.serverBound = '1';
+    serverSelect.addEventListener('change', () => {
+      void syncContext('server-select', playerInput.value, serverSelect.value);
     });
   }
-
-  if (playerInput && playerInput.dataset.playerBound !== '1') {
+  if (playerInput.dataset.playerBound !== '1') {
     playerInput.dataset.playerBound = '1';
     playerInput.addEventListener('input', () => {
-      const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-      data['player-code-input'] = playerInput.value.trim();
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-      const parsed = parsePlayerNumber(playerInput.value.trim(), serverRowsCache);
-      globalStore.update({
-        playerNumber: playerInput.value.trim(),
-        parsedServer: parsed.ok ? parsed.server : null,
-        realmCode: parsed.ok ? parsed.realmCode : '',
-        worldNumber: parsed.ok ? parsed.world : null,
-        serverName: parsed.ok ? parsed.server?.server_name || '' : '',
-      });
-      applyPlayerCode();
+      void syncContext('player-input', playerInput.value);
     });
   }
-}
 
+  const savedPlayer = parsePlayerNumber(savedPlayerNumber, servers);
+  const initialServerId = savedPlayer.ok
+    ? savedPlayer.serverId
+    : deriveServerContext(savedServer?.server_id || savedServerValue, servers).serverId || '';
+  await syncContext('initial-load', savedPlayer.ok ? savedPlayerNumber : playerInput.value, initialServerId);
+  window.addEventListener('languagechange', () => {
+    placeholder.textContent = t('server_select_placeholder');
+    Array.from(serverSelect.options).forEach((option) => {
+      if (!option.value) return;
+      option.textContent = `[${option.value}] ${option.dataset.serverName || t('server_unknown_name')}`;
+    });
+  });
+}
 async function initWorldRally() {
   const playerInput = document.getElementById('player-code-input');
   const seasonSelect = document.getElementById('season-select');
@@ -3102,17 +3138,15 @@ async function initWorldRally() {
   };
 
   renderWorldRallyFromGlobalState = () => {
-    const enteredPlayerNumber = playerInput.value.trim();
-    const selectedOption = serverSelect.options[serverSelect.selectedIndex];
-    const selectedServerId = selectedOption?.dataset.serverId || '';
-    if (!enteredPlayerNumber && !selectedServerId) {
+    const context = globalStore.getState();
+    if (!context.serverId) {
       renderMessage(t('world_rally_empty_prompt'));
       return;
     }
 
-    const playerNumber = enteredPlayerNumber || `${selectedServerId}00000`;
     const viewModel = createWorldRallyViewModel({
-      playerNumber,
+      playerNumber: context.playerNumber,
+      serverId: context.serverId,
       season: seasonSelect.value,
       serverRows,
       ruleRows: rallyRules,
@@ -3130,7 +3164,7 @@ async function initWorldRally() {
     const summaryList = document.createElement('dl');
     summaryList.className = 'world-rally-summary-grid';
     const fields = [
-      ['world_rally_player_number', viewModel.playerSummary.playerNumber],
+      ['world_rally_player_number', viewModel.playerSummary.playerNumber || t('player_code_incomplete')],
       ['world_rally_selected_season', viewModel.playerSummary.season],
       ['world_rally_server_id', viewModel.playerSummary.serverId],
       ['world_rally_server_name', viewModel.playerSummary.serverName || t('world_rally_unknown_server')],
@@ -3174,13 +3208,14 @@ async function initWorldRally() {
     }
     resultElement.append(summary, realm, rally);
   };
-
   const renderWhenActive = () => {
     if (!panel.classList.contains('hidden')) renderWorldRallyFromGlobalState();
   };
-  playerInput.addEventListener('input', renderWhenActive);
-  seasonSelect.addEventListener('change', renderWhenActive);
-  serverSelect.addEventListener('change', renderWhenActive);
+  if (panel.dataset.worldRallyBound !== '1') {
+    panel.dataset.worldRallyBound = '1';
+    window.addEventListener('sxstx:global-context-change', renderWhenActive);
+    seasonSelect.addEventListener('change', renderWhenActive);
+  }
   if (!panel.classList.contains('hidden')) renderWorldRallyFromGlobalState();
 }
 
@@ -3642,10 +3677,9 @@ async function initializeActiveFeature(containers, saved = {}, { refresh = false
     } else if (tool === 'gift') {
       await renderGiftCalculator(saved);
     } else if (tool === 'world-rally') {
-      await initServerSelector(containers);
       await initWorldRally();
     } else if (tool === 'contribution') {
-      const settled = await Promise.allSettled([initServerSelector(containers), initTargetTimeControls(containers)]);
+      const settled = await Promise.allSettled([initTargetTimeControls(containers)]);
       const failed = settled.find((result) => result.status === 'rejected');
       if (failed) throw failed.reason;
       updateTargetTimeFormDefaults();
@@ -3838,13 +3872,14 @@ async function init() {
         }
       });
     },
-    initializeGlobalContext() {
+    async initializeGlobalContext() {
       globalStore.update({
         activeTool: readToolFromLocation(),
         seasonId: state.seasonId,
         language: document.documentElement.lang,
         theme: document.documentElement.dataset.theme || 'light',
       });
+      await initGlobalContext(containers, saved);
     },
     onError(error, stage) {
       console.error('[bootstrap]', stage, error);
