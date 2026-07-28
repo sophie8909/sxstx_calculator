@@ -184,6 +184,14 @@ body.app-loading .app-loading-overlay {
   font-weight: 700;
 }
 
+.app-loading-fallback {
+  visibility: hidden;
+  color: #9f1239;
+  font-size: .85rem;
+  font-weight: 700;
+  animation: app-loading-fallback 0s linear 12s forwards;
+}
+
 .app-loading-progress {
   position: relative;
   width: min(100%, 15rem);
@@ -255,6 +263,12 @@ body.app-loading .app-loading-overlay {
   40% {
     opacity: 1;
     transform: translateY(-.25rem);
+  }
+}
+
+@keyframes app-loading-fallback {
+  to {
+    visibility: visible;
   }
 }
 
