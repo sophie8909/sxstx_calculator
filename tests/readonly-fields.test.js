@@ -56,15 +56,13 @@ test('Traditional Chinese exposes a compact 唯讀 indicator', async () => {
   assert.match(html, /class="readonly-badge"[^>]*data-i18n="readonly_badge">唯讀<\/span>/);
 });
 
-test('derived context and score displays use semantic calculated surfaces', async () => {
-  const [shell, html, relay] = await Promise.all([
-    read('src/app/shell.js'), read('index.html'), read('src/form-relay.js'),
-  ]);
-  assert.match(shell, /context-summary readonly-field" role="status" aria-live="polite"/);
+test('derived score and automatic description displays use semantic calculated surfaces', async () => {
+  const [html, relay] = await Promise.all([read('index.html'), read('src/form-relay.js')]);
   assert.match(html, /readonly-field readonly-field--summary[^>]*role="status" aria-live="polite"/);
   assert.match(relay, /setReadOnlyField\(descriptionInput\)/);
   assert.match(relay, /relay-description-readonly-badge/);
 });
+
 test('shared helper never presents a read-only control as unavailable', async () => {
   const shared = await read('src/shared/components.js');
   assert.match(shared, /export function setReadOnlyField/);

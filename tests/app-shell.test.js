@@ -20,6 +20,21 @@ test('application shell defines five canonical features and responsive navigatio
   assert.match(components, /ArrowLeft/);
 });
 
+test('global context renders season, player, server, and status in order without a realm column', async () => {
+  const [shell, layout, fantasy, store] = await Promise.all([
+    read('src/app/shell.js'), read('src/styles/layout.css'), read('src/styles/fantasy.css'), read('src/app/store.js'),
+  ]);
+  const grid = shell.match(/<div class="context-grid">([\s\S]*?)<\/div>`;/)?.[1] || '';
+  const orderedIds = [...grid.matchAll(/id="(context-[^"]+)"/g)].map((match) => match[1]);
+  assert.deepEqual(orderedIds, ['context-season', 'context-player', 'context-server', 'context-status']);
+  assert.doesNotMatch(shell, /context-realm-value|context-world-value|context-summary|copy\.realm|copy\.world/);
+  assert.match(layout, /grid-template-columns: minmax\(150px, \.8fr\) minmax\(210px, 1fr\) minmax\(280px, 1\.4fr\) minmax\(190px, \.9fr\)/);
+  assert.match(fantasy, /grid-template-columns: minmax\(150px,.8fr\) minmax\(210px,1fr\) minmax\(280px,1.4fr\) minmax\(190px,.9fr\)/);
+  assert.doesNotMatch(fantasy, /\.context-grid > \*:last-child \{ grid-column: 1 \/ -1/);
+  assert.match(store, /'realmCode', 'realm', 'world'/);
+  assert.match(store, /worldNumber: null/);
+});
+
 test('Primordial workspace exposes exactly three independent layouts and transfer actions', async () => {
   const shell = await read('src/app/shell.js');
   assert.match(shell, /id: 'primordial-workspace'/);

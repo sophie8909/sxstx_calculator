@@ -39,6 +39,8 @@ test('World Rally ViewModel lists the realm, unknown names, current server, and 
     serverRows,
     ruleRows,
   });
+  assert.equal(ready.playerSummary.realmCode, '60026');
+  assert.equal(ready.playerSummary.worldNumber, '01');
   assert.deepEqual(ready.realmEntries.map((entry) => entry.serverId), ['6002601', '6002602', '6002616']);
   assert.equal(ready.realmEntries[0].isCurrent, true);
   assert.equal(ready.realmEntries[1].label, '[6002602] 未知伺服器');

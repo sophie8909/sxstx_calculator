@@ -4,7 +4,7 @@ import { confirmationNotice, element, emptyState, featureTabs, navButton } from 
 const COPY = {
   'zh-Hant': {
     product: '杖劍傳說計算機', menu: '功能選單', context: '玩家環境', contextHint: '賽季與玩家編號會套用到相關功能',
-    season: '賽季', player: '玩家編號', server: '伺服器', realm: '界域', world: '世界', unknown: '尚未識別', expand: '編輯玩家環境',
+    season: '賽季', player: '玩家編號', server: '伺服器', unknown: '尚未識別', expand: '編輯玩家環境',
     features: {
       primordial: ['原初養成', '設定目標並計算角色與素材需求'], equipment: ['裝備與碎片', '評分、交易與副本掉落資料'],
       gift: ['禮物與好感', '規劃好感需求與禮物購買'], 'world-rally': ['世界集結', '依界域查看伺服器與集結名單'],
@@ -19,7 +19,7 @@ const COPY = {
   },
   'zh-Hans': {
     product: '杖剑传说计算机', menu: '功能选单', context: '玩家环境', contextHint: '赛季与玩家编号会套用到相关功能',
-    season: '赛季', player: '玩家编号', server: '服务器', realm: '界域', world: '世界', unknown: '尚未识别', expand: '编辑玩家环境',
+    season: '赛季', player: '玩家编号', server: '服务器', unknown: '尚未识别', expand: '编辑玩家环境',
     features: {
       primordial: ['原初养成', '设定目标并计算角色与素材需求'], equipment: ['装备与碎片', '评分、交易与副本掉落资料'],
       gift: ['礼物与好感', '规划好感需求与礼物购买'], 'world-rally': ['世界集结', '依界域查看服务器与集结名单'],
@@ -34,7 +34,7 @@ const COPY = {
   },
   en: {
     product: 'SxS Calculator', menu: 'Features', context: 'Player context', contextHint: 'Season and player number apply across relevant features',
-    season: 'Season', player: 'Player number', server: 'Server', realm: 'Realm', world: 'World', unknown: 'Not identified', expand: 'Edit player context',
+    season: 'Season', player: 'Player number', server: 'Server', unknown: 'Not identified', expand: 'Edit player context',
     features: {
       primordial: ['Primordial planning', 'Set targets and calculate experience and materials'], equipment: ['Equipment & fragments', 'Scores, market returns, and dungeon data'],
       gift: ['Gifts & bond', 'Plan affection requirements and gift purchases'], 'world-rally': ['World Rally', 'View realm servers and rally groups'],
@@ -50,7 +50,7 @@ const COPY = {
 
 Object.assign(COPY['zh-Hant'], {
   product: '杖劍傳說養成計算器', menu: '主要功能', context: '冒險者資訊', contextHint: '賽季與玩家編號會套用至相關功能',
-  season: '賽季', player: '玩家編號', server: '伺服器', realm: '領域', world: '世界', unknown: '尚未辨識', expand: '編輯冒險者資訊',
+  season: '賽季', player: '玩家編號', server: '伺服器', unknown: '尚未辨識', expand: '編輯冒險者資訊',
   features: {
     primordial: ['原初計算機', '規劃養成目標、角色經驗與完整素材'], equipment: ['裝備與碎片', '查詢裝備評分、兌換與副本資料'],
     gift: ['禮物與羈絆', '規劃好感度需求與禮物採購'], 'world-rally': ['世界集結', '查看領域伺服器與集結分組'], contribution: ['資料貢獻', '提交伺服器、目標時間與缺漏資料'],
@@ -63,7 +63,7 @@ Object.assign(COPY['zh-Hant'], {
 });
 Object.assign(COPY['zh-Hans'], {
   product: '杖剑传说养成计算器', menu: '主要功能', context: '冒险者资讯', contextHint: '赛季与玩家编号会套用至相关功能',
-  season: '赛季', player: '玩家编号', server: '服务器', realm: '领域', world: '世界', unknown: '尚未识别', expand: '编辑冒险者资讯',
+  season: '赛季', player: '玩家编号', server: '服务器', unknown: '尚未识别', expand: '编辑冒险者资讯',
   features: {
     primordial: ['原初计算机', '规划养成目标、角色经验与完整素材'], equipment: ['装备与碎片', '查询装备评分、兑换与副本资料'],
     gift: ['礼物与羁绊', '规划好感度需求与礼物采购'], 'world-rally': ['世界集结', '查看领域服务器与集结分组'], contribution: ['资料贡献', '提交服务器、目标时间与缺漏资料'],
@@ -220,10 +220,7 @@ function updateLabels(root, tool) {
   if (targetLabel) targetLabel.textContent = copy.characterTarget;
   root.querySelector('.context-toggle strong').textContent = copy.context;
   root.querySelector('.context-toggle small').textContent = copy.contextHint;
-  const summary = root.querySelector('.context-summary');
-  summary.querySelector(':scope > span').textContent = copy.realm;
-  const summaryLabels = summary.querySelectorAll('small span');
-  if (summaryLabels[0]) summaryLabels[0].textContent = copy.world;
+
   root.querySelectorAll('.empty-state').forEach((state) => {
     state.querySelector('h3').textContent = copy.unavailableTitle;
     state.querySelector('p').textContent = copy.unavailableBody;
@@ -270,7 +267,6 @@ function mountAppShell() {
     <div class="context-grid">
       <div id="context-season" class="context-field"></div><div id="context-player" class="context-field"></div>
       <div id="context-server" class="context-field"></div>
-      <div class="context-summary readonly-field" role="status" aria-live="polite" aria-atomic="true"><span>${copy.realm}</span><strong id="context-realm-value">--</strong><small><span>${copy.world}</span> <b id="context-world-value">--</b></small></div>
       <div id="context-status" class="context-status"></div>
     </div>`;
   const featureHeader = element('div', { className: 'feature-toolbar' }, [element('div', { id: 'feature-settings', 'data-feature-settings': '' })]);
@@ -313,12 +309,6 @@ function mountAppShell() {
     const expanded = context.classList.toggle('is-expanded');
     toggle.setAttribute('aria-expanded', String(expanded));
   });
-  const renderContext = (context = {}) => {
-    root.querySelector('#context-realm-value').textContent = context.realmCode || '--';
-    root.querySelector('#context-world-value').textContent = context.world || '--';
-  };
-  window.addEventListener('sxstx:global-context-change', (event) => renderContext(event.detail || {}));
-  renderContext();
 
   const initial = normalizeTool(new URLSearchParams(location.search).get('tool'));
   updateLabels(root, initial);

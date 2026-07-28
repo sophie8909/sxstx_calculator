@@ -19,17 +19,18 @@ test('approved pastel fantasy tokens replace the legacy teal identity', async ()
   assert.match(fantasy, /prefers-reduced-motion:reduce/);
 });
 
-test('shell uses five context sections, fantasy icons, and responsive navigation', async () => {
+test('shell uses four balanced context sections, fantasy icons, and responsive navigation', async () => {
   const [shell, shared, fantasy] = await Promise.all([
     read('src/app/shell.js'), read('src/shared/components.js'), read('src/styles/fantasy.css'),
   ]);
-  for (const id of ['context-season', 'context-player', 'context-server', 'context-realm-value', 'context-status']) {
+  for (const id of ['context-season', 'context-player', 'context-server', 'context-status']) {
     assert.match(shell, new RegExp(id));
   }
+  assert.doesNotMatch(shell, /context-realm-value|context-world-value|context-summary/);
   assert.match(shared, /<svg viewBox=/);
-  assert.match(fantasy, /grid-template-columns: minmax\(135px,.8fr\).*minmax\(150px,.85fr\)/);
-  assert.match(fantasy, /@media \(max-width:1199px\)/);
-  assert.match(fantasy, /@media \(max-width:767px\)/);
+  assert.match(fantasy, /grid-template-columns: minmax\(150px,.8fr\) minmax\(210px,1fr\) minmax\(280px,1.4fr\) minmax\(190px,.9fr\)/);
+  assert.match(fantasy, /@media \(max-width:1199px\)[\s\S]*grid-template-columns: repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(fantasy, /@media \(max-width:767px\)[\s\S]*grid-template-columns: 1fr/);
 });
 
 test('Primordial resource workspace keeps the approved 2, 1, 3 card rows and mobile order', async () => {

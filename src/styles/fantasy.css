@@ -76,12 +76,11 @@ a { color: var(--primary-strong); }
 .global-context-panel { position: relative; margin-top: 20px; padding: 18px 22px; overflow: hidden; border-color: var(--border); border-radius: var(--radius-lg); background: linear-gradient(115deg,var(--surface),color-mix(in srgb,var(--surface) 78%,var(--surface-gold))); box-shadow: var(--shadow-card); }
 .global-context-panel::before { position: absolute; inset: 0 0 auto; height: 3px; background: linear-gradient(90deg,var(--secondary),var(--gold),var(--sky),var(--primary)); content: ''; }
 .global-context-panel::after { position: absolute; right: 16px; bottom: 6px; color: color-mix(in srgb,var(--gold) 55%,transparent); content: '✦'; }
-.context-grid { grid-template-columns: minmax(135px,.8fr) minmax(190px,1.15fr) minmax(220px,1.3fr) minmax(155px,.8fr) minmax(150px,.85fr); gap: 0; align-items: stretch; }
+.context-grid { grid-template-columns: minmax(150px,.8fr) minmax(210px,1fr) minmax(280px,1.4fr) minmax(190px,.9fr); gap: 0; align-items: stretch; }
 .context-grid > * { min-width: 0; padding: 2px 16px; border-right: 1px solid var(--border); }
 .context-grid > *:first-child { padding-left: 0; }
 .context-grid > *:last-child { padding-right: 0; border-right: 0; }
-.context-field label,.context-summary > span { color: var(--text-muted); font-size: 12px; }
-.context-summary strong { color: var(--text-strong); }
+.context-field label { color: var(--text-muted); font-size: 12px; }
 .context-status { display: flex; min-height: 64px; align-items: center; }
 .feature-toolbar { margin-top: 15px; }
 .feature-workspace { margin-top: 7px; }
@@ -120,7 +119,6 @@ a { color: var(--primary-strong); }
   .context-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px 0; }
   .context-grid > *:nth-child(2n) { border-right: 0; }
   .context-grid > *:nth-child(n+3) { border-top: 1px solid var(--border); padding-top: 14px; }
-  .context-grid > *:last-child { grid-column: 1 / -1; }
 }
 @media (max-width:767px) {
   .top-bar { padding: 14px 16px; }
@@ -130,7 +128,6 @@ a { color: var(--primary-strong); }
   .global-context-panel { padding: 11px 15px; }
   .context-grid { grid-template-columns: 1fr; }
   .context-grid > * { padding: 10px 0!important; border: 0!important; border-top: 1px solid var(--border)!important; }
-  .context-grid > *:last-child { grid-column: auto; }
   .feature-tabs { border-radius: 16px; }
   .feature-tab { min-height: 44px; }
 }

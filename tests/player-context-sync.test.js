@@ -34,6 +34,8 @@ test('player input selects the matching server and switches on another valid pre
   assert.equal(first.serverId, '6001509');
   assert.equal(second.serverId, '6002603');
   assert.equal(second.playerSuffix, '00582');
+  assert.equal(second.realmCode, '60026');
+  assert.equal(second.world, '03');
 });
 
 test('incomplete input clears a previously parsed server context', () => {
@@ -54,6 +56,8 @@ test('server selection replaces only the prefix and preserves leading-zero suffi
   const result = resolvePlayerContext({ source: 'server-select', serverId: '6002603', playerNumber: '600150900582', serverRows: servers });
   assert.equal(result.playerNumber, '600260300582');
   assert.equal(result.playerSuffix, '00582');
+  assert.equal(result.realmCode, '60026');
+  assert.equal(result.world, '03');
   assert.equal(buildPlayerNumber('6002603', '00582'), '600260300582');
 });
 

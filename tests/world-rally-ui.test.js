@@ -26,6 +26,8 @@ test('World Rally renders on activation and attaches one reactive listener per g
   assert.match(controller, /document\.getElementById\('season-select'\)/);
   assert.equal(count(controller, /window\.addEventListener\('sxstx:global-context-change', renderWhenActive\)/g), 1);
   assert.equal(count(controller, /seasonSelect\.addEventListener\('change', renderWhenActive\)/g), 1);
+  assert.match(controller, /\['world_rally_realm_code', viewModel\.playerSummary\.realmCode\]/);
+  assert.match(controller, /\['world_rally_world_number', viewModel\.playerSummary\.worldNumber\]/);
 });
 
 test('World Rally visible strings exist in every supported language', () => {
