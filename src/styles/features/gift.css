@@ -1,2 +1,11 @@
 #gift-workspace-panel-calculator, #gift-workspace-panel-plan, #gift-workspace-panel-reference { padding-top: 4px; }
-#gift-calculator-result > div { border-radius: var(--radius-md) !important; }
+#gift-calculator-result > div { height: 100%; border-radius: var(--radius-md) !important; }
+#gift-calculator-result,
+#gift-purchase-plan,
+#gift-comparison-result { min-width: 0; max-width: 100%; }
+.gift-table-shell { max-width: 100%; border-color: var(--border); }
+.gift-table-shell th,
+.gift-table-shell td { border-color: var(--border); }
+.gift-table-shell thead { background: var(--surface-lavender); color: var(--text-strong); }
+
+.gift-panel-divider { border-color: var(--border) !important; }

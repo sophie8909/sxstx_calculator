@@ -42,7 +42,7 @@ import {
 } from '../core/experience.js';
 import { loadRallyRules, loadServers } from '../services/dataService.js';
 import { CACHE_FALLBACK_EVENT, CACHE_UPDATED_EVENT, fetchTextWithCache } from '../services/dataCache.js';
-import { setReadOnlyField } from '../shared/components.js';
+import { setReadOnlyField, summaryMetric } from '../shared/components.js';
 import { convertTargetLayout, convertRelicLayout } from '../core/targetLayouts.js';
 import {
   buildPlayerNumber,
@@ -1709,10 +1709,6 @@ function bindTargetTimeFormToggle() {
 
     navButtons.forEach((button) => {
       const active = button.dataset.page === targetPage;
-      button.classList.toggle('bg-[#2cb5ab]', active);
-      button.classList.toggle('hover:bg-[#23a69d]', active);
-      button.classList.toggle('bg-gray-600', !active);
-      button.classList.toggle('hover:bg-gray-500', !active);
       button.setAttribute('aria-current', active ? 'page' : 'false');
       button.setAttribute('aria-pressed', String(active));
     });
@@ -1775,9 +1771,8 @@ function updateRelicModeButtons() {
   const mode = document.getElementById('relic-ui-mode')?.value || 'compact';
   document.querySelectorAll('.relic-mode-btn').forEach((button) => {
     const active = button.dataset.mode === mode;
-    button.classList.toggle('bg-[#2cb5ab]', active);
-    button.classList.toggle('text-white', active);
-    button.classList.toggle('text-[#0f766e]', !active);
+    button.classList.toggle('is-active', active);
+    button.setAttribute('aria-pressed', String(active));
   });
 }
 
@@ -2138,13 +2133,12 @@ function getAvailableGiftKingdoms(row, category) {
     .sort((a, b) => a.sourceRank - b.sourceRank);
 }
 
-function renderGiftSummaryItem(labelKey, value) {
-  return `
-    <div class="info-item rounded-lg p-3">
-      <div class="text-xs font-semibold text-slate-500">${escapeHtml(t(labelKey))}</div>
-      <div class="mt-1 text-lg font-bold text-slate-800">${escapeHtml(value)}</div>
-    </div>
-  `;
+function renderGiftSummaryItem(labelKey, value, options = {}) {
+  return summaryMetric({
+    label: t(labelKey),
+    value,
+    ...options,
+  });
 }
 
 function getGiftSourceRank(source) {
@@ -2377,28 +2371,28 @@ function renderGiftPurchaseTable(purchases) {
     .sort((a, b) => getGiftSourceRank(a) - getGiftSourceRank(b) || a.price - b.price || a.quality.localeCompare(b.quality))
     .map((item) => `
       <tr>
-        <td class="border border-[#cde5e8] px-3 py-2 font-semibold">${escapeHtml(item.kingdomLabel)}</td>
-        <td class="border border-[#cde5e8] px-3 py-2">${escapeHtml(item.quality)}</td>
-        <td class="border border-[#cde5e8] px-3 py-2 text-right">${formatGiftNumber(item.favorPerGift)}</td>
-        <td class="border border-[#cde5e8] px-3 py-2 text-right">${formatGiftNumber(item.price)}</td>
-        <td class="border border-[#cde5e8] px-3 py-2 text-right">${formatGiftNumber(item.quantity)}</td>
-        <td class="border border-[#cde5e8] px-3 py-2 text-right">${formatGiftNumber(item.spent)}</td>
-        <td class="border border-[#cde5e8] px-3 py-2 text-right">${formatGiftNumber(item.obtainedFavor)}</td>
+        <td class="gift-table-cell border px-3 py-2 font-semibold">${escapeHtml(item.kingdomLabel)}</td>
+        <td class="gift-table-cell border px-3 py-2">${escapeHtml(item.quality)}</td>
+        <td class="gift-table-cell border px-3 py-2 text-right">${formatGiftNumber(item.favorPerGift)}</td>
+        <td class="gift-table-cell border px-3 py-2 text-right">${formatGiftNumber(item.price)}</td>
+        <td class="gift-table-cell border px-3 py-2 text-right">${formatGiftNumber(item.quantity)}</td>
+        <td class="gift-table-cell border px-3 py-2 text-right">${formatGiftNumber(item.spent)}</td>
+        <td class="gift-table-cell border px-3 py-2 text-right">${formatGiftNumber(item.obtainedFavor)}</td>
       </tr>
     `).join('');
 
   return `
-    <div class="responsive-table">
+    <div class="responsive-table gift-table-shell">
       <table class="text-sm border-collapse">
         <thead>
-          <tr class="bg-[#eefafa] text-slate-700">
-            <th class="border border-[#cde5e8] px-3 py-2 text-left">${escapeHtml(t('gift_table_kingdom'))}</th>
-            <th class="border border-[#cde5e8] px-3 py-2 text-left">${escapeHtml(t('gift_table_quality'))}</th>
-            <th class="border border-[#cde5e8] px-3 py-2 text-right">${escapeHtml(t('gift_table_favor'))}</th>
-            <th class="border border-[#cde5e8] px-3 py-2 text-right">${escapeHtml(t('gift_table_price'))}</th>
-            <th class="border border-[#cde5e8] px-3 py-2 text-right">${escapeHtml(t('gift_table_quantity'))}</th>
-            <th class="border border-[#cde5e8] px-3 py-2 text-right">${escapeHtml(t('gift_table_spent'))}</th>
-            <th class="border border-[#cde5e8] px-3 py-2 text-right">${escapeHtml(t('gift_table_obtained'))}</th>
+          <tr>
+            <th class="gift-table-cell border px-3 py-2 text-left">${escapeHtml(t('gift_table_kingdom'))}</th>
+            <th class="gift-table-cell border px-3 py-2 text-left">${escapeHtml(t('gift_table_quality'))}</th>
+            <th class="gift-table-cell border px-3 py-2 text-right">${escapeHtml(t('gift_table_favor'))}</th>
+            <th class="gift-table-cell border px-3 py-2 text-right">${escapeHtml(t('gift_table_price'))}</th>
+            <th class="gift-table-cell border px-3 py-2 text-right">${escapeHtml(t('gift_table_quantity'))}</th>
+            <th class="gift-table-cell border px-3 py-2 text-right">${escapeHtml(t('gift_table_spent'))}</th>
+            <th class="gift-table-cell border px-3 py-2 text-right">${escapeHtml(t('gift_table_obtained'))}</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
@@ -2414,9 +2408,9 @@ function renderGiftPlanSection(titleKey, plan, neededFavor) {
     <div class="space-y-2">
       <h4 class="text-lg font-bold">${escapeHtml(t(titleKey))}</h4>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-        ${renderGiftSummaryItem('gift_obtainable_favor_label', formatGiftNumber(plan.favor))}
-        ${renderGiftSummaryItem('gift_missing_favor_label', formatGiftNumber(missingFavor))}
-        ${renderGiftSummaryItem('gift_overflow_label', formatGiftNumber(overflowFavor))}
+        ${renderGiftSummaryItem('gift_obtainable_favor_label', formatGiftNumber(plan.favor), { variant: 'info' })}
+        ${renderGiftSummaryItem('gift_missing_favor_label', formatGiftNumber(missingFavor), { variant: missingFavor > 0 ? 'shortage' : 'success' })}
+        ${renderGiftSummaryItem('gift_overflow_label', formatGiftNumber(overflowFavor), { variant: 'overflow' })}
         ${renderGiftSummaryItem('gift_total_cost_label', formatGiftNumber(plan.cost))}
       </div>
       ${renderGiftPurchaseTable(plan.purchases)}
@@ -2427,22 +2421,22 @@ function renderGiftPlanSection(titleKey, plan, neededFavor) {
 function renderGiftComparisonTable(results) {
   const body = results.map((item) => `
     <tr>
-      <td class="border border-[#cde5e8] px-3 py-2 font-semibold">${escapeHtml(item.quality)}</td>
-      <td class="border border-[#cde5e8] px-3 py-2 text-right">${formatGiftNumber(item.favorPerGift)}</td>
-      <td class="border border-[#cde5e8] px-3 py-2 text-right">${formatGiftNumber(item.price)}</td>
-      <td class="border border-[#cde5e8] px-3 py-2">${escapeHtml(item.kingdoms)}</td>
+      <td class="gift-table-cell border px-3 py-2 font-semibold">${escapeHtml(item.quality)}</td>
+      <td class="gift-table-cell border px-3 py-2 text-right">${formatGiftNumber(item.favorPerGift)}</td>
+      <td class="gift-table-cell border px-3 py-2 text-right">${formatGiftNumber(item.price)}</td>
+      <td class="gift-table-cell border px-3 py-2">${escapeHtml(item.kingdoms)}</td>
     </tr>
   `).join('');
 
   return `
-    <div class="responsive-table">
+    <div class="responsive-table gift-table-shell">
       <table class="text-sm border-collapse">
         <thead>
-          <tr class="bg-[#eefafa] text-slate-700">
-            <th class="border border-[#cde5e8] px-3 py-2 text-left">${escapeHtml(t('gift_table_quality'))}</th>
-            <th class="border border-[#cde5e8] px-3 py-2 text-right">${escapeHtml(t('gift_table_favor'))}</th>
-            <th class="border border-[#cde5e8] px-3 py-2 text-right">${escapeHtml(t('gift_table_price'))}</th>
-            <th class="border border-[#cde5e8] px-3 py-2 text-left">${escapeHtml(t('gift_table_kingdoms'))}</th>
+          <tr>
+            <th class="gift-table-cell border px-3 py-2 text-left">${escapeHtml(t('gift_table_quality'))}</th>
+            <th class="gift-table-cell border px-3 py-2 text-right">${escapeHtml(t('gift_table_favor'))}</th>
+            <th class="gift-table-cell border px-3 py-2 text-right">${escapeHtml(t('gift_table_price'))}</th>
+            <th class="gift-table-cell border px-3 py-2 text-left">${escapeHtml(t('gift_table_kingdoms'))}</th>
           </tr>
         </thead>
         <tbody>${body}</tbody>
@@ -2503,12 +2497,15 @@ function updateGiftCalculatorResult() {
   const missingFavor = Number.isFinite(totalNeeded) ? Math.max(0, totalNeeded - summaryPlan.favor) : null;
   const overflowFavor = canOptimize ? (summaryPlan.reachable ? Math.max(0, summaryPlan.favor - totalNeeded) : 0) : null;
   result.innerHTML = [
-    renderGiftSummaryItem(recipientType.totalNeededLabelKey, formatGiftNumber(totalNeeded)),
-    renderGiftSummaryItem('gift_obtainable_favor_label', formatGiftNumber(summaryPlan.favor)),
-    renderGiftSummaryItem('gift_missing_favor_label', formatGiftNumber(missingFavor)),
-    renderGiftSummaryItem('gift_total_cost_label', formatGiftNumber(summaryPlan.cost)),
-    renderGiftSummaryItem('gift_overflow_label', formatGiftNumber(overflowFavor)),
-    renderGiftSummaryItem('gift_reachable_label', summaryPlan.reachable ? t('gift_reachable_yes') : t('gift_reachable_no')),
+    renderGiftSummaryItem(recipientType.totalNeededLabelKey, formatGiftNumber(totalNeeded), { variant: 'default' }),
+    renderGiftSummaryItem('gift_obtainable_favor_label', formatGiftNumber(summaryPlan.favor), { variant: 'info' }),
+    renderGiftSummaryItem('gift_missing_favor_label', formatGiftNumber(missingFavor), { variant: missingFavor > 0 ? 'shortage' : 'success' }),
+    renderGiftSummaryItem('gift_total_cost_label', formatGiftNumber(summaryPlan.cost), { variant: 'default' }),
+    renderGiftSummaryItem('gift_overflow_label', formatGiftNumber(overflowFavor), { variant: 'overflow' }),
+    renderGiftSummaryItem('gift_reachable_label', summaryPlan.reachable ? t('gift_reachable_yes') : t('gift_reachable_no'), {
+      variant: summaryPlan.reachable ? 'success' : 'unavailable',
+      statusIcon: summaryPlan.reachable ? '?' : '?',
+    }),
   ].join('');
 
   purchaseTable.innerHTML = [
@@ -2651,9 +2648,8 @@ function updateFragmentFeeRates() {
 
   document.querySelectorAll('.fragment-fee-mode-btn').forEach((button) => {
     const active = button.dataset.mode === mode;
-    button.classList.toggle('bg-[#2cb5ab]', active);
-    button.classList.toggle('text-white', active);
-    button.classList.toggle('text-[#0f766e]', !active);
+    button.classList.toggle('is-active', active);
+    button.setAttribute('aria-pressed', String(active));
   });
 }
 

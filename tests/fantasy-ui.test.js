@@ -44,3 +44,26 @@ test('Primordial resource workspace keeps the approved 2, 1, 3 card rows and mob
   assert.match(fantasy, /minmax\(0,1.15fr\) minmax\(280px,.9fr\) minmax\(300px,1fr\)/);
   assert.match(primordial, /@media \(max-width: 767px\)[\s\S]*resource-row-top, \.resource-row-pets, \.resource-row-summary/);
 });
+
+test('Gift results use shared semantic fantasy summary metrics', async () => {
+  const [controller, shared, components, gift, tokens, themes] = await Promise.all([
+    read('src/ui/controller.js'), read('src/shared/components.js'), read('src/styles/components.css'),
+    read('src/styles/features/gift.css'), read('src/styles/tokens.css'), read('src/styles/themes.css'),
+  ]);
+  assert.match(controller, /import \{ setReadOnlyField, summaryMetric \}/);
+  assert.match(controller, /summaryMetric\(\{/);
+  assert.match(controller, /variant: missingFavor > 0 \? 'shortage' : 'success'/);
+  assert.match(controller, /variant: 'overflow'/);
+  assert.match(controller, /variant: summaryPlan\.reachable \? 'success' : 'unavailable'/);
+  assert.match(shared, /summary-metric--\$\{safeVariant\}/);
+  assert.match(components, /\.summary-metric--shortage/);
+  assert.match(components, /\.summary-metric--overflow/);
+  assert.match(components, /\.summary-metric--success/);
+  assert.match(components, /height: 100%/);
+  assert.match(gift, /#gift-calculator-result > div \{ height: 100%/);
+  for (const token of ['--metric-default-bg', '--metric-info-bg', '--metric-shortage-bg', '--metric-overflow-bg', '--metric-success-bg']) {
+    assert.match(tokens, new RegExp(token));
+    assert.match(themes, new RegExp(token));
+  }
+  assert.doesNotMatch(gift, /teal|cyan|turquoise|#0f6b68|#dcefed|#edf6f5/);
+});

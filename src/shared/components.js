@@ -103,6 +103,35 @@ export function confirmationNotice(message) {
   return notice;
 }
 
+function escapeSummaryText(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
+export function summaryMetric({
+  label,
+  value,
+  variant = 'default',
+  statusIcon = '',
+}) {
+  const allowedVariants = new Set(['default', 'info', 'shortage', 'overflow', 'success', 'unavailable']);
+  const safeVariant = allowedVariants.has(variant) ? variant : 'default';
+  const iconMarkup = statusIcon
+    ? `<span class="summary-metric__icon" aria-hidden="true">${escapeSummaryText(statusIcon)}</span>`
+    : '';
+
+  return `
+    <div class="summary-metric summary-metric--${safeVariant}" role="status">
+      <div class="summary-metric__label">${escapeSummaryText(label)}</div>
+      <div class="summary-metric__value">${iconMarkup}<span>${escapeSummaryText(value)}</span></div>
+    </div>
+  `;
+}
+
 export function setReadOnlyField(control, readOnly = true) {
   if (!control) return;
 

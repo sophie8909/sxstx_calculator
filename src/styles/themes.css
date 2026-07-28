@@ -17,8 +17,6 @@
   --sky-soft: #2b4359;
   --gold: #e9c96f;
   --gold-soft: #504426;
-  --mint: #7dd7c4;
-  --mint-soft: #294a44;
   --text: #eee8fa;
   --text-strong: #fff9ff;
   --text-muted: #b9accb;
@@ -28,6 +26,18 @@
   --success: #75d0a2;
   --warning: #edbd70;
   --danger: #f097ad;
+  --metric-default-bg: linear-gradient(135deg, #3b2d50, #432b43);
+  --metric-default-accent: var(--primary);
+  --metric-info-bg: linear-gradient(135deg, #29384f, #382d4d);
+  --metric-info-accent: var(--sky);
+  --metric-shortage-bg: linear-gradient(135deg, #4b2d45, #38283f);
+  --metric-shortage-accent: var(--danger);
+  --metric-overflow-bg: linear-gradient(135deg, #403724, #3a2b3e);
+  --metric-overflow-accent: var(--gold);
+  --metric-success-bg: linear-gradient(135deg, #2d403b, #403724);
+  --metric-success-accent: var(--success);
+  --metric-unavailable-bg: var(--metric-shortage-bg);
+  --metric-unavailable-accent: var(--danger);
   --shadow-card: 0 10px 28px rgba(10, 5, 18, .3);
   --shadow-floating: 0 16px 36px rgba(8, 4, 16, .42);
   --shadow-control: 0 3px 12px rgba(8, 4, 16, .2);

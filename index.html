@@ -283,7 +283,7 @@
           <span data-title-icon="gem" data-i18n="relic_distribution_title">遺物等級分布</span> <span id="relic-total-display" class="text-sm font-normal text-gray-400">(0/20)</span>
         </h3>
         <div class="absolute right-4 top-4">
-          <div class="inline-flex overflow-hidden rounded-full border border-[#9ed6d8] bg-[#eefafa] p-0.5 shadow-sm" role="group" aria-label="遺物輸入模式" data-i18n-aria-label="relic_input_mode">
+          <div class="segmented-control" role="group" aria-label="遺物輸入模式" data-i18n-aria-label="relic_input_mode">
             <button type="button" class="relic-mode-btn rounded-full px-3 py-1 text-sm font-semibold" data-mode="compact" data-i18n="relic_mode_new">新</button>
             <button type="button" class="relic-mode-btn rounded-full px-3 py-1 text-sm font-semibold" data-mode="legacy" data-i18n="relic_mode_old">舊</button>
           </div>
@@ -464,7 +464,7 @@
           <label class="block min-w-0">
             <span class="flex items-center gap-2 text-sm font-semibold mb-1 min-h-[28px]">
               <span data-i18n="fragment_fee_label">交易行出售抽成</span>
-              <span class="inline-flex overflow-hidden rounded-full border border-[#9ed6d8] bg-[#eefafa] p-0.5 shadow-sm" role="group" aria-label="手續費模式" data-i18n-aria-label="fragment_fee_mode">
+              <span class="segmented-control" role="group" aria-label="手續費模式" data-i18n-aria-label="fragment_fee_mode">
                 <button type="button" class="fragment-fee-mode-btn rounded-full px-3 py-1 text-xs font-semibold" data-mode="normal" data-i18n="fragment_fee_normal">正常</button>
                 <button type="button" class="fragment-fee-mode-btn rounded-full px-3 py-1 text-xs font-semibold" data-mode="discount" data-i18n="fragment_fee_discount">優惠</button>
               </span>
@@ -500,7 +500,7 @@
 
   <div id="gift-calculator-panel" class="hidden">
     <div class="card rounded-xl p-0 shadow-lg mb-6 w-full">
-      <div class="border-b sticky top-0 z-10 px-4 py-2 m-0 bg-white/90 backdrop-blur border-[#cde5e8]">
+      <div class="border-b sticky top-0 z-10 px-4 py-2 m-0 bg-white/90 backdrop-blur gift-panel-divider">
         <h2 class="text-2xl font-bold" data-title-icon="gift" data-i18n="gift_calculator_title">禮物計算機</h2>
       </div>
       <div class="p-4 space-y-4">
@@ -545,12 +545,12 @@
 
         <div id="gift-calculator-result" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"></div>
 
-        <div class="border-t border-[#cde5e8] pt-4 space-y-3">
+        <div class="border-t gift-panel-divider pt-4 space-y-3">
           <h3 class="text-xl font-bold" data-title-icon="lightbulb" data-i18n="gift_purchase_plan_title">建議方案</h3>
           <div id="gift-purchase-table"></div>
         </div>
 
-        <div class="border-t border-[#cde5e8] pt-4 space-y-3">
+        <div class="border-t gift-panel-divider pt-4 space-y-3">
           <h3 class="text-xl font-bold" data-title-icon="book-open" data-i18n="gift_comparison_title">禮物參考資料</h3>
           <div id="gift-comparison-table"></div>
         </div>
@@ -683,7 +683,7 @@
               href="https://docs.google.com/forms/d/e/1FAIpQLSdDK_zxUq21HXgrK3TMsQ7Vj6lqiKlJrekk8PkfrH920AMiQg/viewform"
               target="_blank"
               rel="noopener"
-              class="inline-flex items-center justify-center rounded-lg border border-[#b6d7da] bg-white px-4 py-3 text-teal-700 hover:bg-teal-50 w-full md:w-auto"
+              class="btn-secondary w-full md:w-auto"
               data-i18n="relay_open_google_form"
             >
               開啟原始 Google 表單
@@ -763,7 +763,7 @@
         <p>
           <span data-i18n="footer_discord_prefix">問題回報：</span>
           <a href="https://discord.com/channels/1215600132003725353/1431686816674611372"
-            class="text-teal-700 hover:text-teal-600 hover:underline underline-offset-2 break-all"
+            class="fantasy-link hover:underline underline-offset-2 break-all"
             target="_blank" rel="noopener"
             data-i18n="footer_discord_link"
           >
@@ -774,7 +774,7 @@
           GitHub Repo:
           <a
             href="https://github.com/sophie8909/sxstx_calculator"
-            class="text-teal-700 hover:text-teal-600 hover:underline underline-offset-2 break-all"
+            class="fantasy-link hover:underline underline-offset-2 break-all"
             target="_blank" rel="noopener"
           >
             https://github.com/sophie8909/sxstx_calculator

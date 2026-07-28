@@ -17,8 +17,6 @@
   --sky-soft: #e1f3ff;
   --gold: #e8bd58;
   --gold-soft: #fff1bd;
-  --mint: #61c7b1;
-  --mint-soft: #dcf7f0;
   --text: #4a3d72;
   --text-strong: #38285f;
   --text-muted: #81769b;
@@ -28,6 +26,18 @@
   --success: #49ad7e;
   --warning: #d89a43;
   --danger: #dc6687;
+  --metric-default-bg: linear-gradient(135deg, color-mix(in srgb, var(--surface-lavender) 88%, var(--surface)), color-mix(in srgb, var(--surface-pink) 72%, var(--surface)));
+  --metric-default-accent: var(--primary);
+  --metric-info-bg: linear-gradient(135deg, color-mix(in srgb, var(--surface-blue) 92%, var(--surface)), color-mix(in srgb, var(--surface-lavender) 68%, var(--surface)));
+  --metric-info-accent: var(--sky);
+  --metric-shortage-bg: linear-gradient(135deg, color-mix(in srgb, var(--surface-pink) 92%, var(--surface)), var(--surface));
+  --metric-shortage-accent: var(--danger);
+  --metric-overflow-bg: linear-gradient(135deg, color-mix(in srgb, var(--surface-gold) 94%, var(--surface)), color-mix(in srgb, var(--surface-pink) 34%, var(--surface)));
+  --metric-overflow-accent: var(--gold);
+  --metric-success-bg: linear-gradient(135deg, color-mix(in srgb, var(--success) 10%, var(--surface)), color-mix(in srgb, var(--surface-gold) 54%, var(--surface)));
+  --metric-success-accent: var(--success);
+  --metric-unavailable-bg: var(--metric-shortage-bg);
+  --metric-unavailable-accent: var(--danger);
   --shadow-card: 0 8px 24px rgba(117, 89, 177, .1), 0 2px 6px rgba(231, 139, 182, .07);
   --shadow-floating: 0 12px 32px rgba(104, 72, 216, .16);
   --shadow-control: 0 3px 10px rgba(117, 89, 177, .08);
