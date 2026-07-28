@@ -14,9 +14,17 @@ export function element(tag, options = {}, children = []) {
 
 export function icon(name) {
   const icons = {
-    primordial: 'P', equipment: 'E', gift: 'G', rally: 'W', contribution: '+', menu: 'M', status: '*',
+    primordial: '<path d="M12 3 10.7 7.7 6 9l4.7 1.3L12 15l1.3-4.7L18 9l-4.7-1.3L12 3Z"/><path d="m5 15-.7 2.3L2 18l2.3.7L5 21l.7-2.3L8 18l-2.3-.7L5 15Z"/>',
+    equipment: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-5"/>',
+    gift: '<rect x="3" y="8" width="18" height="13" rx="2"/><path d="M12 8v13M3 12h18M12 8H7.5A2.5 2.5 0 1 1 10 5.5V8ZM12 8h4.5A2.5 2.5 0 1 0 14 5.5V8Z"/>',
+    rally: '<path d="M5 21V4m0 1c5-3 9 3 14 0v10c-5 3-9-3-14 0"/><path d="M2 21h7"/>',
+    contribution: '<path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>',
+    menu: '<path d="M4 6h16M4 12h16M4 18h16"/>',
+    status: '<circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/>',
   };
-  return element('span', { className: 'app-icon', text: icons[name] || '*', ariaHidden: 'true' });
+  const node = element('span', { className: 'app-icon', ariaHidden: 'true' });
+  node.innerHTML = `<svg viewBox="0 0 24 24" focusable="false">${icons[name] || icons.primordial}</svg>`;
+  return node;
 }
 
 export function navButton({ label, shortLabel, iconName, page }) {

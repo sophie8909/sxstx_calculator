@@ -40,12 +40,12 @@ test('source markup has one global player number and no obsolete quick-navigatio
 });
 
 test('shared controls and design tokens are centralized', async () => {
-  const [tokens, base, components] = await Promise.all([
-    read('src/styles/tokens.css'), read('src/styles/base.css'), read('src/styles/components.css'),
+  const [tokens, fantasy, components] = await Promise.all([
+    read('src/styles/tokens.css'), read('src/styles/fantasy.css'), read('src/styles/components.css'),
   ]);
-  assert.match(tokens, /--color-primary: #0f6b68/);
-  assert.match(tokens, /--content-max-width: 1480px/);
-  assert.match(base, /min-height: var\(--control-height\)/);
+  assert.match(tokens, /--primary: #8064e8/);
+  assert.match(tokens, /--content-max: 1500px/);
+  assert.match(fantasy, /min-height: var\(--control-height\)/);
   assert.match(components, /\.btn-primary/);
   assert.match(components, /\.global-data-status/);
 });

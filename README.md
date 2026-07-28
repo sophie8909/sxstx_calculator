@@ -58,7 +58,7 @@ Primordial planning has three independently usable layouts:
 
 Transfer actions copy target values into the destination layout without clearing current levels or owned-resource inputs. Internal tab state is persisted independently from the active query route.
 
-Desktop navigation uses a 232px sidebar. Tablet navigation removes the sidebar, and mobile uses five bottom navigation items plus a collapsible global-context card. The main workspace is capped at 1480px and uses one page scroll; ordinary cards do not create nested vertical scrolling.
+Desktop navigation uses an approximately 272px fantasy sidebar. Tablet navigation removes the sidebar, and mobile uses five bottom navigation items plus a collapsible global-context card. The main workspace is capped at 1500px and uses one page scroll; ordinary cards do not create nested vertical scrolling.
 
 ### MVC and feature extension
 
@@ -85,3 +85,19 @@ The application remains a static Vite site compatible with GitHub Pages and the 
 `/?tool=primordial`, `/?tool=equipment`, `/?tool=gift`, `/?tool=world-rally`, and `/?tool=contribution`.
 
 Browser back/forward and in-app tool changes use the History API without reloading the page.
+
+## Approved fantasy visual system
+
+The production interface uses one pastel fantasy design system across all five features. Its canonical tokens live in `src/styles/tokens.css`: dreamy lavender and pink primary surfaces, sky-blue and warm-gold accents, translucent white cards, 44px controls, 16–22px radii, and restrained layered shadows. `src/styles/themes.css` provides the coordinated deep-plum dark mode; `src/styles/fantasy.css` is the final presentation layer for the shared shell, navigation, context panel, tabs, controls, cards, fantasy motifs, and responsive behavior.
+
+The persistent shell contains the desktop sidebar, mobile header, top bar, five-section global context, data status, feature tabs, workspace, and mobile bottom navigation. At desktop widths, the Primordial resource calculator uses equipment/skill in Row 1, a full-width pet card in Row 2, and materials/cart/results as equal-height cards in Row 3. Tablet layouts reduce columns where controls need room; below 768px all six cards retain that sequence in one column.
+
+Extend the interface through `src/shared/components.js`, the shell helpers in `src/app/shell.js`, and a feature-scoped stylesheet in `src/styles/features/`. Shared components must remain calculation-free, and feature code must continue to use Google Sheets through the existing service registry as the only production data source.
+
+Development is Vite-only:
+
+```bash
+npm run dev
+```
+
+Do not use VS Code Live Server. `index.html` loads `/src/main.js` as its module entry, and `src/main.js` imports `./styles/index.css`. Never load a CSS file with a module-script tag or add a second stylesheet entrypoint.

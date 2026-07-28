@@ -48,6 +48,32 @@ const COPY = {
   },
 };
 
+Object.assign(COPY['zh-Hant'], {
+  product: '杖劍傳說養成計算器', menu: '主要功能', context: '冒險者資訊', contextHint: '賽季與玩家編號會套用至相關功能',
+  season: '賽季', player: '玩家編號', server: '伺服器', realm: '領域', world: '世界', unknown: '尚未辨識', expand: '編輯冒險者資訊',
+  features: {
+    primordial: ['原初計算機', '規劃養成目標、角色經驗與完整素材'], equipment: ['裝備與碎片', '查詢裝備評分、兌換與副本資料'],
+    gift: ['禮物與羈絆', '規劃好感度需求與禮物採購'], 'world-rally': ['世界集結', '查看領域伺服器與集結分組'], contribution: ['資料貢獻', '提交伺服器、目標時間與缺漏資料'],
+  },
+  short: ['原初', '裝備', '禮物', '集結', '貢獻'],
+  primordialTabs: ['原初目標', '角色經驗', '完整資源'], characterTarget: '目標角色等級',
+  equipmentTabs: ['裝備評分', '市場兌換', '副本資料'], giftTabs: ['羈絆計算', '禮物規劃', '參考資料'], contributionTabs: ['伺服器與時間', '升級經驗', '其他資料'],
+  applyCharacter: '套用角色目標', applyAll: '套用所有目標', characterApplied: '角色目標已套用至經驗計算機。', allApplied: '所有目標已套用至資源計算機。',
+  unavailableTitle: '目前沒有可用的已驗證表單', unavailableBody: '取得已驗證的 Google 表單欄位後才會開放此區；系統不會建立虛構的提交資料。',
+});
+Object.assign(COPY['zh-Hans'], {
+  product: '杖剑传说养成计算器', menu: '主要功能', context: '冒险者资讯', contextHint: '赛季与玩家编号会套用至相关功能',
+  season: '赛季', player: '玩家编号', server: '服务器', realm: '领域', world: '世界', unknown: '尚未识别', expand: '编辑冒险者资讯',
+  features: {
+    primordial: ['原初计算机', '规划养成目标、角色经验与完整素材'], equipment: ['装备与碎片', '查询装备评分、兑换与副本资料'],
+    gift: ['礼物与羁绊', '规划好感度需求与礼物采购'], 'world-rally': ['世界集结', '查看领域服务器与集结分组'], contribution: ['资料贡献', '提交服务器、目标时间与缺漏资料'],
+  },
+  short: ['原初', '装备', '礼物', '集结', '贡献'],
+  primordialTabs: ['原初目标', '角色经验', '完整资源'], characterTarget: '目标角色等级', equipmentTabs: ['装备评分', '市场兑换', '副本资料'],
+  giftTabs: ['羁绊计算', '礼物规划', '参考资料'], contributionTabs: ['服务器与时间', '升级经验', '其他资料'],
+  applyCharacter: '套用角色目标', applyAll: '套用所有目标', characterApplied: '角色目标已套用至经验计算机。', allApplied: '所有目标已套用至资源计算机。',
+  unavailableTitle: '目前没有可用的已验证表单', unavailableBody: '取得已验证的 Google 表单字段后才会开放此区；系统不会建立虚构的提交资料。',
+});
 const FEATURE_META = [
   ['primordial', 'primordial', 'primordial'], ['equipment', 'fragment', 'equipment'], ['gift', 'gift', 'gift'],
   ['world-rally', 'world-rally', 'rally'], ['contribution', 'target-time-form', 'contribution'],
@@ -215,7 +241,7 @@ function mountAppShell() {
   const root = element('div', { id: 'calculator-app', className: 'calculator-app' });
   const sidebar = element('aside', { className: 'desktop-sidebar' });
   const sidebarBrand = element('div', { className: 'sidebar-brand' }, [
-    element('span', { className: 'brand-mark', text: 'SxS', ariaHidden: 'true' }),
+    element('span', { className: 'brand-mark', text: '\u2726', ariaHidden: 'true' }),
     element('div', {}, [element('strong', { text: copy.product }), element('span', { text: 'Feiya Studio' })]),
   ]);
   const desktopNav = element('nav', { className: 'desktop-feature-nav', ariaLabel: copy.menu });
@@ -229,7 +255,7 @@ function mountAppShell() {
 
   const main = element('main', { className: 'application-main' });
   const mobileHeader = element('header', { className: 'mobile-header' }, [
-    element('span', { className: 'brand-mark', text: 'SxS', ariaHidden: 'true' }), element('strong', { text: copy.product }),
+    element('span', { className: 'brand-mark', text: '\u2726', ariaHidden: 'true' }), element('strong', { text: copy.product }),
   ]);
   const topbar = element('header', { className: 'top-bar' }, [
     element('div', { className: 'feature-heading' }, [
@@ -243,6 +269,7 @@ function mountAppShell() {
     <button type="button" class="context-toggle" aria-expanded="false"><span><strong>${copy.context}</strong><small>${copy.contextHint}</small></span><span aria-hidden="true">v</span></button>
     <div class="context-grid">
       <div id="context-season" class="context-field"></div><div id="context-player" class="context-field"></div>
+      <div id="context-server" class="context-field"></div>
       <div class="context-summary"><span>${copy.realm}</span><strong id="context-realm-value">--</strong><small><span>${copy.world}</span> <b id="context-world-value">--</b></small></div>
       <div id="context-status" class="context-status"></div>
     </div>`;
@@ -265,7 +292,7 @@ function mountAppShell() {
   moveSelectorControl('season-select', root.querySelector('#context-season'));
   moveSelectorControl('player-code-input', root.querySelector('#context-player'));
   moveSelectorControl('job-select', root.querySelector('#feature-settings'));
-  const serverSource = moveSelectorControl('server-select', root.querySelector('#context-status'));
+  const serverSource = moveSelectorControl('server-select', root.querySelector('#context-server'));
   serverSource?.classList.add('context-server-source');
   const status = document.getElementById('global-data-status');
   if (status) root.querySelector('#context-status').prepend(status);
