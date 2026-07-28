@@ -102,3 +102,18 @@ export function confirmationNotice(message) {
   window.setTimeout(() => notice.remove(), 3200);
   return notice;
 }
+
+export function setReadOnlyField(control, readOnly = true) {
+  if (!control) return;
+
+  control.disabled = false;
+  control.readOnly = readOnly;
+  control.classList.toggle('readonly-field', readOnly);
+  control.classList.toggle('input-field', !readOnly);
+
+  if (readOnly) control.setAttribute('aria-readonly', 'true');
+  else control.removeAttribute('aria-readonly');
+
+  const group = control.closest('.field-group, label') || control.parentElement;
+  group?.classList.toggle('field-group--readonly', readOnly);
+}

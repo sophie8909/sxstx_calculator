@@ -19,6 +19,34 @@ input:focus,select:focus,textarea:focus { border-color: var(--primary); backgrou
 input:disabled,select:disabled,textarea:disabled { cursor: not-allowed; opacity: .7; background: var(--surface-lavender); box-shadow: none; }
 input[type="number"] { appearance: textfield; }
 input[type="number"]::-webkit-inner-spin-button,input[type="number"]::-webkit-outer-spin-button { margin: 0; appearance: none; }
+.field-label-row { display: flex!important; align-items: center; flex-wrap: wrap; gap: 7px; }
+.readonly-badge { display: inline-flex; min-height: 20px; align-items: center; padding: 2px 7px; border-radius: var(--radius-pill); background: color-mix(in srgb,var(--surface-lavender) 78%,var(--gold-soft)); color: var(--primary-strong); font-size: 11px; font-weight: 700; line-height: 1; letter-spacing: .02em; }
+input.readonly-field,.readonly-field {
+  min-height: var(--control-height);
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  width: 100%;
+  padding: .65rem .8rem;
+  border: 0!important;
+  border-radius: var(--radius-sm);
+  outline: 0;
+  background: linear-gradient(135deg,rgba(244,239,255,.9),rgba(255,247,251,.9))!important;
+  color: var(--text-strong)!important;
+  font-weight: 650;
+  box-shadow: inset 0 0 0 1px rgba(128,100,232,.06)!important;
+  cursor: default;
+  transition: none;
+}
+input.readonly-field:hover,.readonly-field:hover,input.readonly-field:focus,.readonly-field:focus,input.readonly-field:focus-visible,.readonly-field:focus-visible {
+  border: 0!important;
+  outline: 0!important;
+  background: linear-gradient(135deg,rgba(244,239,255,.9),rgba(255,247,251,.9))!important;
+  box-shadow: inset 0 0 0 1px rgba(128,100,232,.06)!important;
+}
+input[readonly][type="number"] { appearance: textfield; }
+input[readonly][type="number"]::-webkit-inner-spin-button,input[readonly][type="number"]::-webkit-outer-spin-button { margin: 0; appearance: none; }
+.readonly-field--summary { justify-content: space-between; }
 a { color: var(--primary-strong); }
 .card,.calculator-section-card { position: relative; overflow: clip; border: 1px solid var(--border)!important; border-radius: var(--radius-lg)!important; background: linear-gradient(145deg,var(--surface),color-mix(in srgb,var(--surface) 80%,var(--surface-pink)))!important; color: var(--text); box-shadow: var(--shadow-card)!important; }
 .card::after,.calculator-section-card::after { position: absolute; top: 10px; right: 14px; pointer-events: none; color: color-mix(in srgb,var(--gold) 78%,transparent); font-size: 15px; letter-spacing: 5px; content: '✦ ·'; }
@@ -114,6 +142,14 @@ html[data-theme='dark'] .card,html[data-theme='dark'] .calculator-section-card,h
 html[data-theme='dark'] input,html[data-theme='dark'] select,html[data-theme='dark'] textarea,html[data-theme='dark'] .input-field,html[data-theme='dark'] .theme-select { border-color: var(--border)!important; background: color-mix(in srgb,var(--surface) 88%,var(--surface-gold))!important; color: var(--text)!important; }
 html[data-theme='dark'] input:focus,html[data-theme='dark'] select:focus,html[data-theme='dark'] textarea:focus,html[data-theme='dark'] .input-field:focus { border-color: var(--primary)!important; background: var(--surface)!important; box-shadow: 0 0 0 4px color-mix(in srgb,var(--primary) 16%,transparent)!important; }
 html[data-theme='dark'] input:disabled,html[data-theme='dark'] select:disabled,html[data-theme='dark'] textarea:disabled,html[data-theme='dark'] .input-field:disabled { border-color: var(--border)!important; background: var(--surface-lavender)!important; color: var(--text-muted)!important; }
+html[data-theme='dark'] input.readonly-field,html[data-theme='dark'] .readonly-field,html[data-theme='dark'] input.readonly-field:hover,html[data-theme='dark'] .readonly-field:hover,html[data-theme='dark'] input.readonly-field:focus,html[data-theme='dark'] .readonly-field:focus {
+  border: 0!important;
+  outline: 0!important;
+  background: linear-gradient(135deg,rgba(68,48,91,.92),rgba(55,39,75,.94))!important;
+  color: var(--text-strong)!important;
+  box-shadow: inset 0 0 0 1px rgba(222,203,255,.09)!important;
+}
+html[data-theme='dark'] .readonly-badge { background: color-mix(in srgb,var(--surface-lavender) 78%,var(--gold-soft)); color: var(--gold-soft)!important; }
 html[data-theme='dark'] select option { background: var(--surface)!important; color: var(--text)!important; }
 html[data-theme='dark'] label,html[data-theme='dark'] .font-semibold,html[data-theme='dark'] .font-bold { color: var(--text)!important; }
 html[data-theme='dark'] .app-nav-item { border-color: transparent!important; background: transparent!important; color: var(--text-muted)!important; }

@@ -413,13 +413,19 @@
               </span>
               <select id="equipment-season-boots" class="input-field rounded p-2 w-full"></select>
             </label>
-            <label class="block min-w-0">
-              <span class="block text-sm font-semibold mb-1" data-i18n="equipment_rating_label">裝備評級</span>
-              <input id="equipment-season-rating" type="text" class="input-field rounded p-2 w-full text-right" value="未達 C" disabled />
+            <label class="field-group field-group--readonly block min-w-0">
+              <span class="field-label-row block text-sm font-semibold mb-1">
+                <span data-i18n="equipment_rating_label">裝備評級</span>
+                <span class="readonly-badge" data-i18n="readonly_badge">唯讀</span>
+              </span>
+              <input id="equipment-season-rating" type="text" class="readonly-field rounded p-2 w-full text-right" value="未達 C" readonly aria-readonly="true" />
             </label>
           </div>
-          <div class="text-sm font-semibold text-slate-700">
-            <span data-i18n="equipment_total_season_score_label">總賽季分數</span>
+          <div class="readonly-field readonly-field--summary text-sm font-semibold text-slate-700" role="status" aria-live="polite">
+            <span class="field-label-row">
+              <span data-i18n="equipment_total_season_score_label">總賽季分數</span>
+              <span class="readonly-badge" data-i18n="readonly_badge">唯讀</span>
+            </span>
             <span id="equipment-season-total">0</span>
           </div>
         </div>
@@ -434,7 +440,10 @@
             <input id="fragment-quantity" type="number" min="0" step="1" class="input-field rounded p-2 w-full text-right" value="0" />
           </label>
           <label class="block min-w-0">
-            <span class="block text-sm font-semibold mb-1" data-i18n="fragment_stone_output_label">分解後神鑄石數量</span>
+            <span class="field-label-row block text-sm font-semibold mb-1">
+              <span data-i18n="fragment_stone_output_label">分解後神鑄石數量</span>
+              <span class="readonly-badge hidden" data-i18n="readonly_badge">唯讀</span>
+            </span>
             <input id="fragment-stone-output" type="number" min="0" step="0.01" class="input-field rounded p-2 w-full text-right" value="0" disabled />
           </label>
           <label class="block min-w-0">
@@ -445,9 +454,12 @@
             <span class="block text-sm font-semibold mb-1" data-i18n="fragment_stone_price_label">當前神鑄石售價（每組）</span>
             <input id="fragment-stone-price" type="number" min="0" step="0.01" class="input-field rounded p-2 w-full text-right" value="0" />
           </label>
-          <label class="block min-w-0">
-            <span class="block text-sm font-semibold mb-1" data-i18n="fragment_decomposed_sale_label">碎片分解神鑄石後售價（每組）</span>
-            <input id="fragment-decomposed-sale" type="number" min="0" step="0.01" class="input-field rounded p-2 w-full text-right" value="0" disabled />
+          <label class="field-group field-group--readonly block min-w-0">
+            <span class="field-label-row block text-sm font-semibold mb-1">
+              <span data-i18n="fragment_decomposed_sale_label">碎片分解神鑄石後售價（每組）</span>
+              <span class="readonly-badge" data-i18n="readonly_badge">唯讀</span>
+            </span>
+            <input id="fragment-decomposed-sale" type="number" min="0" step="0.01" class="readonly-field rounded p-2 w-full text-right" value="0" readonly aria-readonly="true" />
           </label>
           <label class="block min-w-0">
             <span class="flex items-center gap-2 text-sm font-semibold mb-1 min-h-[28px]">
@@ -459,13 +471,19 @@
             </span>
             <select id="fragment-fee-rate" class="input-field rounded p-2 w-full"></select>
           </label>
-          <label class="block min-w-0">
-            <span class="block text-sm font-semibold mb-1 min-h-[28px]" data-i18n="fragment_sale_after_fee_label">神鑄石抽成後收入</span>
-            <input id="fragment-sale-after-fee" type="number" min="0" step="0.01" class="input-field rounded p-2 w-full text-right" value="0" disabled />
+          <label class="field-group field-group--readonly block min-w-0">
+            <span class="field-label-row block text-sm font-semibold mb-1 min-h-[28px]">
+              <span data-i18n="fragment_sale_after_fee_label">神鑄石抽成後收入</span>
+              <span class="readonly-badge" data-i18n="readonly_badge">唯讀</span>
+            </span>
+            <input id="fragment-sale-after-fee" type="number" min="0" step="0.01" class="readonly-field rounded p-2 w-full text-right" value="0" readonly aria-readonly="true" />
           </label>
-          <label class="block min-w-0">
-            <span class="block text-sm font-semibold mb-1 min-h-[28px]" data-i18n="fragment_profit_label">買碎片分解賣神鑄石收入</span>
-            <input id="fragment-profit" type="number" step="0.01" class="input-field rounded p-2 w-full text-right" value="0" disabled />
+          <label class="field-group field-group--readonly block min-w-0">
+            <span class="field-label-row block text-sm font-semibold mb-1 min-h-[28px]">
+              <span data-i18n="fragment_profit_label">買碎片分解賣神鑄石收入</span>
+              <span class="readonly-badge" data-i18n="readonly_badge">唯讀</span>
+            </span>
+            <input id="fragment-profit" type="number" step="0.01" class="readonly-field rounded p-2 w-full text-right" value="0" readonly aria-readonly="true" />
           </label>
         </div>
         <input id="fragment-discount-fee" type="checkbox" class="hidden" />
@@ -634,7 +652,10 @@
                 </select>
               </div>
               <div class="md:col-span-2">
-                <label for="relay-description" class="block font-semibold mb-2" data-i18n="relay_description_label">說明</label>
+                <div class="field-label-row mb-2">
+                  <label for="relay-description" class="block font-semibold" data-i18n="relay_description_label">說明</label>
+                  <span id="relay-description-readonly-badge" class="readonly-badge hidden" data-i18n="readonly_badge">唯讀</span>
+                </div>
                 <input
                   id="relay-description"
                   class="input-field rounded p-3 w-full"

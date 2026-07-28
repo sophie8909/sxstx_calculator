@@ -5,6 +5,7 @@ import { initLanguage, applyStaticTranslations, t } from './i18n-inline.js';
 import { fetchTextWithCache } from './services/dataCache.js';
 import { loadServers } from './services/dataService.js';
 import { readToolFromLocation } from './app/router.js';
+import { setReadOnlyField } from './shared/components.js';
 
 const SEASON_START_CATEGORY = '【賽季開始】';
 const SEASON_END_CATEGORY = '【賽季結束】';
@@ -445,8 +446,8 @@ function applyCategoryDescriptionLock() {
     descriptionInput.value = categorySelect.value === SEASON_START_CATEGORY
       ? t('relay_season_start_auto_description')
       : t('relay_season_end_auto_description');
-    descriptionInput.disabled = true;
-    descriptionInput.setAttribute('aria-readonly', 'true');
+    setReadOnlyField(descriptionInput);
+    document.getElementById('relay-description-readonly-badge')?.classList.remove('hidden');
     return;
   }
 
@@ -454,7 +455,9 @@ function applyCategoryDescriptionLock() {
     if (relicSelect) relicSelect.classList.add('hidden');
     if (eventSelect) eventSelect.classList.add('hidden');
     descriptionInput.classList.add('hidden');
+    setReadOnlyField(descriptionInput, false);
     descriptionInput.disabled = true;
+    document.getElementById('relay-description-readonly-badge')?.classList.add('hidden');
     descriptionInput.required = false;
     if (dungeonSelect) {
       dungeonSelect.classList.remove('hidden');
@@ -474,7 +477,9 @@ function applyCategoryDescriptionLock() {
       eventSelect.required = false;
     }
     descriptionInput.classList.add('hidden');
+    setReadOnlyField(descriptionInput, false);
     descriptionInput.disabled = true;
+    document.getElementById('relay-description-readonly-badge')?.classList.add('hidden');
     descriptionInput.required = false;
     if (relicSelect) {
       relicSelect.classList.remove('hidden');
@@ -494,7 +499,9 @@ function applyCategoryDescriptionLock() {
       relicSelect.required = false;
     }
     descriptionInput.classList.add('hidden');
+    setReadOnlyField(descriptionInput, false);
     descriptionInput.disabled = true;
+    document.getElementById('relay-description-readonly-badge')?.classList.add('hidden');
     descriptionInput.required = false;
     if (eventSelect) {
       eventSelect.classList.remove('hidden');
@@ -516,7 +523,7 @@ function applyCategoryDescriptionLock() {
     eventSelect.required = false;
   }
   descriptionInput.classList.remove('hidden');
-  if (descriptionInput.disabled && (
+  if ((descriptionInput.disabled || descriptionInput.readOnly) && (
     descriptionInput.value === SEASON_START_DESCRIPTION ||
     descriptionInput.value === SEASON_END_DESCRIPTION ||
     descriptionInput.value === t('relay_season_start_auto_description') ||
@@ -524,9 +531,9 @@ function applyCategoryDescriptionLock() {
   )) {
     descriptionInput.value = '';
   }
-  descriptionInput.disabled = false;
+  setReadOnlyField(descriptionInput, false);
   descriptionInput.required = true;
-  descriptionInput.removeAttribute('aria-readonly');
+  document.getElementById('relay-description-readonly-badge')?.classList.add('hidden');
 }
 function buildSubmittedDescription(category, body) {
   if (category === SEASON_START_CATEGORY) return SEASON_START_CATEGORY;

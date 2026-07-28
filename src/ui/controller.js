@@ -42,6 +42,7 @@ import {
 } from '../core/experience.js';
 import { loadRallyRules, loadServers } from '../services/dataService.js';
 import { CACHE_FALLBACK_EVENT, CACHE_UPDATED_EVENT, fetchTextWithCache } from '../services/dataCache.js';
+import { setReadOnlyField } from '../shared/components.js';
 import { convertTargetLayout, convertRelicLayout } from '../core/targetLayouts.js';
 import {
   buildPlayerNumber,
@@ -1108,12 +1109,16 @@ async function renderPrimordialRecommendations() {
     const row = getRecommendationForCurrentSeason(rows, key);
     const value = row?.star || '';
     return `
-      <label class="block min-w-0">
-        <span class="block text-sm font-semibold mb-1">${escapeHtml(label)}</span>
+      <label class="field-group field-group--readonly block min-w-0">
+        <span class="field-label-row block text-sm font-semibold mb-1">
+          <span>${escapeHtml(label)}</span>
+          <span class="readonly-badge">${escapeHtml(t('readonly_badge'))}</span>
+        </span>
         <input
-          class="input-field rounded p-2 w-full text-right"
+          class="readonly-field rounded p-2 w-full text-right"
           value="${escapeHtml(value)}"
-          disabled
+          readonly
+          aria-readonly="true"
           aria-label="${escapeHtml(t('primordial_recommendation_aria', { label }))}"
         />
       </label>
@@ -2668,7 +2673,8 @@ function updateFragmentCalculator() {
   if (output) {
     const previousKey = output.dataset.fragmentKey || '';
     output.dataset.fragmentKey = selectedKey;
-    output.disabled = hasSheetStoneValue;
+    setReadOnlyField(output, hasSheetStoneValue);
+    output.closest('label')?.querySelector('.readonly-badge')?.classList.toggle('hidden', !hasSheetStoneValue);
     if (previousKey && previousKey !== selectedKey && !hasSheetStoneValue) output.value = '0';
   }
 
@@ -2953,13 +2959,17 @@ function renderDungeonPowerPanel(preset, dungeonPowerRows) {
     const safeDifficulty = escapeHtml(difficultyLabel);
     const safeValue = escapeHtml(value);
     return `
-      <label class="block min-w-0">
-        <span class="block text-sm font-semibold mb-1">${safeDifficulty}</span>
+      <label class="field-group field-group--readonly block min-w-0">
+        <span class="field-label-row block text-sm font-semibold mb-1">
+          <span>${safeDifficulty}</span>
+          <span class="readonly-badge">${escapeHtml(t('readonly_badge'))}</span>
+        </span>
         <input
-          class="input-field rounded p-2 w-full text-right"
+          class="readonly-field rounded p-2 w-full text-right"
           value="${safeValue}"
           placeholder=""
-          disabled
+          readonly
+          aria-readonly="true"
           aria-label="${escapeHtml(t('power_requirement_aria', { difficulty: difficultyLabel }))}"
         />
       </label>

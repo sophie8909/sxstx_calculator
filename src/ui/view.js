@@ -1,5 +1,6 @@
 import { el, fmt } from '../utils/format.js';
 import { getCurrentLanguage, t } from '../i18n-inline.js';
+import { setReadOnlyField } from '../shared/components.js';
 import { EQUIPMENT_TARGET_IDS, SKILL_TARGET_IDS, PET_TARGET_IDS, ELEMENT_TARGET_IDS, RELIC_TARGET_IDS } from '../core/targetLayouts.js';
 import {
   categories,
@@ -107,7 +108,7 @@ function formatEstimateText(estimatedRanges = []) {
 }
 
 function getReadonlyBadgeHtml() {
-  return `<span class="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 align-middle">${t('readonly_badge')}</span>`;
+  return `<span class="readonly-badge">${t('readonly_badge')}</span>`;
 }
 
 function getOwnedExpUnitPlaceholder() {
@@ -174,8 +175,9 @@ export function renderPrimordialStarCumulative(container) {
 
     if (isReadOnly) {
       const input = group.querySelector('input');
-      input.disabled = true;
-      input.setAttribute('aria-readonly', 'true');
+      setReadOnlyField(input);
+      group.classList.add('field-group');
+      label.classList.add('field-label-row');
       label.insertAdjacentHTML('beforeend', getReadonlyBadgeHtml());
     }
 
@@ -194,7 +196,7 @@ export function renderTargetLevels(container) {
   const layoutSelect = el('select', ['hidden']); layoutSelect.id = 'target-level-layout-mode'; ['compact', 'detailed'].forEach((mode) => { const option = el('option'); option.value = mode; option.textContent = t('target_layout_' + mode); layoutSelect.appendChild(option); }); layoutSelect.value = layoutMode; container.appendChild(layoutSelect);
   ['compact', 'detailed'].forEach((mode) => { const button = el('button', ['target-layout-mode-btn', 'rounded-full', 'px-3', 'py-1', 'text-sm', 'font-semibold']); button.type = 'button'; button.dataset.mode = mode; button.textContent = t('target_layout_' + mode); button.setAttribute('aria-pressed', String(layoutMode === mode)); selector.appendChild(button); });
   container.appendChild(selector);
-  const makeGroup = (id, label, readOnly = false, extra = '') => { const group = createInputGroup(id, label, readOnly ? t('readonly_badge') : t('target_placeholder'), false, extra); const input = group.querySelector('input'); if (readOnly) { input.disabled = true; input.setAttribute('aria-readonly', 'true'); group.querySelector('label').insertAdjacentHTML('beforeend', getReadonlyBadgeHtml()); } return group; };
+  const makeGroup = (id, label, readOnly = false, extra = '') => { const group = createInputGroup(id, label, readOnly ? t('readonly_badge') : t('target_placeholder'), false, extra); const input = group.querySelector('input'); if (readOnly) { setReadOnlyField(input); group.classList.add('field-group'); const fieldLabel = group.querySelector('label'); fieldLabel.classList.add('field-label-row'); fieldLabel.insertAdjacentHTML('beforeend', getReadonlyBadgeHtml()); } return group; };
   const makeScoredGroup = (id, label) => { const group = makeGroup(id, label); const score = el('div', ['text-xs', 'text-slate-500', 'mt-1']); score.dataset.targetScoreFor = id.replace('target-', ''); score.textContent = t('target_individual_score', { score: 0 }); group.appendChild(score); return group; };
   const common = el('div', ['grid', 'grid-cols-1', 'md:grid-cols-2']);
   common.appendChild(makeGroup('target-character', getTargetLabel('character'), false, '<div id=\"target-char-reachable-level\" class=\"text-xs text-gray-500 mt-1\">' + t('reachable_label', { value: '--' }) + '</div>'));
@@ -582,12 +584,16 @@ export function renderMaterialSource(containers) {
     <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-3 mb-4">
       <h3 class="text-lg font-bold text-emerald-700">${t('material_source_title')}</h3>
       <div class="flex flex-col md:flex-row md:items-center gap-2 text-sm w-full md:w-auto">
-        <span class="font-semibold">${t('days_remaining_label')}</span>
+        <span class="field-label-row font-semibold">
+          <span>${t('days_remaining_label')}</span>
+          ${getReadonlyBadgeHtml()}
+        </span>
         <input
           id="days-remaining"
           type="number"
-          class="input-field rounded px-2 py-1 text-right bg-gray-50 w-full md:w-auto"
+          class="readonly-field rounded px-2 py-1 text-right w-full md:w-auto"
           readonly
+          aria-readonly="true"
         />
       </div>
     </div>

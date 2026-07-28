@@ -270,7 +270,7 @@ function mountAppShell() {
     <div class="context-grid">
       <div id="context-season" class="context-field"></div><div id="context-player" class="context-field"></div>
       <div id="context-server" class="context-field"></div>
-      <div class="context-summary"><span>${copy.realm}</span><strong id="context-realm-value">--</strong><small><span>${copy.world}</span> <b id="context-world-value">--</b></small></div>
+      <div class="context-summary readonly-field" role="status" aria-live="polite" aria-atomic="true"><span>${copy.realm}</span><strong id="context-realm-value">--</strong><small><span>${copy.world}</span> <b id="context-world-value">--</b></small></div>
       <div id="context-status" class="context-status"></div>
     </div>`;
   const featureHeader = element('div', { className: 'feature-toolbar' }, [element('div', { id: 'feature-settings', 'data-feature-settings': '' })]);
