@@ -31,9 +31,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build data
-        run: npm run build:data
-
       - name: Build site
         run: npm run build
 
