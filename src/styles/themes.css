@@ -26,6 +26,11 @@
   --success: #75d0a2;
   --warning: #edbd70;
   --danger: #f097ad;
+  --metric-neutral-bg: var(--metric-default-bg);
+  --metric-neutral-border: var(--border);
+  --metric-neutral-accent: var(--primary);
+  --metric-warning-bg: var(--metric-overflow-bg);
+  --metric-warning-accent: var(--gold);
   --metric-default-bg: linear-gradient(135deg, #3b2d50, #432b43);
   --metric-default-accent: var(--primary);
   --metric-info-bg: linear-gradient(135deg, #29384f, #382d4d);
@@ -53,10 +58,8 @@
 :root[data-theme="dark"] .text-slate-700,
 :root[data-theme="dark"] .text-gray-500,
 :root[data-theme="dark"] .text-slate-600,
-:root[data-theme="dark"] .text-teal-700,
-:root[data-theme="dark"] .text-teal-600 { color: var(--text-muted) !important; }
 :root[data-theme="dark"] [class*="border-[#"],
-:root[data-theme="dark"] .border-\[\#cde5e8\] { border-color: var(--border) !important; }
+
 :root[data-theme="dark"] .bg-green-100,
 :root[data-theme="dark"] .bg-blue-100,
 :root[data-theme="dark"] .bg-orange-100,

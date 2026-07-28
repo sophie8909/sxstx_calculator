@@ -26,6 +26,11 @@
   --success: #49ad7e;
   --warning: #d89a43;
   --danger: #dc6687;
+  --metric-neutral-bg: var(--metric-default-bg);
+  --metric-neutral-border: var(--border);
+  --metric-neutral-accent: var(--primary);
+  --metric-warning-bg: var(--metric-overflow-bg);
+  --metric-warning-accent: var(--gold);
   --metric-default-bg: linear-gradient(135deg, color-mix(in srgb, var(--surface-lavender) 88%, var(--surface)), color-mix(in srgb, var(--surface-pink) 72%, var(--surface)));
   --metric-default-accent: var(--primary);
   --metric-info-bg: linear-gradient(135deg, color-mix(in srgb, var(--surface-blue) 92%, var(--surface)), color-mix(in srgb, var(--surface-lavender) 68%, var(--surface)));

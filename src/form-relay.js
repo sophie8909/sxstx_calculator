@@ -233,14 +233,14 @@ function showFeedback(message, type = 'info') {
   if (!feedback) return;
 
   feedback.textContent = message;
-  feedback.className = 'mt-4 rounded-lg border px-4 py-3 text-sm';
+  feedback.className = 'status-panel mt-4 px-4 py-3 text-sm';
 
   if (type === 'success') {
-    feedback.classList.add('border-emerald-200', 'bg-emerald-50', 'text-emerald-700');
+    feedback.classList.add('status-panel--success');
   } else if (type === 'error') {
-    feedback.classList.add('border-red-200', 'bg-red-50', 'text-red-700');
+    feedback.classList.add('status-panel--error');
   } else {
-    feedback.classList.add('border-slate-200', 'bg-slate-50', 'text-slate-700');
+    feedback.classList.add('status-panel--info');
   }
 }
 
@@ -264,14 +264,14 @@ function showExpRequiredFeedback(message, type = 'info') {
   if (!feedback) return;
 
   feedback.textContent = message;
-  feedback.className = 'mt-4 rounded-lg border px-4 py-3 text-sm';
+  feedback.className = 'status-panel mt-4 px-4 py-3 text-sm';
 
   if (type === 'success') {
-    feedback.classList.add('border-emerald-200', 'bg-emerald-50', 'text-emerald-700');
+    feedback.classList.add('status-panel--success');
   } else if (type === 'error') {
-    feedback.classList.add('border-red-200', 'bg-red-50', 'text-red-700');
+    feedback.classList.add('status-panel--error');
   } else {
-    feedback.classList.add('border-slate-200', 'bg-slate-50', 'text-slate-700');
+    feedback.classList.add('status-panel--info');
   }
 }
 

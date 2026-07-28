@@ -40,3 +40,11 @@ Google Sheets remains the only canonical production game-data source. The visual
 Run `npm run dev`, `npm test`, and `npm run build`. Do not use VS Code Live Server. HTML loads `/src/main.js`; JavaScript imports `./styles/index.css`; CSS is never loaded as a module script.
 
 New shared controls belong in `src/shared/components.js` and must remain calculation-free. New feature-specific rendering belongs in the feature MVC folder with styles under `src/styles/features/`.
+
+## Canonical fantasy colour system
+
+Lavender is the primary neutral brand colour. Soft pink, cream white, pale sky blue, and restrained warm gold provide ordinary application structure. Green or mint is reserved for semantic success, current, completed, achievable, or synced states; rose is reserved for shortage, invalid, unavailable, failed, or unachievable states; gold is reserved for warnings, estimates, stale data, and overflow; pale blue is informational. Teal and cyan are prohibited as default application-brand colours.
+
+Shared semantic styles include `summary-metric` variants (neutral, info, shortage, warning, success, and unavailable), `notice-panel` variants, `status-panel` variants, fantasy table styling, `readonly-field`, and `border-fantasy`. New features must select a semantic variant instead of hardcoding a background or border colour. Both light and dark values are defined in `tokens.css` and `themes.css`.
+
+Run `npm test` to execute the visual-style audit. It rejects obsolete teal/cyan utility classes and legacy primary hex values across active application styles and generated markup.

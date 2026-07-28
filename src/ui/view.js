@@ -388,7 +388,7 @@ export function renderCharBed(container) {
     if (readOnly) {
       input.type = 'text';
       input.readOnly = true;
-      input.classList.add('bg-slate-50', 'border', 'border-slate-200', 'text-gray-700', 'cursor-default');
+      input.classList.add('readonly-field', 'cursor-default');
       input.style.appearance = 'none';
     } else {
       input.type = type;
@@ -536,12 +536,12 @@ export function renderCharBed(container) {
     notifySelect.appendChild(option);
   });
 
-  const levelUpButton = el('button', ['bg-gray-600', 'hover:bg-gray-500', 'text-white', 'font-bold', 'py-2', 'px-4', 'rounded-lg', 'text-xs']);
+  const levelUpButton = el('button', ['control-secondary', 'font-bold', 'py-2', 'px-4', 'text-xs']);
   levelUpButton.type = 'button';
   levelUpButton.id = 'enable-levelup-notify-btn';
   levelUpButton.textContent = t('enable_notify');
 
-  const targetButton = el('button', ['bg-gray-600', 'hover:bg-gray-500', 'text-white', 'font-bold', 'py-2', 'px-4', 'rounded-lg', 'text-xs']);
+  const targetButton = el('button', ['control-secondary', 'font-bold', 'py-2', 'px-4', 'text-xs']);
   targetButton.type = 'button';
   targetButton.id = 'enable-target-notify-btn';
   targetButton.textContent = t('enable_target_notify');
@@ -549,7 +549,7 @@ export function renderCharBed(container) {
   actionsPanel.append(notifyLabel, notifySelect, levelUpButton, targetButton);
 
   const reminderPanel = el('div', ['character-exp-reminder']);
-  const hoardButton = el('button', ['bg-gray-600', 'hover:bg-gray-500', 'text-white', 'font-bold', 'py-2', 'px-4', 'rounded-lg', 'text-xs']);
+  const hoardButton = el('button', ['control-secondary', 'font-bold', 'py-2', 'px-4', 'text-xs']);
   hoardButton.type = 'button';
   hoardButton.id = 'enable-hoard-exp-notify-btn';
   hoardButton.textContent = t('enable_hoard_exp_notify');
@@ -582,7 +582,7 @@ export function renderMaterialSource(containers) {
 
   wrapper.innerHTML = `
     <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-3 mb-4">
-      <h3 class="text-lg font-bold text-emerald-700">${t('material_source_title')}</h3>
+      <h3 class="text-lg font-bold semantic-success">${t('material_source_title')}</h3>
       <div class="flex flex-col md:flex-row md:items-center gap-2 text-sm w-full md:w-auto">
         <span class="field-label-row font-semibold">
           <span>${t('days_remaining_label')}</span>
@@ -852,7 +852,7 @@ export function renderResults(containers, payload, missingFiles = [], options = 
   if (options.cacheFallback) {
     root.insertAdjacentHTML(
       'afterbegin',
-      `<div class="bg-yellow-900/50 border-l-4 border-yellow-400 text-yellow-300 p-3 rounded-lg mb-3 text-sm">
+      `<div class="notice-panel notice-panel--warning mb-3 text-sm">
         <p>${t('cache_fallback_notice')}</p>
        </div>`
     );
@@ -861,7 +861,7 @@ export function renderResults(containers, payload, missingFiles = [], options = 
   if (missingFiles.length > 0) {
     root.insertAdjacentHTML(
       'afterbegin',
-      `<div class="bg-yellow-900/50 border-l-4 border-yellow-400 text-yellow-300 p-3 rounded-lg mb-3 text-sm">
+      `<div class="notice-panel notice-panel--warning mb-3 text-sm">
         <h4 class="font-bold">${t('results_missing_files_title')}</h4>
         <p>${t('summary_missing_data', { files: missingFiles.join(', ') })}</p>
        </div>`
@@ -884,31 +884,31 @@ export function renderResults(containers, payload, missingFiles = [], options = 
     const hasError = !!materialErrors[matId];
     const estimateHint = formatEstimateText(Array.from(estimated[matId] || []));
 
-    let classes = 'border rounded-lg w-full px-4 py-3';
-    if (hasError) classes += ' bg-red-100 border-red-300';
-    else if (need === 0) classes += ' bg-green-100 border-green-300';
-    else if (lack === 0 && gain > 0) classes += ' bg-blue-100 border-blue-300';
-    else if (lack === 0) classes += ' bg-green-100 border-green-300';
-    else classes += ' bg-orange-100 border-orange-300';
+    let classes = 'result-summary-row w-full px-4 py-3';
+    if (hasError) classes += ' result-summary-row--unavailable';
+    else if (need === 0) classes += ' result-summary-row--success';
+    else if (lack === 0 && gain > 0) classes += ' result-summary-row--info';
+    else if (lack === 0) classes += ' result-summary-row--success';
+    else classes += ' result-summary-row--shortage';
 
     const row = el('div', classes.split(' '));
     row.classList.add('result-summary-row');
     const left = el('div', ['flex', 'items-center', 'gap-2', 'min-w-0']);
-    left.innerHTML = `<span class="font-bold text-slate-700">${getMaterialLabel(matId)}</span>`;
+    left.innerHTML = `<span class="font-bold text-strong">${getMaterialLabel(matId)}</span>`;
 
     const right = el('div', ['ml-auto', 'flex', 'items-center', 'gap-x-6', 'gap-y-1', 'text-sm', 'result-summary-values']);
     if (hasError) {
-      right.innerHTML = `<span class="text-red-700 font-semibold">${materialErrors[matId]}</span>`;
+      right.innerHTML = `<span class="semantic-danger font-semibold">${materialErrors[matId]}</span>`;
     } else {
       right.innerHTML = `
-        <span class="text-slate-700">${t('summary_need')} <strong>${fmt(need)}</strong></span>
-        <span class="text-slate-700">${t('summary_gain')} <strong>${fmt(gain)}</strong></span>
-        <span class="text-slate-700">${t('summary_deficit')} ${
+        <span class="text-strong">${t('summary_need')} <strong>${fmt(need)}</strong></span>
+        <span class="text-strong">${t('summary_gain')} <strong>${fmt(gain)}</strong></span>
+        <span class="text-strong">${t('summary_deficit')} ${
           lack > 0
-            ? `<strong class="text-red-700">-${fmt(lack)}</strong>`
-            : `<strong class="text-emerald-700">${t('summary_done')}</strong>`
+            ? `<strong class="semantic-danger">-${fmt(lack)}</strong>`
+            : `<strong class="semantic-success">${t('summary_done')}</strong>`
         }</span>
-        ${estimateHint ? `<span class="text-amber-700 text-xs">${estimateHint}</span>` : ''}`;
+        ${estimateHint ? `<span class="semantic-warning text-xs">${estimateHint}</span>` : ''}`;
     }
 
     row.append(left, right);
@@ -916,7 +916,7 @@ export function renderResults(containers, payload, missingFiles = [], options = 
   });
 
   if (!Object.keys(required).length && !Object.keys(deficit).length && !Object.keys(materialErrors).length) {
-    root.innerHTML += `<p class="text-gray-500 text-center py-6">${t('summary_no_input')}</p>`;
+    root.innerHTML += `<p class="semantic-muted text-center py-6">${t('summary_no_input')}</p>`;
   } else {
     root.appendChild(list);
   }

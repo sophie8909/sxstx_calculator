@@ -118,7 +118,7 @@ export function summaryMetric({
   variant = 'default',
   statusIcon = '',
 }) {
-  const allowedVariants = new Set(['default', 'info', 'shortage', 'overflow', 'success', 'unavailable']);
+  const allowedVariants = new Set(['default', 'neutral', 'info', 'shortage', 'overflow', 'warning', 'success', 'unavailable']);
   const safeVariant = allowedVariants.has(variant) ? variant : 'default';
   const iconMarkup = statusIcon
     ? `<span class="summary-metric__icon" aria-hidden="true">${escapeSummaryText(statusIcon)}</span>`

@@ -1,77 +1,38 @@
 .world-rally-result {
   display: grid;
   gap: 1rem;
-  border: 1px solid #b6d7da;
-  border-radius: 0.75rem;
-  background: rgba(240, 253, 250, 0.72);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--metric-info-bg);
   padding: 1rem;
 }
-
-.world-rally-result.hidden {
-  display: none;
-}
-
-.world-rally-summary {
-  display: grid;
-  gap: 0.25rem;
-}
-
-.world-rally-server-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
-  gap: 0.75rem;
-}
-
+.world-rally-result.hidden { display: none; }
+.world-rally-summary { display: grid; gap: .25rem; }
+.world-rally-server-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: .75rem; }
 .world-rally-server {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
+  gap: .5rem;
   border: 1px solid var(--border);
-  border-radius: 0.65rem;
-  background: #fff;
-  padding: 0.8rem 0.9rem;
+  border-radius: var(--radius-md);
+  background: var(--metric-default-bg);
+  padding: .8rem .9rem;
+  color: var(--text-strong);
   font-weight: 600;
+  box-shadow: var(--shadow-control);
 }
-
-.world-rally-server.current-server {
-  border-color: var(--primary-strong);
-  box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.12);
-}
-
-.current-server-indicator {
-  border-radius: 999px;
-  background: var(--primary-strong);
-  color: #fff;
-  padding: 0.2rem 0.6rem;
-  font-size: 0.75rem;
-}
-
-.world-rally-note {
-  border-left: 4px solid var(--primary-strong);
-  background: rgba(204, 251, 241, 0.72);
-  padding: 0.75rem;
-  font-weight: 600;
-}
-
-html[data-theme='dark'] .world-rally-result,
-html[data-theme='dark'] .world-rally-note {
-  background: rgba(20, 83, 80, 0.35);
-  border-color: #35666a;
-}
-
-html[data-theme='dark'] .world-rally-server {
-  background: #142a2f;
-  border-color: #35666a;
-}
-
-.world-rally-result { display: grid; gap: 1rem; }
-.world-rally-section { border: 1px solid var(--border); border-radius: 0.75rem; padding: 1rem; }
-.world-rally-section h3 { margin: 0 0 0.5rem; font-size: 1.125rem; font-weight: 700; }
-.world-rally-summary-grid { display: grid; gap: 0.75rem; }
+.world-rally-server.current-server { border-color: var(--border-gold); background: var(--metric-overflow-bg); box-shadow: 0 0 0 2px color-mix(in srgb, var(--gold) 18%, transparent); }
+.current-server-indicator { border-radius: var(--radius-pill); background: var(--gold-soft); color: var(--text-strong); padding: .2rem .6rem; font-size: .75rem; }
+.world-rally-note { border-inline-start: 3px solid var(--warning); border-radius: var(--radius-sm); background: var(--metric-overflow-bg); padding: .75rem; color: var(--text-strong); font-weight: 600; }
+.world-rally-section { border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); padding: 1rem; }
+.world-rally-section h3 { margin: 0 0 .5rem; color: var(--text-strong); font-size: 1.125rem; font-weight: 700; }
+.world-rally-summary-grid { display: grid; gap: .75rem; }
 .world-rally-summary-grid div { min-width: 0; }
-.world-rally-summary-grid dt { color: #64748b; font-size: 0.75rem; }
-.world-rally-summary-grid dd { overflow-wrap: anywhere; font-weight: 600; }
+.world-rally-summary-grid dt { color: var(--text-muted); font-size: .75rem; }
+.world-rally-summary-grid dd { overflow-wrap: anywhere; color: var(--text-strong); font-weight: 600; }
+.world-rally-state { border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--metric-info-bg); color: var(--text-strong); padding: .75rem; }
+.world-rally-state-error { border-color: var(--border-pink); background: var(--metric-unavailable-bg); color: var(--danger); }
 @media (min-width: 768px) { .world-rally-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 1024px) { .world-rally-summary-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
