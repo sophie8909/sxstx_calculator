@@ -47,6 +47,7 @@ function createElement() {
 }
 
 function createDocument() {
+  const workspace = createElement();
   const body = createElement();
   body.classList = createClassList(['app-loading']);
   const shell = createElement();
@@ -54,10 +55,12 @@ function createDocument() {
   const message = createElement();
   const control = createElement();
   const byId = new Map([
+    ['feature-workspace', workspace],
     ['global-data-status', status],
     ['app-loading-message', message],
   ]);
   return {
+    workspace,
     body,
     shell,
     status,
@@ -118,12 +121,13 @@ test('3. full-screen loader closes when a request times out', async () => {
   globalThis.fetch = originalFetch;
 });
 
-test('4. inert and aria-hidden are restored after failure', () => {
+test('4. loading is scoped to the feature workspace without disabling the shell', () => {
   const documentLike = createDocument();
   setDocumentLoading(documentLike, true);
   setDocumentLoading(documentLike, false);
   assert.equal(documentLike.shell.inert, false);
-  assert.equal(documentLike.shell.getAttribute('aria-hidden'), 'false');
+  assert.equal(documentLike.workspace.getAttribute('aria-busy'), 'false');
+  assert.equal(documentLike.workspace.classList.contains('is-loading'), false);
   assert.equal(documentLike.control.disabled, false);
 });
 

@@ -14,7 +14,7 @@ export function createGlobalStore(initial = {}) {
     rallyGroup: [],
     language: 'zh-Hant',
     theme: 'light',
-    activeTool: 'progression',
+    activeTool: 'primordial',
     dataStatus: 'loading',
     ...persisted,
     ...initial,

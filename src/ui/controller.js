@@ -1227,7 +1227,8 @@ function readBedProgressState() {
   const currentLevel = Math.max(0, parseInt(document.getElementById('character-current')?.value, 10) || 0);
   const currentExpInput = readCurrentExpInput();
   const bedHourly = Math.max(0, parseFloat(document.getElementById('bed-exp-hourly')?.value) || 0);
-  const targetLevel = Math.max(0, parseInt(document.getElementById('target-character')?.value, 10) || 0);
+  const experienceTarget = document.getElementById('character-exp-target')?.value;
+  const targetLevel = Math.max(0, parseInt(experienceTarget || document.getElementById('target-character')?.value, 10) || 0);
   const ownedExp = getLiveOwnedExp(
     currentLevel,
     currentExpInput.rawInput,
@@ -1339,7 +1340,12 @@ function setGlobalDataStatus(status, message) {
   const element = document.getElementById('global-data-status');
   if (!element) return;
   element.dataset.status = status;
-  element.textContent = message;
+  const statusKeys = {
+    loading: 'data_status_loading', ready: 'data_status_ready', stale: 'data_status_stale',
+    unavailable: 'data_status_unavailable', refreshing: 'data_status_refreshing', error: 'data_status_error',
+  };
+  element.title = message || '';
+  element.textContent = t(statusKeys[status] || 'data_status_loading');
   globalStore.update({ dataStatus: status });
 }
 
@@ -1348,7 +1354,7 @@ function bindDataCacheHandlers(containers) {
     state.cacheFallback = true;
     const sheet = event.detail?.sheet || 'Google data';
     setGlobalDataStatus('stale', `${sheet} refresh failed; showing cached data.`);
-    if (containers?.results && globalStore.getState().activeTool === 'progression') triggerRecalculate(containers);
+    if (containers?.results && globalStore.getState().activeTool === 'primordial') triggerRecalculate(containers);
   });
 
   window.addEventListener(CACHE_UPDATED_EVENT, (event) => {
@@ -1656,8 +1662,6 @@ function bindTargetTimeFormToggle() {
   const giftCalculatorPanel = document.getElementById('gift-calculator-panel');
   const worldRallyPanel = document.getElementById('world-rally-panel');
   const targetTimeFormPanel = document.getElementById('target-time-form-panel');
-  const sectionSideNav = document.getElementById('section-side-nav');
-  const appLayout = document.querySelector('.app-layout');
 
   if (!navButtons.length || !calculatorPageContent || !fragmentCalculatorPanel || !giftCalculatorPanel || !worldRallyPanel || !targetTimeFormPanel) return;
 
@@ -1675,8 +1679,8 @@ function bindTargetTimeFormToggle() {
     'target-time-form': targetTimeFormPanel,
   };
   const pageToTool = {
-    primordial: 'progression',
-    fragment: 'fragment',
+    primordial: 'primordial',
+    fragment: 'equipment',
     gift: 'gift',
     'world-rally': 'world-rally',
     'target-time-form': 'contribution',
@@ -1698,14 +1702,10 @@ function bindTargetTimeFormToggle() {
       button.classList.toggle('hover:bg-[#23a69d]', active);
       button.classList.toggle('bg-gray-600', !active);
       button.classList.toggle('hover:bg-gray-500', !active);
+      button.setAttribute('aria-current', active ? 'page' : 'false');
+      button.setAttribute('aria-pressed', String(active));
     });
 
-    if (sectionSideNav) {
-      const showSectionNav = targetPage === 'primordial';
-      sectionSideNav.classList.toggle('is-hidden', !showSectionNav);
-      sectionSideNav.setAttribute('aria-hidden', showSectionNav ? 'false' : 'true');
-    }
-    appLayout?.classList.toggle('is-focused-page', targetPage !== 'primordial');
 
     localStorage.setItem(ACTIVE_PAGE_STORAGE_KEY, targetPage);
     if (updateHistory) {
@@ -3578,7 +3578,7 @@ function bindGlobalHandlers(containers) {
 function getFeatureStatusTarget(tool) {
   if (tool === 'gift') return document.getElementById('gift-calculator-status');
   if (tool === 'world-rally') return document.getElementById('world-rally-result');
-  if (tool === 'fragment') return document.getElementById('fragment-calculator-status');
+  if (tool === 'equipment') return document.getElementById('fragment-calculator-status');
   return document.getElementById('global-data-status');
 }
 
@@ -3617,7 +3617,7 @@ async function initializeActiveFeature(containers, saved = {}, { refresh = false
   }
 
   try {
-    if (tool === 'progression') {
+    if (tool === 'primordial') {
       await loadDataForSeason(state.seasonId);
       if (generation !== activeFeatureGeneration) return;
       preprocessCostData();
@@ -3635,7 +3635,7 @@ async function initializeActiveFeature(containers, saved = {}, { refresh = false
       renderMaterialSource(containers);
       updateRelicTotal();
       triggerRecalculate(containers);
-    } else if (tool === 'fragment') {
+    } else if (tool === 'equipment') {
       await Promise.all([initFragmentCalculator(saved), initDungeonFragmentYield(saved)]);
       updateFragmentFeeRates();
       updateFragmentCalculator();
@@ -3653,7 +3653,7 @@ async function initializeActiveFeature(containers, saved = {}, { refresh = false
     if (generation !== activeFeatureGeneration) return;
     setGlobalDataStatus(
       state.cacheFallback ? 'stale' : 'ready',
-      state.cacheFallback ? 'Showing cached Google data.' : 'Google data is current.'
+      state.cacheFallback ? t('cache_fallback_notice') : t('data_status_ready')
     );
     hasCompletedInitialLoad = true;
   } catch (error) {

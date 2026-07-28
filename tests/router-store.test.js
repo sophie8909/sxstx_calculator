@@ -7,7 +7,9 @@ import { createGlobalStore } from '../src/app/store.js';
 test('query routing supports direct links and rejects invalid tools', () => {
   const location = { href: 'https://example.com/?tool=world-rally#details', search: '?tool=world-rally' };
   assert.equal(readToolFromLocation(location), 'world-rally');
-  assert.equal(normalizeTool('invalid'), 'progression');
+  assert.equal(normalizeTool('invalid'), 'primordial');
+  assert.equal(normalizeTool('progression'), 'primordial');
+  assert.equal(normalizeTool('fragment'), 'equipment');
   assert.equal(buildToolUrl('gift', location), '/?tool=gift#details');
 });
 

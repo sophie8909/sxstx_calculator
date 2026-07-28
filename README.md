@@ -40,13 +40,48 @@ Reload the page to refresh all active feature data. Code can explicitly refresh 
 
 Production CSV/JSON datasets must not be committed to Git. UI translations, icons/images, CSS tokens, and small inline test fixtures are not production game datasets and remain in the repository.
 
+## Application architecture
+
+The frontend is one persistent application workspace rather than a long calculator page:
+
+- `src/app/shell.js` mounts the desktop sidebar, mobile header and bottom navigation, top bar, global player context, feature header, and active workspace.
+- `src/shared/components.js` provides native-JavaScript navigation, tabs, empty states, transfer notices, and common element helpers without importing game calculations.
+- `src/app/router.js` owns the five canonical query routes: `primordial`, `equipment`, `gift`, `world-rally`, and `contribution`. Legacy `progression` and `fragment` values map to `primordial` and `equipment`; invalid values fall back to `primordial`.
+- `src/app/store.js` owns season, player number, parsed server context, language, theme, active tool, and global data status. Feature-specific inputs remain in feature state.
+- `src/styles/index.css` is the only stylesheet entry imported by JavaScript. It loads Tailwind, tokens, base rules, layout, shared components, feature styles, and dark-theme overrides.
+
+Primordial planning has three independently usable layouts:
+
+1. Primordial target recommendations.
+2. Character experience, with its own editable target level.
+3. Complete resource requirements and shortage results.
+
+Transfer actions copy target values into the destination layout without clearing current levels or owned-resource inputs. Internal tab state is persisted independently from the active query route.
+
+Desktop navigation uses a 232px sidebar. Tablet navigation removes the sidebar, and mobile uses five bottom navigation items plus a collapsible global-context card. The main workspace is capped at 1480px and uses one page scroll; ordinary cards do not create nested vertical scrolling.
+
+### MVC and feature extension
+
+- Models contain pure calculations and state transforms.
+- Views render DOM/ViewModels and emit events.
+- Controllers coordinate state, models, services, feature tabs, and transfer actions.
+- Services own Google Sheets, cache, storage, and form submission.
+
+To add a feature, register its canonical route, add one shell navigation entry, create a feature-owned controller/model/view, and add a scoped stylesheet under `src/styles/features/`. Do not add another top-level HTML application or put new fields into the global store unless they genuinely affect multiple features.
+
+The shell renders before feature data settles. Each active feature loads independently and can show its own skeleton, cached-data notice, unavailable state, or targeted retry without hiding the shell. A failed Google request never activates a permanent full-screen overlay.
 ## Development
 
 ```bash
+
 npm install
 npm test
 npm run build
 npm run dev
 ```
 
-The application remains a static Vite site compatible with GitHub Pages and the custom production domain. Query routes use `/?tool=progression`, `fragment`, `gift`, `world-rally`, or `contribution`.
+The application remains a static Vite site compatible with GitHub Pages and the custom production domain. Canonical query routes are:
+
+`/?tool=primordial`, `/?tool=equipment`, `/?tool=gift`, `/?tool=world-rally`, and `/?tool=contribution`.
+
+Browser back/forward and in-app tool changes use the History API without reloading the page.

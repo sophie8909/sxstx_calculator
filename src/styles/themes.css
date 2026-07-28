@@ -1,0 +1,10 @@
+:root[data-theme="dark"] {
+  --color-page: #0f1d1e; --color-surface: #172829; --color-surface-soft: #203536; --color-surface-raised: #1d3031;
+  --color-primary: #71c4bf; --color-primary-hover: #8bd6d1; --color-primary-soft: #203f3e; --color-accent: #d4939e;
+  --color-text: #e3eeee; --color-text-muted: #9db2b3; --color-border: #355152; --color-border-strong: #587778;
+  --color-success: #69c390; --color-warning: #e1ad59; --color-danger: #ec7c7c; --color-focus: #7ed2cd;
+  --shadow-card: 0 5px 20px rgba(0, 0, 0, .22);
+}
+:root[data-theme="dark"] .bg-white, :root[data-theme="dark"] .bg-gray-50 { background-color: var(--color-surface) !important; }
+:root[data-theme="dark"] .text-slate-700, :root[data-theme="dark"] .text-gray-500, :root[data-theme="dark"] .text-slate-600 { color: var(--color-text-muted) !important; }
+:root[data-theme="dark"] .border-\[\#cde5e8\] { border-color: var(--color-border) !important; }

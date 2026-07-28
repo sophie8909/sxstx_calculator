@@ -1,0 +1,7 @@
+#primordial-workspace-panel-target > #primordial-star-card { margin-bottom: 0 !important; }
+#primordial-workspace-panel-target > #target-levels-card { margin-bottom: 0 !important; }
+#primordial-workspace-panel-experience #character-exp-card { width: 100%; min-height: auto; }
+#primordial-workspace-panel-resources { grid-template-columns: minmax(0, 1.65fr) minmax(300px, .85fr); align-items: start; }
+#primordial-workspace-panel-resources #target-time-card, #primordial-workspace-panel-resources #relic-card, #primordial-workspace-panel-resources #material-source-card { grid-column: 1 / -1; }
+#primordial-workspace-panel-resources #results-card { position: sticky; top: 80px; }
+@media (max-width: 900px) { #primordial-workspace-panel-resources { grid-template-columns: 1fr; } #primordial-workspace-panel-resources #results-card { position: static; } }

@@ -65,53 +65,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet" />
 
-  <link rel="stylesheet" href="./css/style.css" type="text/css" />
-  <link rel="stylesheet" href="./css/world-rally.css" type="text/css" />
-  <link rel="stylesheet" href="./css/tailwind.css" type="text/css" />
 </head>
 
-<body class="p-3 md:p-4 lg:p-6 compact app-loading" aria-busy="true">
-  <div id="app-loading-overlay" class="app-loading-overlay" role="status" aria-live="polite">
-    <div class="app-loading-panel">
-      <div class="app-loading-mark" aria-hidden="true">
-        <img src="./images/favicon_v1.png" alt="" />
-        <span class="app-loading-ring"></span>
-      </div>
-      <div class="app-loading-copy">
-        <p class="app-loading-title" data-i18n="app_title">杖劍傳說計算機</p>
-        <p id="app-loading-message" class="app-loading-message" data-i18n="loading_app_data">資料讀取中，請稍候...</p>
-        <p class="app-loading-fallback">載入時間過長，請重新整理頁面。</p>
-      </div>
-      <div class="app-loading-progress" aria-hidden="true">
-        <span></span>
-      </div>
-      <div class="app-loading-dots" aria-hidden="true">
-        <span></span>
-        <span></span>
-        <span></span>
-      </div>
-    </div>
-  </div>
-  <div class="app-layout">
-    <nav id="section-side-nav" class="section-side-nav" aria-label="區塊導覽" data-i18n-aria-label="side_nav_aria">
-      <p class="section-side-nav-title" data-title-icon="list" data-i18n="side_nav_title">快速導覽</p>
-      <a href="#target-time-card" data-i18n="side_nav_time">時間</a>
-      <a href="#primordial-star-card" data-i18n="side_nav_primordial">原初</a>
-      <a href="#target-levels-card" data-i18n="side_nav_target">目標</a>
-      <a href="#character-exp-card" data-i18n="side_nav_character">角色</a>
-      <a href="#relic-card" data-i18n="side_nav_relic">遺物</a>
-      <a href="#skill-card" data-i18n="side_nav_skill">技能</a>
-      <a href="#equipment-card" data-i18n="side_nav_equipment">裝備</a>
-      <a href="#pet-card" data-i18n="side_nav_pet">寵物</a>
-      <a href="#production-card" data-i18n="side_nav_cart">推車</a>
-      <a href="#owned-materials-card" data-i18n="side_nav_materials">素材</a>
-      <a href="#results-card" data-i18n="side_nav_results">結果</a>
-      <a href="#material-source-card" data-i18n="side_nav_sources">來源</a>
-    </nav>
+<body class="compact app-loading" aria-busy="true">
+  <div class="app-layout legacy-layout-source">
   <div class="app-shell w-full max-w-7xl mx-auto">
-    <header class="text-center mb-6">
-      <h1 class="text-3xl md:text-4xl font-bold text-teal-800" data-i18n="app_title">杖劍傳說計算機</h1>
-    </header>
 
     <div class="app-toolbar text-center mb-4 flex flex-col lg:flex-row lg:items-center lg:justify-center gap-3">
       <label for="language-select" class="mr-2 font-semibold" data-i18n="language_label">語言：</label>
@@ -128,54 +86,6 @@
           </select>
         </span>
 
-      <button
-        type="button"
-        class="calculator-nav-btn bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg text-sm"
-        data-page="primordial"
-        data-i18n="nav_primordial_calculator"
-      >
-        原初計算機
-      </button>
-      <button
-        type="button"
-        class="calculator-nav-btn bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg text-sm"
-        data-page="fragment"
-        data-i18n="nav_fragment_calculator"
-      >
-        裝備與碎片計算機
-      </button>
-      <button
-        type="button"
-        class="calculator-nav-btn bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg text-sm"
-        data-page="gift"
-        data-i18n="nav_gift_calculator"
-      >
-        禮物計算機
-      </button>
-      <button
-        type="button"
-        class="calculator-nav-btn bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg text-sm"
-        data-page="world-rally"
-        data-i18n="nav_world_rally"
-      >
-        世界集結查詢
-      </button>
-      <button
-        id="open-target-time-form-btn"
-        type="button"
-        class="calculator-nav-btn bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg text-sm"
-        data-page="target-time-form"
-        data-i18n="relay_form_button_title"
-      >
-        伺服器及目標時間填寫
-      </button>
-      <a
-        href="https://feiyastudio.com/sxstx-calculator"
-        class="inline-flex items-center justify-center bg-white border border-[#b6d7da] hover:bg-teal-50 text-teal-700 font-bold py-2 px-4 rounded-lg text-sm"
-        data-i18n="nav_feiya_home"
-      >
-        Feiya Studio
-      </a>
     </div>
 
     <div class="selector-bar text-center mb-6 flex flex-col md:flex-row md:flex-wrap md:items-start md:justify-center gap-3">

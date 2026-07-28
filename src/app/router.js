@@ -1,14 +1,20 @@
 export const TOOL_IDS = Object.freeze([
-  'progression',
-  'fragment',
+  'primordial',
+  'equipment',
   'gift',
   'world-rally',
   'contribution',
 ]);
 
+export const LEGACY_TOOL_ALIASES = Object.freeze({
+  progression: 'primordial',
+  fragment: 'equipment',
+});
+
 export function normalizeTool(value) {
   const tool = String(value || '').trim().toLowerCase();
-  return TOOL_IDS.includes(tool) ? tool : 'progression';
+  const canonical = LEGACY_TOOL_ALIASES[tool] || tool;
+  return TOOL_IDS.includes(canonical) ? canonical : 'primordial';
 }
 
 export function readToolFromLocation(locationLike = window.location) {

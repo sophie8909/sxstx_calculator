@@ -1,0 +1,21 @@
+* { box-sizing: border-box; }
+html { min-width: 320px; scroll-padding-bottom: 96px; }
+body { margin: 0; min-height: 100vh; background: var(--color-page); color: var(--color-text); font: 15px/1.55 "Noto Sans TC", system-ui, sans-serif; }
+button, input, select, textarea { font: inherit; }
+button, select { cursor: pointer; }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-focus) 42%, transparent); outline-offset: 2px;
+}
+input, select, textarea, .input-field, .theme-select {
+  min-height: var(--control-height); width: 100%; border: 1px solid var(--color-border); border-radius: 10px;
+  background: var(--color-surface); color: var(--color-text); padding: 9px 12px; box-shadow: none;
+}
+input:hover, select:hover, textarea:hover { border-color: var(--color-border-strong); }
+input:disabled, select:disabled, textarea:disabled { cursor: not-allowed; opacity: .68; background: var(--color-surface-soft); }
+label { color: var(--color-text); }
+[hidden] { display: none !important; }
+.legacy-layout-source { display: none !important; }
+.card { background: var(--color-surface); color: var(--color-text); border: 1px solid var(--color-border); border-radius: var(--radius-md) !important; box-shadow: var(--shadow-card) !important; }
+.card .overflow-y-auto, .calculator-section-card .responsive-scroll { overflow-y: visible !important; max-height: none !important; }
+.card h2.sticky, .card > .sticky { position: static !important; background: transparent !important; backdrop-filter: none !important; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; } }

@@ -1,5 +1,4 @@
 export const BOOTSTRAP_TIMEOUT_MS = 20_000;
-const LOADING_DISABLED_ATTR = 'data-loading-disabled';
 
 export function setDocumentLoading(documentLike, loading, message = '') {
   const body = documentLike?.body;
@@ -11,25 +10,9 @@ export function setDocumentLoading(documentLike, loading, message = '') {
   const loadingMessage = documentLike.getElementById('app-loading-message');
   if (loadingMessage && message) loadingMessage.textContent = message;
 
-  const appShell = documentLike.querySelector('.app-shell');
-  if (appShell) {
-    appShell.inert = Boolean(loading);
-    appShell.setAttribute('aria-hidden', loading ? 'true' : 'false');
-  }
-
-  documentLike.querySelectorAll('button, input, select, textarea').forEach((control) => {
-    if (loading) {
-      if (!control.disabled) {
-        control.disabled = true;
-        control.setAttribute(LOADING_DISABLED_ATTR, '1');
-      }
-      return;
-    }
-    if (control.getAttribute(LOADING_DISABLED_ATTR) === '1') {
-      control.disabled = false;
-      control.removeAttribute(LOADING_DISABLED_ATTR);
-    }
-  });
+  const workspace = documentLike.getElementById('feature-workspace');
+  workspace?.setAttribute('aria-busy', loading ? 'true' : 'false');
+  workspace?.classList.toggle('is-loading', Boolean(loading));
 }
 
 export function renderBootstrapError(documentLike, error, retry) {

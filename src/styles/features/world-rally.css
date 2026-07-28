@@ -1,0 +1,4 @@
+.world-rally-result { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.world-rally-result .world-rally-summary { grid-column: 1 / -1; }
+.world-rally-section { margin: 0; border-color: var(--color-border); background: var(--color-surface-soft); }
+@media (max-width: 700px) { .world-rally-result { grid-template-columns: 1fr; } }

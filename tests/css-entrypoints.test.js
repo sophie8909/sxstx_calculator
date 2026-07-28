@@ -15,7 +15,7 @@ async function readRepositoryFile(relativePath) {
   return readFile(new URL(relativePath, repositoryRoot), 'utf8');
 }
 
-test('source HTML uses JavaScript as the module entrypoint and Tailwind as a stylesheet', async () => {
+test('source HTML uses one JavaScript entrypoint for the intentional stylesheet graph', async () => {
   const [indexHtml, redirectHtml, mainSource] = await Promise.all([
     readRepositoryFile('index.html'),
     readRepositoryFile('submit-target-time.html'),
@@ -30,8 +30,9 @@ test('source HTML uses JavaScript as the module entrypoint and Tailwind as a sty
   }
 
   assert.match(indexHtml, /<script\b[^>]*type=["']module["'][^>]*src=["'][^"']*src\/main\.js["'][^>]*>/i);
-  assert.match(indexHtml, /<link\b[^>]*rel=["']stylesheet["'][^>]*href=["'][^"']*css\/tailwind\.css["'][^>]*>/i);
-  assert.doesNotMatch(mainSource, /import\s+["'][^"']*\.css["']/);
+  assert.doesNotMatch(indexHtml, /href=["'][^"']*(?:css\/style|css\/world-rally|css\/tailwind)\.css["']/i);
+  assert.match(mainSource, /import\s+["']\.\/styles\/index\.css["']/);
+  assert.equal((mainSource.match(/import\s+["'][^"']*\.css["']/g) || []).length, 1);
 });
 
 test('built HTML never references CSS from a module script', async () => {

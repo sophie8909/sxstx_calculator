@@ -1,0 +1,2 @@
+#fragment-calculator-panel > .card, #gift-calculator-panel > .card, #world-rally-panel > .card, #target-time-form-panel > .card { margin: 0 !important; overflow: clip; }
+#equipment-workspace-panel-score > div, #equipment-workspace-panel-market > div, #equipment-workspace-panel-data > div { padding: 20px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }

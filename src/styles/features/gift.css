@@ -1,0 +1,2 @@
+#gift-workspace-panel-calculator, #gift-workspace-panel-plan, #gift-workspace-panel-reference { padding-top: 4px; }
+#gift-calculator-result > div { border-radius: var(--radius-md) !important; }

@@ -1,0 +1,68 @@
+.calculator-app { min-height: 100vh; }
+.desktop-sidebar { position: fixed; inset: 0 auto 0 0; z-index: 30; display: flex; width: var(--sidebar-width); flex-direction: column; padding: 24px 16px; background: var(--color-surface); border-right: 1px solid var(--color-border); }
+.sidebar-brand { display: flex; align-items: center; gap: 12px; min-height: 52px; margin-bottom: 24px; }
+.sidebar-brand div { display: flex; min-width: 0; flex-direction: column; }
+.sidebar-brand strong { font-size: 15px; line-height: 1.25; }
+.sidebar-brand span:last-child { color: var(--color-text-muted); font-size: 12px; }
+.brand-mark { display: grid; width: 38px; height: 38px; flex: 0 0 auto; place-items: center; border-radius: 12px; background: var(--color-primary); color: #fff; font-weight: 700; letter-spacing: -.05em; }
+.desktop-feature-nav { display: flex; flex-direction: column; gap: 6px; }
+.sidebar-links { display: grid; gap: 8px; margin-top: auto; padding-top: 20px; border-top: 1px solid var(--color-border); }
+.sidebar-links a { color: var(--color-text-muted); font-size: 13px; text-decoration: none; }
+.application-main { min-width: 0; margin-left: var(--sidebar-width); padding-bottom: 48px; }
+.top-bar { position: sticky; top: 0; z-index: 20; display: flex; min-height: var(--topbar-height); align-items: center; justify-content: space-between; gap: 24px; padding: 10px 32px; background: color-mix(in srgb, var(--color-page) 90%, transparent); border-bottom: 1px solid var(--color-border); backdrop-filter: blur(14px); }
+.feature-heading h1 { margin: 0; color: var(--color-text); font-size: 24px; line-height: 1.25; }
+.feature-heading p { margin: 2px 0 0; color: var(--color-text-muted); font-size: 13px; }
+.topbar-controls { display: flex; align-items: center; gap: 8px; }
+.topbar-control { display: flex; align-items: center; gap: 6px; color: var(--color-text-muted); }
+.topbar-control select, .theme-select { min-width: 126px; height: 36px; min-height: 36px; padding: 5px 9px; }
+.global-context-panel, .feature-toolbar, .feature-workspace { width: min(calc(100% - 64px), var(--content-max-width)); margin-inline: auto; }
+.global-context-panel { margin-top: 24px; padding: 20px 24px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-card); }
+.context-toggle { display: none; width: 100%; align-items: center; justify-content: space-between; border: 0; background: transparent; color: var(--color-text); text-align: left; }
+.context-toggle span:first-child { display: flex; flex-direction: column; }
+.context-toggle small { color: var(--color-text-muted); font-weight: 400; }
+.context-grid { display: grid; grid-template-columns: minmax(160px, .8fr) minmax(220px, 1.2fr) minmax(220px, 1.2fr) minmax(160px, .8fr); gap: 16px; align-items: start; }
+.context-field > div { gap: 6px !important; text-align: left; }
+.context-field label { display: block; font-size: 13px; }
+.context-field > div > span { min-height: 0 !important; }
+.context-summary { display: flex; min-height: 62px; flex-direction: column; justify-content: center; padding: 4px 0; }
+.context-summary > span { color: var(--color-text-muted); font-size: 13px; }
+.context-summary strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.context-summary small { color: var(--color-text-muted); }
+.context-status { display: flex; min-height: 62px; align-items: center; }
+.context-server-source { display: none !important; }
+.feature-toolbar { min-height: 40px; margin-top: 16px; }
+#feature-settings { max-width: 260px; }
+.feature-workspace { margin-top: 8px; }
+.feature-workspace > div { animation: feature-enter .18s ease-out; }
+.mobile-header, .mobile-navigation { display: none; }
+@keyframes feature-enter { from { opacity: .25; transform: translateY(4px); } }
+@media (max-width: 1023px) {
+  .desktop-sidebar { display: none; }
+  .application-main { margin-left: 0; }
+  .mobile-header { display: flex; min-height: 58px; align-items: center; gap: 10px; padding: 10px 24px; background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+  .mobile-header .brand-mark { width: 34px; height: 34px; }
+  .application-main { padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
+  .mobile-navigation { position: fixed; inset: auto 0 0; z-index: 50; display: grid; grid-template-columns: repeat(5, 1fr); padding: 6px 6px calc(6px + env(safe-area-inset-bottom)); background: color-mix(in srgb, var(--color-surface) 94%, transparent); border-top: 1px solid var(--color-border); backdrop-filter: blur(14px); }
+  .mobile-navigation .app-nav-item { min-height: 58px; }
+  .top-bar { top: 0; padding-inline: 24px; }
+  .global-context-panel, .feature-toolbar, .feature-workspace { width: min(calc(100% - 48px), var(--content-max-width)); }
+  .context-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 639px) {
+  .application-main { padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
+  .mobile-header { padding-inline: 16px; }
+  .top-bar { position: static; min-height: auto; padding: 16px; }
+  .feature-heading h1 { font-size: 24px; }
+  .feature-heading p { display: none; }
+  .topbar-controls { margin-left: auto; }
+  .topbar-control > span { display: none; }
+  .topbar-control select, .theme-select { width: 46px; min-width: 46px; max-width: 46px; padding-inline: 6px; color: transparent; }
+  .global-context-panel, .feature-toolbar, .feature-workspace { width: calc(100% - 32px); }
+  .global-context-panel { margin-top: 12px; padding: 14px 16px; }
+  .context-toggle { display: flex; min-height: 44px; }
+  .context-grid { display: none; grid-template-columns: 1fr; padding-top: 14px; }
+  .global-context-panel.is-expanded .context-grid { display: grid; }
+  .feature-toolbar { margin-top: 8px; }
+  #feature-settings { max-width: none; }
+  .mobile-navigation { position: fixed; inset: auto 0 0; z-index: 50; display: grid; grid-template-columns: repeat(5, 1fr); padding: 6px 6px calc(6px + env(safe-area-inset-bottom)); background: color-mix(in srgb, var(--color-surface) 94%, transparent); border-top: 1px solid var(--color-border); backdrop-filter: blur(14px); }
+}
