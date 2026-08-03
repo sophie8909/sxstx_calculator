@@ -1,7 +1,15 @@
 import { fetchTextWithCache, RemoteDataError } from './dataCache.js';
 import { getSheetDefinition, SPREADSHEET_ID } from './sheetRegistry.js';
+import { mergeServerRows, normalizeSubmittedServerRows } from '../core/serverData.js';
 
 const requestCache = new Map();
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('sxstx:data-cache-updated', (event) => {
+    const gid = Number(event.detail?.gid);
+    if (Number.isFinite(gid)) requestCache.delete(gid);
+  });
+}
 
 export class SheetDataError extends RemoteDataError {
   constructor(code, message, definition, metadata = {}, options = {}) {
@@ -201,15 +209,24 @@ export async function loadUpgradeCostTablesForSeason(season) {
 }
 
 export async function loadServers() {
-  const rows = await loadSheet('servers');
-  return rows
-    .filter((row) => /^600\d{4}$/.test(row.server_id))
+  const [canonicalRows, submissionRows] = await Promise.all([
+    loadSheet('servers'),
+    loadSheet('serverSubmissions'),
+  ]);
+  const canonical = canonicalRows
+    .filter((row) => /^600\d{4}$/.test(String(row.server_id || '').trim()))
     .map((row) => ({
       ...row,
+      server_id: String(row.server_id || '').trim(),
       server_name: String(row.server_name || '').trim(),
       server_short: String(row.server_short || row.server_id.slice(3)).padStart(4, '0'),
       realm_id: String(row.realm_id || row.server_id.slice(3, 5)).padStart(2, '0'),
     }))
+    .filter((row) => row.server_name);
+  const submissions = normalizeSubmittedServerRows(submissionRows).rows;
+
+  return mergeServerRows(canonical, submissions)
+    .filter((row) => String(row.server_name || '').trim())
     .sort((left, right) => Number(left.server_id) - Number(right.server_id));
 }
 

@@ -41,6 +41,7 @@ import {
   parseExperienceInput,
 } from '../core/experience.js';
 import { loadRallyRules, loadServers } from '../services/dataService.js';
+import { getSheetDefinition } from '../services/sheetRegistry.js';
 import { CACHE_FALLBACK_EVENT, CACHE_UPDATED_EVENT, fetchTextWithCache } from '../services/dataCache.js';
 import { setReadOnlyField, summaryMetric } from '../shared/components.js';
 import { convertTargetLayout, convertRelicLayout } from '../core/targetLayouts.js';
@@ -1371,6 +1372,17 @@ function bindDataCacheHandlers(containers) {
   window.addEventListener(CACHE_UPDATED_EVENT, (event) => {
     const sheet = event.detail?.sheet || 'Google data';
     setGlobalDataStatus('ready', `${sheet} refreshed.`);
+    const serverGids = new Set([
+      getSheetDefinition('servers').gid,
+      getSheetDefinition('serverSubmissions').gid,
+    ]);
+    if (serverGids.has(Number(event.detail?.gid))) {
+      clearControllerRemoteRowsCaches();
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      void initGlobalContext(containers, saved).catch((error) => {
+        console.error('[server data refresh]', error);
+      });
+    }
   });
 }
 

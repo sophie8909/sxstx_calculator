@@ -53,15 +53,19 @@ test('canonical rows override submissions while form-only server names remain av
   assert.equal(map.get('6003206').server_name, '測試');
 });
 
-test('website server loading uses only the canonical server sheet', async () => {
+test('website server loading merges form submissions and omits unnamed servers', async () => {
   const [dataService, registry] = await Promise.all([
     readFile(new URL('../src/services/dataService.js', import.meta.url), 'utf8'),
     readFile(new URL('../src/services/sheetRegistry.js', import.meta.url), 'utf8'),
   ]);
 
   assert.match(registry, /servers:[\s\S]*gid: 1981289603/);
+  assert.match(registry, /serverSubmissions:[\s\S]*gid: 859085671/);
   assert.match(dataService, /loadSheet\('servers'\)/);
-  assert.doesNotMatch(dataService, /serverSubmissions|mergeServerRows|mergeCanonicalServerRows|data\/raw/);
+  assert.match(dataService, /loadSheet\('serverSubmissions'\)/);
+  assert.match(dataService, /mergeServerRows/);
+  assert.match(dataService, /\.filter\(\(row\) => String\(row\.server_name \|\| ''\)\.trim\(\)\)/);
+  assert.doesNotMatch(dataService, /data\/raw/);
 });
 
 test('World Rally reads the shared global context instead of fabricating a player suffix', async () => {

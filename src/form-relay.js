@@ -2,7 +2,7 @@ import './ads.js';
 import './theme.js';
 import './title-icons.js';
 import { initLanguage, applyStaticTranslations, t } from './i18n-inline.js';
-import { fetchTextWithCache } from './services/dataCache.js';
+import { CACHE_UPDATED_EVENT, fetchTextWithCache } from './services/dataCache.js';
 import { loadServers } from './services/dataService.js';
 import { readToolFromLocation } from './app/router.js';
 import { setReadOnlyField } from './shared/components.js';
@@ -27,6 +27,7 @@ const DUNGEON_CATEGORY = '【副本開啟】';
 const RELIC_CATEGORY = '【遺物】';
 const EVENT_CATEGORY = '【活動】';
 const RELIC_SERIES_SHEET = { id: '1boxKipNVI-tCaJEaX-AoOTijEgKcxKfilhbtxkLbX-E', gid: '2041024019' };
+const SERVER_DATA_GIDS = new Set(['1981289603', '859085671']);
 
 const FALLBACK_SERVERS = ['台港澳'];
 const EXP_REQUIRED_SUBMIT_TIMEOUT_MS = 15000;
@@ -781,6 +782,17 @@ async function init() {
     if (!savedState.selectedServer && !savedState.manualServer) applyInitialContext();
     updateManualToggleLabel();
     applyCategoryDescriptionLock();
+  });
+
+  window.addEventListener(CACHE_UPDATED_EVENT, async (event) => {
+    if (!SERVER_DATA_GIDS.has(String(event.detail?.gid || ''))) return;
+    const savedState = getRelayFormState();
+    serverRowsCache = null;
+    const refreshedServers = await fetchServerOptionsFromSheet();
+    window.__relayServers = refreshedServers;
+    fillServerOptions(refreshedServers);
+    restoreRelayFormState(savedState);
+    if (!savedState.selectedServer && !savedState.manualServer) applyInitialContext();
   });
 
   window.__relayServers = servers;
