@@ -25,5 +25,5 @@ export const WORLD_RALLY_STATE_I18N = {
   world_rally_realm_heading: { 'zh-Hant': '國度', 'zh-Hans': '国度', en: 'Current realm' },
   world_rally_realm_explanation: { 'zh-Hant': '此國度賽季中的所有伺服器', 'zh-Hans': '此国度赛季中的所有服务器', en: 'All available servers in the current realm.' },
   world_rally_group_heading: { 'zh-Hant': '世界集會：可加入同一公會', 'zh-Hans': '世界集会：可加入同一公会', en: 'World Rally guild group' },
-  world_rally_disabled_for_season: { 'zh-Hant': '所選賽季尚未啟用跨服公會世界集會。', 'zh-Hans': '所选赛季尚未启用跨服公会世界集会。', en: 'Cross-server guild World Rally is not enabled for the selected season.' },
-  world_rally_rule_unavailable: { 'zh-Hant': '無法取得所選賽季的世界集會規則。', 'zh-Hans': '无法取得所选赛季的世界集会规则。', en: 'World Rally rules are unavailable for the selected season.' },};
+  world_rally_disabled_for_season: { 'zh-Hant': '所選賽季尚未啟用跨服公會世界集結。', 'zh-Hans': '所选赛季尚未启用跨服公会世界集结。', en: 'Cross-server guild World Rally is not enabled for the selected season.' },
+  world_rally_rule_unavailable: { 'zh-Hant': '無法取得所選賽季的世界集結規則。', 'zh-Hans': '无法取得所选赛季的世界集结规则。', en: 'World Rally rules are unavailable for the selected season.' },};
