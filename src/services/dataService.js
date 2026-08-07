@@ -1,6 +1,7 @@
 import { fetchTextWithCache, RemoteDataError } from './dataCache.js';
 import { getSheetDefinition, SPREADSHEET_ID } from './sheetRegistry.js';
 import { mergeServerRows, normalizeSubmittedServerRows } from '../core/serverData.js';
+import { fillMissingUpgradeExperience } from '../core/upgradeExperience.js';
 
 const requestCache = new Map();
 
@@ -188,20 +189,22 @@ export async function loadUpgradeCosts(category, season) {
   if (!sheetKey) throw new RangeError(`Unknown upgrade category: ${category}`);
   const normalizedSeason = String(season || '').trim().toLowerCase();
   const rows = await loadSheet(sheetKey);
-  return rows
+  const filtered = rows
     .filter((row) => row.season === normalizedSeason)
     .map((row) => ({ ...row, category }));
+  return fillMissingUpgradeExperience(filtered, category);
 }
 
 export async function loadUpgradeCostTablesForSeason(season) {
   const entries = await Promise.all(
     Object.entries(UPGRADE_SHEET_KEYS).map(async ([category, sheetKey]) => {
       const rows = await loadSheet(sheetKey);
+      const filtered = rows
+        .filter((row) => row.season === String(season).toLowerCase())
+        .map((row) => ({ ...row, category }));
       return [
         sheetKey,
-        rows
-          .filter((row) => row.season === String(season).toLowerCase())
-          .map((row) => ({ ...row, category })),
+        fillMissingUpgradeExperience(filtered, category),
       ];
     })
   );
