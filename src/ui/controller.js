@@ -3108,6 +3108,7 @@ async function initGlobalContext(containers, saved = {}) {
     ? savedPlayer.serverId
     : deriveServerContext(savedServer?.server_id || savedServerValue, servers).serverId || '';
   await syncContext('initial-load', savedPlayer.ok ? savedPlayerNumber : playerInput.value, initialServerId);
+  await initTargetTimeControls(containers);
   window.addEventListener('languagechange', () => {
     placeholder.textContent = t('server_select_placeholder');
     Array.from(serverSelect.options).forEach((option) => {
@@ -3361,8 +3362,10 @@ async function initTargetTimeControls(containers) {
     triggerRecalculate(containers);
   };
 
-  presetSel.addEventListener('change', apply);
-  customInput.addEventListener('input', apply);
+  // These controls are refreshed when the server or season changes. Replace
+  // the handlers instead of stacking another listener on every refresh.
+  presetSel.onchange = apply;
+  customInput.oninput = apply;
 
   apply();
 }
@@ -3720,6 +3723,7 @@ async function handleSeasonChange(containers) {
   state.seasonId = seasonSelector?.value || state.seasonId || 's2';
   globalStore.update({ seasonId: state.seasonId });
   state.cacheFallback = false;
+  await initTargetTimeControls(containers);
   await initializeActiveFeature(
     containers,
     JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'),
