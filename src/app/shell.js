@@ -101,8 +101,8 @@ function preparePrimordialTabs(panel, copy) {
     ],
     onChange: (tab) => localStorage.setItem('sxstx:primordial-tab', tab),
   });
-  panel.prepend(tabs.tabList, ...tabs.panels);
   const byId = (id) => document.getElementById(id);
+  panel.prepend(byId('target-time-card'), tabs.tabList, ...tabs.panels);
   ['primordial-star-card', 'target-levels-card'].forEach((id) => tabs.panels[0].append(byId(id)));
   const experienceTarget = element('label', { className: 'section-card independent-character-target' }, [
     element('span', { text: copy.characterTarget }),
@@ -116,7 +116,6 @@ function preparePrimordialTabs(panel, copy) {
     return row;
   };
   resourcePanel.append(
-    byId('target-time-card'),
     byId('relic-card'),
     resourceRow('resource-row-top', ['equipment-card', 'skill-card']),
     resourceRow('resource-row-pets', ['pet-card']),

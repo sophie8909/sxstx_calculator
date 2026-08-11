@@ -2,7 +2,6 @@
 #primordial-workspace-panel-target > #target-levels-card { margin-bottom: 0 !important; }
 #primordial-workspace-panel-experience #character-exp-card { width: 100%; min-height: auto; }
 #primordial-workspace-panel-resources { min-width: 0; align-items: stretch; }
-#primordial-workspace-panel-resources > #target-time-card,
 #primordial-workspace-panel-resources > #relic-card,
 #primordial-workspace-panel-resources > #material-source-card { min-width: 0; margin-bottom: 0 !important; }
 .resource-row-top,

@@ -38,6 +38,9 @@ test('global context renders season, player, server, and status in order without
 test('Primordial workspace exposes exactly three independent layouts and transfer actions', async () => {
   const shell = await read('src/app/shell.js');
   assert.match(shell, /id: 'primordial-workspace'/);
+  assert.match(shell, /panel\.prepend\(byId\('target-time-card'\), tabs\.tabList, \.\.\.tabs\.panels\)/);
+  const resourceAppend = shell.match(/const resourcePanel = tabs\.panels\[2\];[\s\S]*?resourcePanel\.append\(([\s\S]*?)\);/)?.[1] || '';
+  assert.doesNotMatch(resourceAppend, /target-time-card/);
   assert.equal((shell.match(/\{ id: 'target', label: copy\.primordialTabs/g) || []).length, 1);
   assert.equal((shell.match(/\{ id: 'experience', label: copy\.primordialTabs/g) || []).length, 1);
   assert.equal((shell.match(/\{ id: 'resources', label: copy\.primordialTabs/g) || []).length, 1);
