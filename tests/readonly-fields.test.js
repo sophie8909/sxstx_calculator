@@ -60,7 +60,8 @@ test('derived score and automatic description displays use semantic calculated s
   const [html, relay] = await Promise.all([read('index.html'), read('src/form-relay.js')]);
   assert.match(html, /readonly-field readonly-field--summary[^>]*role="status" aria-live="polite"/);
   assert.match(relay, /setReadOnlyField\(descriptionInput\)/);
-  assert.match(relay, /relay-description-readonly-badge/);
+  assert.doesNotMatch(html, /relay-description-readonly-badge/);
+  assert.doesNotMatch(relay, /relay-description-readonly-badge/);
 });
 
 test('shared helper never presents a read-only control as unavailable', async () => {

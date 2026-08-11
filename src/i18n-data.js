@@ -792,10 +792,6 @@ export const I18N_DICTIONARIES = {
     "zh-Hant": "送出到 Google 表單",
     "zh-Hans": "送出到 Google 表单"
   },
-  "relay_open_google_form": {
-    "zh-Hant": "開啟原始 Google 表單",
-    "zh-Hans": "打开原始 Google 表单"
-  },
   "relay_submit_pending": {
     "zh-Hant": "送出中，稍後會顯示成功訊息。",
     "zh-Hans": "送出中，稍后会显示成功讯息。"
@@ -1095,7 +1091,6 @@ const EN_TRANSLATIONS = {
   relay_season_start_auto_description: { 'zh-Hant': '此日期將作為計算機自動推算當前賽季副本時間點的基準', 'zh-Hans': '此日期将作为计算机自动推算当前赛季副本时间点的基准', en: 'This date is used as the baseline for automatically estimating current-season dungeon times.' },
   relay_season_end_auto_description: { 'zh-Hant': '此日期將作為計算機自動推算賽季結束時間點的基準', 'zh-Hans': '此日期将作为计算机自动推算赛季结束时间点的基准', en: 'This date is used as the baseline for automatically estimating season end time.' },
   relay_submit: { en: 'Submit to Google Form' },
-  relay_open_google_form: { en: 'Open original Google Form' },
   relay_submit_pending: { en: 'Submitting. A success message will appear shortly.' },
   relay_submit_success: { en: 'Submitted to Google Form. Thanks for adding target time data.' },
   relay_validation_required: { en: 'Fill in server number, server, season, target date, and description first.' },

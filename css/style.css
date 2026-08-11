@@ -967,9 +967,7 @@ body.compact #results .grid > div {
 #enable-target-notify-btn,
 #clear-local-data-btn,
 #relay-submit-btn,
-#exp-required-submit-btn,
-#target-time-form-panel a[data-i18n='relay_open_google_form'],
-main a[data-i18n='relay_open_google_form'] {
+#exp-required-submit-btn {
   width: 100%;
 }
 
@@ -1009,9 +1007,7 @@ main a[data-i18n='relay_open_google_form'] {
   #enable-target-notify-btn,
   #clear-local-data-btn,
   #relay-submit-btn,
-  #exp-required-submit-btn,
-  #target-time-form-panel a[data-i18n='relay_open_google_form'],
-  main a[data-i18n='relay_open_google_form'] {
+  #exp-required-submit-btn {
     width: auto;
   }
 

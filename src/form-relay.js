@@ -448,7 +448,6 @@ function applyCategoryDescriptionLock() {
       ? t('relay_season_start_auto_description')
       : t('relay_season_end_auto_description');
     setReadOnlyField(descriptionInput);
-    document.getElementById('relay-description-readonly-badge')?.classList.remove('hidden');
     return;
   }
 
@@ -458,7 +457,6 @@ function applyCategoryDescriptionLock() {
     descriptionInput.classList.add('hidden');
     setReadOnlyField(descriptionInput, false);
     descriptionInput.disabled = true;
-    document.getElementById('relay-description-readonly-badge')?.classList.add('hidden');
     descriptionInput.required = false;
     if (dungeonSelect) {
       dungeonSelect.classList.remove('hidden');
@@ -480,7 +478,6 @@ function applyCategoryDescriptionLock() {
     descriptionInput.classList.add('hidden');
     setReadOnlyField(descriptionInput, false);
     descriptionInput.disabled = true;
-    document.getElementById('relay-description-readonly-badge')?.classList.add('hidden');
     descriptionInput.required = false;
     if (relicSelect) {
       relicSelect.classList.remove('hidden');
@@ -502,7 +499,6 @@ function applyCategoryDescriptionLock() {
     descriptionInput.classList.add('hidden');
     setReadOnlyField(descriptionInput, false);
     descriptionInput.disabled = true;
-    document.getElementById('relay-description-readonly-badge')?.classList.add('hidden');
     descriptionInput.required = false;
     if (eventSelect) {
       eventSelect.classList.remove('hidden');
@@ -534,7 +530,6 @@ function applyCategoryDescriptionLock() {
   }
   setReadOnlyField(descriptionInput, false);
   descriptionInput.required = true;
-  document.getElementById('relay-description-readonly-badge')?.classList.add('hidden');
 }
 function buildSubmittedDescription(category, body) {
   if (category === SEASON_START_CATEGORY) return SEASON_START_CATEGORY;
