@@ -18,9 +18,9 @@ test('uses the 10x rounded formula for pets', () => {
 
 test('fills only missing cost_exp values and preserves Google Sheet values', () => {
   const rows = fillMissingUpgradeExperience([
-    { season: 's4', level: 190, cost_exp: '' },
-    { season: 's4', level: 191, cost_exp: 12345 },
-    { season: 's4', level: 192, cost_exp: 0 },
+    { season: 's4', level: 190, cost_exp: '', cost_stone_ore: 1 },
+    { season: 's4', level: 191, cost_exp: 12345, cost_stone_ore: 1 },
+    { season: 's4', level: 192, cost_exp: 0, cost_stone_ore: 1 },
   ], 'equipment');
 
   assert.equal(rows[0].cost_exp, 57000);
@@ -28,10 +28,10 @@ test('fills only missing cost_exp values and preserves Google Sheet values', () 
   assert.equal(rows[2].cost_exp, 57570);
 });
 
-test('leaves unsupported or invalid formula ranges untouched', () => {
+test('drops level-only rows as missing data', () => {
   assert.equal(calculateUpgradeExperience('pet', 's4', 301), null);
   assert.deepEqual(
-    fillMissingUpgradeExperience([{ season: 's4', level: 301, cost_exp: '' }], 'pet'),
-    [{ season: 's4', level: 301, cost_exp: '' }]
+    fillMissingUpgradeExperience([{ season: 's4', level: 301 }], 'pet'),
+    []
   );
 });

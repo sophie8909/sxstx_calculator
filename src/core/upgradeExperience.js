@@ -126,11 +126,14 @@ export function calculateUpgradeExperience(category, season, level) {
 }
 
 export function fillMissingUpgradeExperience(rows, category) {
-  return (rows || []).map((row) => {
-    const existing = Number(row?.cost_exp);
-    if (Number.isFinite(existing) && existing > 0) return row;
+  return (rows || []).filter((row) => Object.keys(row || {})
+    .filter((key) => key.startsWith('cost_'))
+    .some((key) => String(row[key] ?? '').trim() !== ''))
+    .map((row) => {
+      const existing = Number(row?.cost_exp);
+      if (Number.isFinite(existing) && existing > 0) return row;
 
-    const calculated = calculateUpgradeExperience(category, row?.season, row?.level);
-    return calculated === null ? row : { ...row, cost_exp: calculated };
-  });
+      const calculated = calculateUpgradeExperience(category, row?.season, row?.level);
+      return calculated === null ? row : { ...row, cost_exp: calculated };
+    });
 }
