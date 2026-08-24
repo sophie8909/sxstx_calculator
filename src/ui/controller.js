@@ -44,7 +44,7 @@ import { loadRallyRules, loadServers } from '../services/dataService.js';
 import { getSheetDefinition } from '../services/sheetRegistry.js';
 import { CACHE_FALLBACK_EVENT, CACHE_UPDATED_EVENT, fetchTextWithCache } from '../services/dataCache.js';
 import { setReadOnlyField, summaryMetric } from '../shared/components.js';
-import { convertTargetLayout, convertRelicLayout } from '../core/targetLayouts.js';
+import { convertTargetLayout, convertRelicLayout, minimumFilledValue } from '../core/targetLayouts.js';
 import {
   buildPlayerNumber,
   deriveServerContext,
@@ -181,6 +181,7 @@ const TARGET_RECOMMENDATION_FIELDS = {
   pet_level: 'target-pet_resonance',
   relic_level: 'target-relic_resonance',
 };
+const CURRENT_LEVEL_CATEGORIES = ['equipment', 'skill', 'pet'];
 let dungeonPowerRowsCache = null;
 let primordialRecommendationRowsCache = null;
 let fragmentRowsCache = null;
@@ -405,8 +406,11 @@ function appendStaticTooltip(target, text) {
   if (existing) {
     const icon = existing.querySelector('.tooltip-icon');
     const body = existing.querySelector('.tooltip-text');
-    if (icon) icon.setAttribute('aria-label', text);
-    if (body) body.textContent = text;
+    if (icon) icon.setAttribute('aria-hidden', 'true');
+    if (body) {
+      body.setAttribute('role', 'tooltip');
+      body.textContent = text;
+    }
     return;
   }
 
@@ -414,7 +418,7 @@ function appendStaticTooltip(target, text) {
   target.classList.add('label-with-help');
   target.insertAdjacentHTML(
     'beforeend',
-    `<span class="tooltip"><span class="tooltip-icon" tabindex="0" role="button" aria-label="${text}">i</span><span class="tooltip-text">${text}</span></span>`
+    `<span class="tooltip"><span class="tooltip-icon" aria-hidden="true">i</span><span class="tooltip-text" role="tooltip">${text}</span></span>`
   );
 }
 
@@ -1786,6 +1790,67 @@ function updateRelicModeButtons() {
     button.classList.toggle('is-active', active);
     button.setAttribute('aria-pressed', String(active));
   });
+}
+
+function getCurrentLevelLayout(category) {
+  if (!CURRENT_LEVEL_CATEGORIES.includes(category)) return null;
+
+  const modeSelect = document.getElementById(`${category}-current-layout-mode`);
+  const compactInput = document.getElementById(`${category}-resonance-current`);
+  const container = modeSelect?.parentElement?.parentElement;
+  if (!modeSelect || !compactInput || !container) return null;
+
+  return {
+    modeSelect,
+    compactInput,
+    container,
+    detailedInputs: Array.from(container.querySelectorAll('.current-layout-detailed input')),
+  };
+}
+
+function updateCurrentLevelLayout(category) {
+  const layout = getCurrentLevelLayout(category);
+  if (!layout) return;
+
+  const mode = layout.modeSelect.value || 'compact';
+  layout.container.querySelector('.current-layout-compact')?.classList.toggle('hidden', mode !== 'compact');
+  layout.container.querySelector('.current-layout-detailed')?.classList.toggle('hidden', mode !== 'detailed');
+  layout.container.querySelectorAll('.current-layout-mode-btn').forEach((button) => {
+    button.setAttribute('aria-pressed', String(button.dataset.mode === mode));
+  });
+}
+
+function syncSavedCompactCurrentLevels() {
+  CURRENT_LEVEL_CATEGORIES.forEach((category) => {
+    const layout = getCurrentLevelLayout(category);
+    if (!layout) return;
+
+    if (layout.modeSelect.value === 'compact') {
+      if (layout.compactInput.value === '') layout.compactInput.value = minimumFilledValue(layout.detailedInputs.map((input) => input.value));
+      layout.detailedInputs.forEach((input) => { input.value = layout.compactInput.value; });
+    }
+    updateCurrentLevelLayout(category);
+  });
+}
+
+function switchCurrentLevelLayout(containers, category, nextMode) {
+  const layout = getCurrentLevelLayout(category);
+  const currentMode = layout?.modeSelect.value || 'compact';
+  if (!layout || currentMode === nextMode || !['compact', 'detailed'].includes(nextMode)) return;
+
+  if (nextMode === 'compact') layout.compactInput.value = minimumFilledValue(layout.detailedInputs.map((input) => input.value));
+  layout.detailedInputs.forEach((input) => { input.value = layout.compactInput.value; });
+  layout.modeSelect.value = nextMode;
+  updateCurrentLevelLayout(category);
+  saveAllInputs();
+  triggerRecalculate(containers);
+}
+
+function mirrorCompactCurrentLevelInput(input) {
+  const category = CURRENT_LEVEL_CATEGORIES.find((key) => input?.id === `${key}-resonance-current`);
+  const layout = category ? getCurrentLevelLayout(category) : null;
+  if (!layout) return;
+  layout.detailedInputs.forEach((detailedInput) => { detailedInput.value = input.value; });
 }
 
 function getFragmentDisplayName(row) {
@@ -3478,6 +3543,7 @@ function bindGlobalHandlers(containers) {
 
       const t = e.target;
       if (t.tagName === 'INPUT') {
+        mirrorCompactCurrentLevelInput(t);
         if (t.id?.startsWith('equipment-season-')) {
           updateEquipmentSeasonScore();
           saveAllInputs();
@@ -3606,6 +3672,12 @@ function bindGlobalHandlers(containers) {
       return;
     }
 
+    const currentLayoutButton = e.target.closest('.current-layout-mode-btn');
+    if (currentLayoutButton) {
+      switchCurrentLevelLayout(containers, currentLayoutButton.dataset.category, currentLayoutButton.dataset.mode);
+      return;
+    }
+
     const targetLayoutButton = e.target.closest('.target-layout-mode-btn');
     if (targetLayoutButton) {
       switchTargetLayout(containers, targetLayoutButton.dataset.mode);
@@ -3680,6 +3752,7 @@ async function initializeActiveFeature(containers, saved = {}, { refresh = false
       renderAll(containers);
       bindTooltipLayers();
       loadAllInputs(['season-select']);
+      syncSavedCompactCurrentLevels();
       renderRelicDistribution(containers.relicDistributionInputs);
       restoreDungeonAutoTargetLevel();
       updateRelicModeButtons();

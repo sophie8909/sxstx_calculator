@@ -656,6 +656,11 @@ body.app-loading .app-loading-overlay {
   font-size: .875rem;
 }
 
+.target-layout-selector {
+  width: fit-content;
+  margin-inline: auto;
+}
+
 .result-item {
   border: 1px solid var(--border);
   border-inline-start: 3px solid var(--metric-default-accent);

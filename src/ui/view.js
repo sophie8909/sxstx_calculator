@@ -69,10 +69,9 @@ function createTooltip(helpText) {
   const icon = el('span', ['tooltip-icon']);
   const text = el('span', ['tooltip-text']);
 
-  icon.tabIndex = 0;
-  icon.setAttribute('role', 'button');
-  icon.setAttribute('aria-label', helpText);
+  icon.setAttribute('aria-hidden', 'true');
   icon.textContent = 'i';
+  text.setAttribute('role', 'tooltip');
   text.textContent = helpText;
 
   tooltip.append(icon, text);
@@ -191,7 +190,7 @@ export function renderTargetLevels(container) {
   const relicMode = saved['target-relic-layout-mode'] || 'element';
   container.className = 'space-y-4';
   container.innerHTML = '';
-  const selector = el('div', ['target-layout-selector', 'hidden', 'md:flex', 'justify-center']);
+  const selector = el('div', ['target-layout-selector', 'segmented-control', 'flex', 'justify-center']);
   selector.setAttribute('role', 'group'); selector.setAttribute('aria-label', t('target_layout_mode_aria'));
   const layoutSelect = el('select', ['hidden']); layoutSelect.id = 'target-level-layout-mode'; ['compact', 'detailed'].forEach((mode) => { const option = el('option'); option.value = mode; option.textContent = t('target_layout_' + mode); layoutSelect.appendChild(option); }); layoutSelect.value = layoutMode; container.appendChild(layoutSelect);
   ['compact', 'detailed'].forEach((mode) => { const button = el('button', ['target-layout-mode-btn', 'rounded-full', 'px-3', 'py-1', 'text-sm', 'font-semibold']); button.type = 'button'; button.dataset.mode = mode; button.textContent = t('target_layout_' + mode); button.setAttribute('aria-pressed', String(layoutMode === mode)); selector.appendChild(button); });
@@ -292,7 +291,6 @@ export function renderRelicDistribution(container) {
 }
 
 export function renderEquipInputs(container) {
-  const frag = document.createDocumentFragment();
   const categoriesEquip = categories.filter((category) => category.id.startsWith('equipment_'));
   const col1 = el('div');
   const col2 = el('div');
@@ -304,12 +302,10 @@ export function renderEquipInputs(container) {
 
   const wrap = el('div', ['grid', 'grid-cols-1', 'md:grid-cols-2', 'gap-x-6', 'gap-y-4']);
   wrap.append(col1, col2);
-  frag.appendChild(wrap);
-  container.appendChild(frag);
+  renderCurrentLevelInputs(container, 'equipment', wrap);
 }
 
 export function renderSkillInputs(container) {
-  const frag = document.createDocumentFragment();
   const combatCol = el('div');
   const arcaneCol = el('div');
 
@@ -323,20 +319,63 @@ export function renderSkillInputs(container) {
 
   const wrap = el('div', ['grid', 'grid-cols-1', 'md:grid-cols-2', 'gap-x-6', 'gap-y-4']);
   wrap.append(combatCol, arcaneCol);
-  frag.appendChild(wrap);
-  container.appendChild(frag);
+  renderCurrentLevelInputs(container, 'skill', wrap);
 }
 
 export function renderPetInputs(container) {
-  const frag = document.createDocumentFragment();
   const petRow = el('div', ['grid', 'grid-cols-1', 'md:grid-cols-2', 'lg:grid-cols-4', 'gap-4']);
 
   categories
     .filter((category) => category.id.startsWith('pet'))
     .forEach((category) => petRow.appendChild(createInputGroup(`${category.id}-current`, getCategoryLabel(category.id), t('current_placeholder'))));
 
-  frag.appendChild(petRow);
-  container.appendChild(frag);
+  renderCurrentLevelInputs(container, 'pet', petRow);
+}
+
+function renderCurrentLevelInputs(container, category, detailedContent) {
+  const saved = JSON.parse(localStorage.getItem('sxstxCalculatorData') || '{}');
+  const modeId = `${category}-current-layout-mode`;
+  const compactId = `${category}-resonance-current`;
+  const hasSavedDetailedValues = Array.from(detailedContent.querySelectorAll('input'))
+    .some(({ id }) => saved[id] !== '' && saved[id] !== null && saved[id] !== undefined);
+  const mode = saved[modeId] || (hasSavedDetailedValues ? 'detailed' : 'compact');
+
+  container.innerHTML = '';
+
+  const selectorWrap = el('div', ['flex', 'justify-center', 'mb-4']);
+  const select = el('select', ['hidden']);
+  select.id = modeId;
+  ['compact', 'detailed'].forEach((value) => {
+    const option = el('option');
+    option.value = value;
+    option.textContent = t(`target_layout_${value}`);
+    select.appendChild(option);
+  });
+  select.value = mode;
+
+  const selector = el('div', ['segmented-control']);
+  selector.setAttribute('role', 'group');
+  selector.setAttribute('aria-label', t(`${category}_input_mode`));
+  ['compact', 'detailed'].forEach((value) => {
+    const button = el('button', ['current-layout-mode-btn', 'rounded-full', 'px-3', 'py-1', 'text-sm', 'font-semibold']);
+    button.type = 'button';
+    button.dataset.category = category;
+    button.dataset.mode = value;
+    button.textContent = t(`target_layout_${value}`);
+    button.setAttribute('aria-pressed', String(mode === value));
+    selector.appendChild(button);
+  });
+  selectorWrap.append(select, selector);
+
+  const compact = el('div', ['current-layout-compact']);
+  compact.classList.toggle('hidden', mode !== 'compact');
+  compact.appendChild(createInputGroup(compactId, t('current_resonance_level'), t('current_placeholder')));
+
+  const detailed = el('div', ['current-layout-detailed']);
+  detailed.classList.toggle('hidden', mode !== 'detailed');
+  detailed.appendChild(detailedContent);
+
+  container.append(selectorWrap, compact, detailed);
 }
 
 export function renderProduction(container) {
