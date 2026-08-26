@@ -1215,6 +1215,7 @@ const EN_TRANSLATIONS = {
   gift_kingdom_coins_title: { 'zh-Hant': '\u6301\u6709\u570b\u5ea6\u5e63', 'zh-Hans': '\u6301\u6709\u56fd\u5ea6\u5e01', en: 'Owned nation coins' },
   gift_kingdom_coin_label: { 'zh-Hant': '{kingdom}', 'zh-Hans': '{kingdom}', en: '{kingdom}' },
   gift_kingdom_forest: { 'zh-Hant': '\u68ee\u4e4b\u570b', 'zh-Hans': '\u68ee\u4e4b\u56fd', en: 'Forest Kingdom' },
+  gift_kingdom_mountain: { 'zh-Hant': '\u5c71\u4e4b\u570b', 'zh-Hans': '\u5c71\u4e4b\u56fd', en: 'Mountain Kingdom' },
   gift_kingdom_marsh: { 'zh-Hant': '\u6fa4\u4e4b\u570b', 'zh-Hans': '\u6cfd\u4e4b\u56fd', en: 'Marsh Kingdom' },
   gift_kingdom_dragon: { 'zh-Hant': '\u9f8d\u4e4b\u570b', 'zh-Hans': '\u9f99\u4e4b\u56fd', en: 'Dragon Kingdom' },
   gift_kingdom_wing: { 'zh-Hant': '\u7fbd\u4e4b\u570b', 'zh-Hans': '\u7fbd\u4e4b\u56fd', en: 'Wing Kingdom' },

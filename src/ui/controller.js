@@ -2061,6 +2061,7 @@ function getGiftCategoryOptions() {
 
 const GIFT_KINGDOMS = [
   { id: 'forest', labelKey: 'gift_kingdom_forest', aliases: ['森之國', '森之国'] },
+  { id: 'mountain', labelKey: 'gift_kingdom_mountain', aliases: ['山之國', '山之国'] },
   { id: 'marsh', labelKey: 'gift_kingdom_marsh', aliases: ['澤之國', '泽之国'] },
   { id: 'dragon', labelKey: 'gift_kingdom_dragon', aliases: ['龍之國', '龙之国'] },
   { id: 'wing', labelKey: 'gift_kingdom_wing', aliases: ['羽之國', '羽之国'] },
