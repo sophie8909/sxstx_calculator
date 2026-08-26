@@ -3104,7 +3104,6 @@ async function initGlobalContext(containers, saved = {}) {
   const notifyContext = (context, source, previous) => {
     const changed = ['playerNumber', 'playerSuffix', 'serverId', 'serverName', 'realmCode', 'realm', 'world']
       .some((key) => previous[key] !== context[key]);
-    if (!changed) return false;
     Object.assign(state, {
       playerNumber: context.playerNumber,
       playerSuffix: context.playerSuffix,
@@ -3112,6 +3111,7 @@ async function initGlobalContext(containers, saved = {}) {
       realmCode: context.realmCode,
       worldNumber: context.worldNumber,
     });
+    if (!changed) return false;
     globalStore.update({ ...context, parsedServer: context.server });
     window.dispatchEvent(new CustomEvent('sxstx:global-context-change', { detail: { ...context, source } }));
     return true;
@@ -4007,4 +4007,3 @@ async function init() {
 }
 
 document.addEventListener('DOMContentLoaded', init);
-

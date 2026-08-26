@@ -237,3 +237,18 @@ test('14. a stale cache notice does not reactivate the global overlay', async ()
   assert.match(handler, /showing cached data/);
   assert.doesNotMatch(handler, /setAppLoading\(true\)/);
 });
+
+test('15. initial global context hydrates the target-time filter state even when persisted context is unchanged', async () => {
+  const controller = await readFile(new URL('../src/ui/controller.js', import.meta.url), 'utf8');
+  const notifyContext = controller.slice(
+    controller.indexOf('const notifyContext ='),
+    controller.indexOf('const syncContext =')
+  );
+  const hydrateIndex = notifyContext.indexOf('Object.assign(state');
+  const unchangedReturnIndex = notifyContext.indexOf('if (!changed) return false;');
+
+  assert.ok(hydrateIndex >= 0, 'legacy calculator state must be hydrated');
+  assert.ok(unchangedReturnIndex >= 0, 'unchanged persisted context should still avoid duplicate notifications');
+  assert.ok(hydrateIndex < unchangedReturnIndex, 'legacy state hydration must happen before the unchanged-context early return');
+  assert.match(notifyContext, /serverName: context\.serverName/);
+});
