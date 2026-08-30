@@ -88,11 +88,10 @@ function normalizeRange(range) {
   const from = Number(range?.from);
   const to = Number(range?.to);
   if (!Number.isFinite(from) || !Number.isFinite(to)) return '';
-  if (from === to) return `${from}-${to}`;
   return `${Math.min(from, to)}-${Math.max(from, to)}`;
 }
 
-function getCumulativeWithMeta(costTable, level, options = {}) {
+function getCumulativeWithMeta(costTable, level) {
   const template = getTableTemplate(costTable);
   if (!costTable || costTable.length === 0) return { row: template, estimatedRanges: [], exact: false };
   if (level <= 0) return { row: template, estimatedRanges: [], exact: true };
@@ -135,7 +134,7 @@ function getCumulativeWithMeta(costTable, level, options = {}) {
       const deltaPerLevel = (last - prev) / span;
       estimated[key] = Math.max(0, Math.round(last + deltaPerLevel * (requestLevel - lowerLevel)));
     });
-    return { row: estimated, estimatedRanges: options.trackRange ? [range] : [range], exact: false };
+    return { row: estimated, estimatedRanges: [range], exact: false };
   }
 
   const upperLevel = Number(upper.level) || 0;
@@ -150,7 +149,7 @@ function getCumulativeWithMeta(costTable, level, options = {}) {
     const upperValue = Number(upper[key]) || 0;
     estimated[key] = Math.max(0, Math.round(lowerValue + (upperValue - lowerValue) * ratio));
   });
-  return { row: estimated, estimatedRanges: options.trackRange ? [range] : [range], exact: false };
+  return { row: estimated, estimatedRanges: [range], exact: false };
 }
 
 export function getCumulative(costTable, level) {
@@ -176,8 +175,8 @@ export function getCharacterCumulativeExpFromTable(table, level) {
 export function getCostDelta(costTable, currentLevel, targetLevel) {
   if (!costTable) return { materials: {}, estimatedRanges: [] };
 
-  const start = getCumulativeWithMeta(costTable, currentLevel - 1, { trackRange: true });
-  const end = getCumulativeWithMeta(costTable, targetLevel - 1, { trackRange: true });
+  const start = getCumulativeWithMeta(costTable, currentLevel - 1);
+  const end = getCumulativeWithMeta(costTable, targetLevel - 1);
   const materials = {};
   const estimatedRangesMap = new Map();
 

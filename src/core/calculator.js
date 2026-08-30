@@ -262,37 +262,17 @@ function getTargetForCategory(categoryId, targets) {
   return 0;
 }
 
-function getCategoryCostConfig(categoryId, gameData, cumulativeCostData, labels) {
+function getCategoryCostTable(categoryId, cumulativeCostData) {
   if (categoryId.startsWith('equipment_')) {
-    return {
-      costTable: cumulativeCostData.equipment,
-      sourceTable: gameData.equipmentUpgradeCosts,
-      itemName: labels.equipment,
-      affected: ['stoneOre', 'rola', 'refiningStone'],
-    };
+    return cumulativeCostData.equipment;
   }
   if (categoryId.startsWith('skill_')) {
-    return {
-      costTable: cumulativeCostData.skill,
-      sourceTable: gameData.skillUpgradeCosts,
-      itemName: labels.skill,
-      affected: ['essence'],
-    };
+    return cumulativeCostData.skill;
   }
   if (categoryId.startsWith('pet')) {
-    return {
-      costTable: cumulativeCostData.pet,
-      sourceTable: gameData.petUpgradeCosts,
-      itemName: labels.pet,
-      affected: ['freezeDried'],
-    };
+    return cumulativeCostData.pet;
   }
-  return {
-    costTable: cumulativeCostData[categoryId],
-    sourceTable: gameData.characterUpgradeCosts,
-    itemName: labels.character,
-    affected: ['exp'],
-  };
+  return cumulativeCostData[categoryId];
 }
 
 export function calculateUpgradeResults(input, context) {
@@ -307,7 +287,6 @@ export function calculateUpgradeResults(input, context) {
   const {
     categories,
     cumulativeCostData,
-    gameData,
     materials,
     productionSources,
     relicCountRequired,
@@ -374,14 +353,8 @@ export function calculateUpgradeResults(input, context) {
     const targetLevel = Math.max(currentLevel, getTargetForCategory(category.id, targets));
     if (targetLevel <= currentLevel) return;
 
-    const costConfig = getCategoryCostConfig(
-      category.id,
-      gameData,
-      cumulativeCostData,
-      context.labels
-    );
-
-    const { materials: delta, estimatedRanges } = getCostDelta(costConfig.costTable, currentLevel, targetLevel);
+    const costTable = getCategoryCostTable(category.id, cumulativeCostData);
+    const { materials: delta, estimatedRanges } = getCostDelta(costTable, currentLevel, targetLevel);
     addMaterialDelta(required, delta);
     mergeEstimateHints(estimated, delta, estimatedRanges);
   });

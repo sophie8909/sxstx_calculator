@@ -565,17 +565,8 @@ export function computeAll(containers) {
     {
       categories,
       cumulativeCostData: state.cumulativeCostData,
-      gameData: state.gameData,
-      labels: {
-        character: 'character',
-        equipment: 'equipment',
-        skill: 'skill',
-        pet: 'pet',
-      },
       materials,
       messages: {
-        missingItemLevel: (itemName, level) => 'Missing data: ' + itemName + ' level ' + level,
-        missingRelicLevel: (level) => 'Missing data: relic level ' + level,
         relicCountError: 'Invalid relic count. Please make sure the total is 20.',
       },
       productionSources,
