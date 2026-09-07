@@ -2139,8 +2139,45 @@ function calculateGiftFavorNeeded(levelRows, currentLevel, currentFavor, targetL
 }
 
 function getGiftAvailableKingdoms(row, category) {
-  const value = String(row?.categories?.[category] || '').trim();
-  return value || t('gift_no_available_kingdoms');
+  const candidateRows = category ? getGiftKingdomRowsByCategory(String(row?.categories?.[category] || '')) : getGiftAvailableKingdomRowsAll(row);
+  return candidateRows.length
+    ? candidateRows.map((kingdom) => getGiftKingdomLabel(kingdom)).join(', ')
+    : t('gift_no_available_kingdoms');
+}
+
+function getGiftKingdomRowsByCategory(value) {
+  const source = String(value || '').trim();
+  if (!source) return [];
+
+  return GIFT_KINGDOMS
+    .map((kingdom, fallbackRank) => {
+      const aliasRanks = kingdom.aliases
+        .map((alias) => source.indexOf(alias))
+        .filter((rank) => rank >= 0);
+      if (!aliasRanks.length) return null;
+      return {
+        ...kingdom,
+        sourceRank: Math.min(...aliasRanks) * GIFT_KINGDOMS.length + fallbackRank,
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.sourceRank - b.sourceRank);
+}
+
+function getGiftAvailableKingdomRowsAll(row) {
+  const rowsByKingdom = new Map();
+  const categories = row?.categories || {};
+
+  Object.values(categories).forEach((value) => {
+    getGiftKingdomRowsByCategory(value).forEach((kingdom) => {
+      const existing = rowsByKingdom.get(kingdom.id);
+      if (!existing || kingdom.sourceRank < existing.sourceRank) {
+        rowsByKingdom.set(kingdom.id, kingdom);
+      }
+    });
+  });
+
+  return [...rowsByKingdom.values()].sort((a, b) => a.sourceRank - b.sourceRank);
 }
 
 function getGiftOwnedGiftRows(qualityRows) {
@@ -2597,7 +2634,7 @@ function updateGiftCalculatorResult() {
     renderGiftPlanSection('gift_plan_min_overflow_title', minimumOverflowPlan, totalNeeded),
     renderGiftPlanSection('gift_plan_owned_first_title', ownedFirstPlan, totalNeeded),
   ].join('');
-  const comparisonResults = qualityRows.map((row) => calculateGiftQualityResult(row, totalNeeded, selectedCategory));
+  const comparisonResults = qualityRows.map((row) => calculateGiftQualityResult(row, totalNeeded, null));
   comparison.innerHTML = renderGiftComparisonTable(comparisonResults);
 }
 
@@ -4015,3 +4052,4 @@ async function init() {
 }
 
 document.addEventListener('DOMContentLoaded', init);
+

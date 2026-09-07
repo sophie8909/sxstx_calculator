@@ -207,8 +207,7 @@ function updateLabels(root, tool) {
     });
   });
   const tabGroups = [
-    ['primordial-workspace', copy.primordialTabs], ['equipment-workspace', copy.equipmentTabs],
-    ['gift-workspace', copy.giftTabs], ['contribution-workspace', copy.contributionTabs],
+    ['primordial-workspace', copy.primordialTabs], ['equipment-workspace', copy.equipmentTabs], ['contribution-workspace', copy.contributionTabs],
   ];
   tabGroups.forEach(([prefix, labels]) => {
     root.querySelectorAll(`[id^="${prefix}-tab-"]`).forEach((tab, index) => { tab.textContent = labels[index]; });
@@ -297,7 +296,6 @@ function mountAppShell() {
   workspace.append(...panels);
   preparePrimordialTabs(document.getElementById('calculator-page-content'), copy);
   prepareEquipmentTabs(document.getElementById('fragment-calculator-panel'), copy);
-  prepareGiftTabs(document.getElementById('gift-calculator-panel'), copy);
   prepareContributionTabs(document.getElementById('target-time-form-panel'), copy);
 
   legacyLayout.classList.add('legacy-layout-source');
@@ -314,3 +312,4 @@ function mountAppShell() {
 }
 
 document.addEventListener('DOMContentLoaded', mountAppShell);
+
