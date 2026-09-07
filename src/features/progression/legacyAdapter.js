@@ -46,14 +46,7 @@ export const categories = [
   { id: 'pet4', name: 'Pet 4', group: 'Pets' },
 ];
 
-export const seasonOptions = [
-  { id: 's1', name: 'S1', readonly: false, season: 1 },
-  { id: 's2', name: 'S2', readonly: false, season: 2 },
-  { id: 's3', name: 'S3', readonly: false, season: 3 },
-  { id: 's4', name: 'S4', readonly: false, season: 4 },
-  { id: 's5', name: 'S5', readonly: false, season: 5 },
-  { id: 'total', name: 'Total', readonly: true },
-];
+export { seasonOptions } from '../../services/seasons.js';
 
 export const targetLevelConfig = [
   { id: 'character', name: 'Character' },

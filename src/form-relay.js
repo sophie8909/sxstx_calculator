@@ -1,8 +1,10 @@
+import { loadSeasonOptions, fillSeasonSelect } from './services/seasons.js';
 import './ads.js';
 import './theme.js';
 import './title-icons.js';
 import { initLanguage, applyStaticTranslations, t } from './i18n-inline.js';
 import { CACHE_UPDATED_EVENT, fetchTextWithCache } from './services/dataCache.js';
+import { getSheetDefinition } from './services/sheetRegistry.js';
 import { loadServers } from './services/dataService.js';
 import { readToolFromLocation } from './app/router.js';
 import { setReadOnlyField } from './shared/components.js';
@@ -711,6 +713,10 @@ function submitExpRequiredForm() {
 async function init() {
   await initLanguage();
   applyRelayTranslations();
+  await loadSeasonOptions();
+  for (const id of ['relay-season', 'exp-required-season']) {
+    fillSeasonSelect(document.getElementById(id), { uppercase: true });
+  }
 
   const dateInput = document.getElementById('relay-date');
   const submitButton = document.getElementById('relay-submit-btn');
@@ -780,6 +786,18 @@ async function init() {
   });
 
   window.addEventListener(CACHE_UPDATED_EVENT, async (event) => {
+    if (Number(event.detail?.gid) === getSheetDefinition('seasonScore').gid) {
+      try {
+        await loadSeasonOptions();
+        for (const id of ['relay-season', 'exp-required-season']) {
+          fillSeasonSelect(document.getElementById(id), { uppercase: true });
+        }
+        await fillDungeonOptions();
+        await fillRelicSeriesOptions();
+      } catch (error) {
+        showFeedback(error.message, 'error');
+      }
+    }
     if (!SERVER_DATA_GIDS.has(String(event.detail?.gid || ''))) return;
     const savedState = getRelayFormState();
     serverRowsCache = null;

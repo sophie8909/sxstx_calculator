@@ -19,7 +19,7 @@ function getLocale() {
 }
 
 function getSeasonLabel(season) {
-  return t(`season_name_${season.id}`);
+  return season.name;
 }
 
 function getCategoryLabel(id) {

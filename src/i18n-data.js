@@ -371,26 +371,6 @@ export const I18N_DICTIONARIES = {
     "zh-Hant": "賽季選項：",
     "zh-Hans": "赛季选项："
   },
-  "season_name_s1": {
-    "zh-Hant": "S1 澤之國",
-    "zh-Hans": "S1 泽之国"
-  },
-  "season_name_s2": {
-    "zh-Hant": "S2 龍之國",
-    "zh-Hans": "S2 龙之国"
-  },
-  "season_name_s3": {
-    "zh-Hant": "S3 羽之國",
-    "zh-Hans": "S3 羽之国"
-  },
-  "season_name_s4": {
-    "zh-Hant": "S4 哈帕迪",
-    "zh-Hans": "S4 哈帕迪"
-  },
-  "season_name_s5": {
-    "zh-Hant": "S5 伊格尼斯",
-    "zh-Hans": "S5 伊格尼斯"
-  },
   "season_name_total": {
     "zh-Hant": "累計",
     "zh-Hans": "累计"
@@ -966,11 +946,6 @@ const EN_TRANSLATIONS = {
   rola_cost_header: { en: 'Rola cost' },
   role_level: { en: 'Current character level' },
   season_label: { en: 'Season:' },
-  season_name_s1: { en: 'S1 Kingdom of Marsh' },
-  season_name_s2: { en: 'S2 Kingdom of Dragon' },
-  season_name_s3: { en: 'S3 Kingdom of Feather' },
-  season_name_s4: { en: 'S4 Hapadi' },
-  season_name_s5: { en: 'S5 Ignis' },
   season_name_total: { en: 'Cumulative' },
   season_tooltip: { en: 'Choose the season you are playing. This affects level, material, and EXP calculations.' },
   section_cart: { en: 'Cart output/hour' },

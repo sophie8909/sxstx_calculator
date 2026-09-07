@@ -1,3 +1,4 @@
+import { loadSeasonOptions, fillSeasonSelect } from '../services/seasons.js';
 // controller.js
 
 import {
@@ -1373,7 +1374,20 @@ function bindDataCacheHandlers(containers) {
     if (containers?.results && globalStore.getState().activeTool === 'primordial') triggerRecalculate(containers);
   });
 
-  window.addEventListener(CACHE_UPDATED_EVENT, (event) => {
+  window.addEventListener(CACHE_UPDATED_EVENT, async (event) => {
+    if (Number(event.detail?.gid) === getSheetDefinition('seasonScore').gid) {
+      try {
+        await loadSeasonOptions();
+        const select = document.getElementById('season-select');
+        fillSeasonSelect(select);
+        if (select?.value && select.value !== state.seasonId) {
+          select.dispatchEvent(new Event('change'));
+        }
+      } catch (error) {
+        setGlobalDataStatus('error', error.message);
+        return;
+      }
+    }
     const sheet = event.detail?.sheet || 'Google data';
     setGlobalDataStatus('ready', `${sheet} refreshed.`);
     const serverGids = new Set([
@@ -1568,18 +1582,11 @@ function initSeasonSelector(containers, saved = null) {
   const seasonSelector = document.getElementById('season-select');
   if (!seasonSelector) return;
 
-  seasonSelector.innerHTML = '';
-  seasonOptions.forEach((s) => {
-    if (s.readonly) return;
-    const opt = document.createElement('option');
-    opt.value = s.id;
-    opt.textContent = t(`season_name_${s.id}`);
-    seasonSelector.appendChild(opt);
-  });
+  fillSeasonSelect(seasonSelector);
 
   const data = saved ?? JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
   const savedSeason = data['season-select'];
-  const defaultId = seasonOptions[0]?.id || 's2';
+  const defaultId = seasonOptions[0].id;
 
   if (savedSeason && seasonOptions.some((s) => s.id === savedSeason)) {
     seasonSelector.value = savedSeason;
@@ -1607,7 +1614,7 @@ function refreshSeasonSelectorLabels() {
   if (!seasonSelector) return;
 
   Array.from(seasonSelector.options).forEach((option) => {
-    option.textContent = t(`season_name_${option.value}`);
+    option.textContent = seasonOptions.find((season) => season.id === option.value)?.name || option.value.toUpperCase();
   });
 }
 
@@ -3937,7 +3944,7 @@ async function init() {
   let containers = null;
   let saved = {};
 
-  await runShellBootstrap({
+  const bootstrap = await runShellBootstrap({
     documentLike: document,
     loadingMessage: t('loading_app_data'),
     onLoadingChange(loading) {
@@ -3956,6 +3963,7 @@ async function init() {
       bindGlobalHandlers(containers);
       bindDataCacheHandlers(containers);
       saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      await loadSeasonOptions();
       initSeasonSelector(containers, saved);
       bindTargetTimeFormToggle();
 
@@ -3986,7 +3994,7 @@ async function init() {
       renderBootstrapError(document, error, () => init());
     },
   });
-  if (!containers) return;
+  if (!bootstrap.ok || !containers) return;
   setupAutoUpdate();
   setInterval(() => updateCurrentTime(containers.currentTimeDisplay), 1000);
   updateCurrentTime(containers.currentTimeDisplay);
