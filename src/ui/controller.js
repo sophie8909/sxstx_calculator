@@ -1,3 +1,4 @@
+import { parseGiftSheet } from '../features/gift/sheet.js';
 import { loadSeasonOptions, fillSeasonSelect } from '../services/seasons.js';
 // controller.js
 
@@ -188,6 +189,7 @@ let primordialRecommendationRowsCache = null;
 let fragmentRowsCache = null;
 let dungeonFragmentYieldRowsCache = null;
 let giftRowsCache = null;
+let giftKingdoms = [];
 let serverRowsCache = null;
 let equipmentSeasonScoreRows = [];
 let equipmentRatingThresholds = {};
@@ -1000,37 +1002,6 @@ async function fetchDungeonFragmentYieldRows() {
   return dungeonFragmentYieldRowsCache;
 }
 
-function parseGiftCalculatorRows(csvRows) {
-  const headers = (csvRows.shift() || []).map((header) => String(header || '').trim());
-  const index = {
-    level: getHeaderIndex(headers, ['level']),
-    partnerRequiredFavor: getHeaderIndex(headers, ['夥伴所需好感', '伙伴所需好感', '所需好感']),
-    starGodRequiredFavor: getHeaderIndex(headers, ['星間之神所需好感', '星间之神所需好感']),
-    quality: getHeaderIndex(headers, ['禮物品質']),
-    favor: getHeaderIndex(headers, ['好感']),
-    price: getHeaderIndex(headers, ['價格']),
-    daily: getHeaderIndex(headers, ['日用品']),
-    flower: getHeaderIndex(headers, ['花']),
-    book: getHeaderIndex(headers, ['書']),
-    valuables: getHeaderIndex(headers, ['貴重品']),
-  };
-
-  return csvRows.map((row) => ({
-    level: String(row[index.level] || '').trim(),
-    partner_required_favor: String(row[index.partnerRequiredFavor] || '').trim(),
-    star_god_required_favor: String(row[index.starGodRequiredFavor] || '').trim(),
-    quality: String(row[index.quality] || '').trim(),
-    favor: String(row[index.favor] || '').trim(),
-    price: String(row[index.price] || '').trim(),
-    categories: {
-      daily: String(row[index.daily] || '').trim(),
-      flower: String(row[index.flower] || '').trim(),
-      book: String(row[index.book] || '').trim(),
-      valuables: String(row[index.valuables] || '').trim(),
-    },
-  }));
-}
-
 function getGiftLevelRows(rows, recipientType = 'partner') {
   const favorKey = recipientType === 'star_god' ? 'star_god_required_favor' : 'partner_required_favor';
   return rows
@@ -1059,9 +1030,13 @@ async function fetchGiftCalculatorRows() {
 
   const url = getGoogleSheetCsvUrl(GIFT_CALCULATOR_SHEET);
   try {
-    giftRowsCache = parseGiftCalculatorRows(
-      parseCsvRows(await fetchTextWithCache('google-sheet:gift-calculator', url))
-    );
+    const [seasons, csv] = await Promise.all([
+      loadSeasonOptions(),
+      fetchTextWithCache('google-sheet:gift-calculator', url),
+    ]);
+    const parsed = parseGiftSheet(parseCsvRows(csv), seasons);
+    giftKingdoms = parsed.kingdoms;
+    giftRowsCache = parsed.rows;
   } catch (err) {
     console.warn('[gift calculator] fetch failed', err);
     giftRowsCache = null;
@@ -1383,6 +1358,19 @@ function bindDataCacheHandlers(containers) {
         if (select?.value && select.value !== state.seasonId) {
           select.dispatchEvent(new Event('change'));
         }
+      } catch (error) {
+        setGlobalDataStatus('error', error.message);
+        return;
+      }
+    }
+    if (giftRowsCache && (
+      Number(event.detail?.gid) === getSheetDefinition('seasonScore').gid ||
+      event.detail?.cacheKey === 'google-sheet:gift-calculator'
+    )) {
+      saveAllInputs();
+      giftRowsCache = null;
+      try {
+        await renderGiftCalculator(JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'));
       } catch (error) {
         setGlobalDataStatus('error', error.message);
         return;
@@ -2066,15 +2054,6 @@ function getGiftCategoryOptions() {
   ];
 }
 
-const GIFT_KINGDOMS = [
-  { id: 'forest', labelKey: 'gift_kingdom_forest', aliases: ['森之國', '森之国'] },
-  { id: 'mountain', labelKey: 'gift_kingdom_mountain', aliases: ['山之國', '山之国'] },
-  { id: 'marsh', labelKey: 'gift_kingdom_marsh', aliases: ['澤之國', '泽之国'] },
-  { id: 'dragon', labelKey: 'gift_kingdom_dragon', aliases: ['龍之國', '龙之国'] },
-  { id: 'wing', labelKey: 'gift_kingdom_wing', aliases: ['羽之國', '羽之国'] },
-  { id: 'hapadi', labelKey: 'gift_kingdom_hapadi', aliases: ['哈帕迪'] },
-  { id: 'ignis', labelKey: 'gift_kingdom_ignis', aliases: ['伊格尼斯'] },
-];
 
 const GIFT_RECIPIENT_TYPES = [
   { id: 'partner', labelKey: 'gift_recipient_partner', totalNeededLabelKey: 'gift_partner_total_needed_label' },
@@ -2146,18 +2125,18 @@ function getGiftAvailableKingdoms(row, category) {
 }
 
 function getGiftKingdomRowsByCategory(value) {
-  const source = String(value || '').trim();
-  if (!source) return [];
+  const names = String(value || '').split('、').map((name) => name.trim()).filter(Boolean);
+  if (!names.length) return [];
 
-  return GIFT_KINGDOMS
+  return giftKingdoms
     .map((kingdom, fallbackRank) => {
       const aliasRanks = kingdom.aliases
-        .map((alias) => source.indexOf(alias))
+        .map((alias) => names.indexOf(alias))
         .filter((rank) => rank >= 0);
       if (!aliasRanks.length) return null;
       return {
         ...kingdom,
-        sourceRank: Math.min(...aliasRanks) * GIFT_KINGDOMS.length + fallbackRank,
+        sourceRank: Math.min(...aliasRanks) * giftKingdoms.length + fallbackRank,
       };
     })
     .filter(Boolean)
@@ -2218,11 +2197,11 @@ function formatGiftNumber(value) {
 }
 
 function getGiftKingdomLabel(kingdom) {
-  return t(kingdom.labelKey);
+  return kingdom.name || t(kingdom.labelKey);
 }
 
 function readGiftKingdomCoins() {
-  return new Map(GIFT_KINGDOMS.map((kingdom) => {
+  return new Map(giftKingdoms.map((kingdom) => {
     const value = parseNumberValue(document.getElementById(`gift-coins-${kingdom.id}`)?.value);
     return [kingdom.id, Math.max(0, Math.trunc(value))];
   }));
@@ -2238,21 +2217,7 @@ function readOwnedGiftCounts(ownedGiftRows) {
 }
 
 function getAvailableGiftKingdoms(row, category) {
-  const value = String(row?.categories?.[category] || '').trim();
-  if (!value) return [];
-  return GIFT_KINGDOMS
-    .map((kingdom, fallbackRank) => {
-      const aliasRanks = kingdom.aliases
-        .map((alias) => value.indexOf(alias))
-        .filter((rank) => rank >= 0);
-      if (!aliasRanks.length) return null;
-      return {
-        ...kingdom,
-        sourceRank: Math.min(...aliasRanks) * GIFT_KINGDOMS.length + fallbackRank,
-      };
-    })
-    .filter(Boolean)
-    .sort((a, b) => a.sourceRank - b.sourceRank);
+  return getGiftKingdomRowsByCategory(row?.categories?.[category]);
 }
 
 function renderGiftSummaryItem(labelKey, value, options = {}) {
@@ -2267,8 +2232,8 @@ function getGiftSourceRank(source) {
   if (source?.kingdomId === 'owned' || source === 'owned') return -1;
   if (Number.isFinite(source?.sourceRank)) return source.sourceRank;
   const kingdomId = source?.kingdomId || source;
-  const index = GIFT_KINGDOMS.findIndex((kingdom) => kingdom.id === kingdomId);
-  return index >= 0 ? index : GIFT_KINGDOMS.length;
+  const index = giftKingdoms.findIndex((kingdom) => kingdom.id === kingdomId);
+  return index >= 0 ? index : giftKingdoms.length;
 }
 
 function getGiftPlanMetrics(plan) {
@@ -2466,7 +2431,7 @@ function optimizeGiftPurchases(qualityRows, category, coinsByKingdom, ownedGiftC
     combinedStates = combineGiftKingdomPlans(combinedStates, ownedStates, favorCap);
   }
 
-  GIFT_KINGDOMS.forEach((kingdom) => {
+  giftKingdoms.forEach((kingdom) => {
     const kingdomOptions = paidOptions.filter((option) => option.kingdom.id === kingdom.id);
     const kingdomStates = optimizeGiftKingdomOptions(kingdomOptions, favorCap, coinsByKingdom.get(kingdom.id) || 0);
     combinedStates = combineGiftKingdomPlans(combinedStates, kingdomStates, favorCap);
@@ -2660,12 +2625,12 @@ async function renderGiftCalculator(saved = {}) {
   categorySelect.innerHTML = getGiftCategoryOptions()
     .map(([value, label]) => `<option value="${value}">${escapeHtml(label)}</option>`)
     .join('');
-  kingdomCoinsContainer.innerHTML = GIFT_KINGDOMS.map((kingdom) => {
+  kingdomCoinsContainer.innerHTML = giftKingdoms.map((kingdom) => {
     const inputId = `gift-coins-${kingdom.id}`;
     return `
       <label class="block min-w-0">
         <span class="block text-sm font-semibold mb-1">${escapeHtml(t('gift_kingdom_coin_label', { kingdom: getGiftKingdomLabel(kingdom) }))}</span>
-        <input id="${inputId}" type="number" min="0" step="1" class="input-field rounded p-2 w-full text-right" value="0" />
+        <input id="${escapeHtml(inputId)}" type="number" min="0" step="1" class="input-field rounded p-2 w-full text-right" value="0" />
       </label>
     `;
   }).join('');
@@ -2700,7 +2665,7 @@ async function renderGiftCalculator(saved = {}) {
     input.max = String(bounds.max);
     input.value = saved[input.id] || defaults[input.id] || String(bounds.min);
   });
-  GIFT_KINGDOMS.forEach((kingdom) => {
+  giftKingdoms.forEach((kingdom) => {
     const input = document.getElementById(`gift-coins-${kingdom.id}`);
     if (input) input.value = saved[input.id] || '0';
   });

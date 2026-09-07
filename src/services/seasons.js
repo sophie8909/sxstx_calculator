@@ -11,7 +11,7 @@ export function buildSeasonOptions(rows) {
     const season = Number(id.slice(1));
     const name = String(row['國度名稱'] ?? '').trim();
     if (!seasons.has(id)) {
-      seasons.set(id, { id, name: [id.toUpperCase(), name].filter(Boolean).join(' '), readonly: false, season });
+      seasons.set(id, { id, kingdomName: name, name: [id.toUpperCase(), name].filter(Boolean).join(' '), readonly: false, season });
     }
   }
   if (!seasons.size) {
