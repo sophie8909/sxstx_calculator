@@ -7,6 +7,7 @@ Sources: user-provided upg_res_0.4.0.csv (archived in docs/data) and the S4 pet 
 - Each category's first CSV block is its normal-level curve through the selected season cap. Earlier normal-level segments remain available. The second block is the selected season's extension beyond that cap; it must not be substituted for an unknown first-block segment.
 - S4 pet destination levels 167 through 190 use all 24 EXP values from the screenshot. They replace the question-mark segment, not the adjacent measured/formula ranges.
 - The loader adds missing transition rows within the supplied ranges and fills missing, nonnumeric or zero main requirements: equipment ore, skill essence, relic sand and pet EXP. Positive values already in the live Google Sheet remain authoritative.
+- The user confirmed that one freeze-dried food supplies 50 EXP in every season. Missing pet food costs use cost_exp / 50, preserving exact equivalents without rounding each transition. Positive food costs from the live sheet are preserved; absent EXP remains unavailable.
 - The CSV does not specify Rola or other secondary-material formulas. Missing secondary costs remain unavailable; no fixed ratio is inferred from isolated rows.
 - This supplements the website at load time. It does not modify the external Google Sheet.
 

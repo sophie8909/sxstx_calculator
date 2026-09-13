@@ -172,6 +172,11 @@ export function fillMissingUpgradeExperience(rows, category, season) {
     const calculated = calculateUpgradeExperience(normalizedCategory, normalizedSeason, row.level + 1);
     if (!positive(row[requirementKey]) && calculated !== null) row[requirementKey] = calculated;
     if (!positive(row.cost_exp) && positive(row[requirementKey])) row.cost_exp = Number(row[requirementKey]);
+    // Confirmed for every season: one freeze-dried food supplies 50 EXP.
+    // Keep exact equivalents; rounding every transition would compound errors.
+    if (normalizedCategory === 'pet' && !positive(row.cost_freeze_dried) && positive(row.cost_exp)) {
+      row.cost_freeze_dried = Number(row.cost_exp) / 50;
+    }
     return row;
   });
 }

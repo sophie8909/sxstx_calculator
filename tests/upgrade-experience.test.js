@@ -51,3 +51,39 @@ test('does not invent out-of-range data or discard missing rows', () => {
   assert.equal(rows.find(r => r.level === 301).cost_exp, undefined);
   assert.deepEqual(fillMissingUpgradeExperience([], 'character', 's5'), []);
 });
+
+
+test('fills pet food from confirmed 50 EXP conversion without replacing known costs', () => {
+  const rows = fillMissingUpgradeExperience([
+    { season: 's4', level: 166, cost_exp: 276320, cost_freeze_dried: '' },
+    { season: 's4', level: 167, cost_exp: 277510, cost_freeze_dried: 0 },
+    { season: 's4', level: 168, cost_exp: 278950, cost_freeze_dried: 123 },
+    { season: 's4', level: 301, cost_exp: 0, cost_freeze_dried: '' },
+  ], 'pet', 's4');
+  assert.equal(rows.find(r => r.level === 166).cost_freeze_dried, 5526.4);
+  assert.equal(rows.find(r => r.level === 167).cost_freeze_dried, 5550.2);
+  assert.equal(rows.find(r => r.level === 168).cost_freeze_dried, 123);
+  assert.equal(rows.find(r => r.level === 301).cost_freeze_dried, '');
+  for (const season of ['s1', 's2', 's3', 's4', 's5']) {
+    const generated = fillMissingUpgradeExperience([], 'pet', season);
+    assert.ok(generated.length > 0);
+    for (const row of generated) {
+      assert.ok(row.cost_exp > 0, season + ':' + row.level);
+      assert.equal(row.cost_freeze_dried, row.cost_exp / 50);
+    }
+  }
+});
+
+test('pet resonance needs increase for S3 through S5 after filling missing food', async () => {
+  const { buildCumulativeCostData, getCostDelta } = await import('../src/core/upgradeCost.js');
+  for (const season of ['s3', 's4', 's5']) {
+    const rows = fillMissingUpgradeExperience([], 'pet', season);
+    const table = buildCumulativeCostData({ petUpgradeCosts: rows }).pet;
+    const first = getCostDelta(table, 166, 167, { expectedMaterials: ['freezeDried'] });
+    const next = getCostDelta(table, 166, 168, { expectedMaterials: ['freezeDried'] });
+    assert.equal(first.missingMaterials, undefined);
+    assert.equal(next.missingMaterials, undefined);
+    assert.ok(first.materials.freezeDried > 0);
+    assert.ok(next.materials.freezeDried > first.materials.freezeDried);
+  }
+});
