@@ -21,6 +21,26 @@ function mergeEstimateHints(target, materials, estimatedRanges) {
   });
 }
 
+function addMaterialErrors(target, missingMaterials, seasonId) {
+  Object.entries(missingMaterials || {}).forEach(([materialId, ranges]) => {
+    if (!target[materialId]) target[materialId] = { seasonId, ranges: [] };
+    ranges.forEach((range) => {
+      if (!target[materialId].ranges.some((item) => item.from === range.from && item.to === range.to)) {
+        target[materialId].ranges.push(range);
+      }
+    });
+    target[materialId].ranges.sort((a, b) => a.from - b.from || a.to - b.to);
+  });
+}
+
+function getExpectedMaterials(categoryId) {
+  if (categoryId === 'relic') return ['sand', 'rola'];
+  if (categoryId.startsWith('equipment_')) return ['stoneOre', 'rola'];
+  if (categoryId.startsWith('skill_')) return ['essence'];
+  if (categoryId.startsWith('pet')) return ['freezeDried'];
+  return [];
+}
+
 function scoreLevel(level, threshold, multiplier) {
   const value = Number(level);
   if (!Number.isFinite(value) || value <= threshold) return 0;
@@ -339,10 +359,14 @@ export function calculateUpgradeResults(input, context) {
     if (requestedTarget === null || requestedTarget === undefined) return;
     const targetLevel = Math.max(currentLevel, requestedTarget);
     if (targetLevel <= currentLevel) return;
+    hasInput = true;
 
-    const { materials: delta, estimatedRanges } = getCostDelta(cumulativeCostData.relic, currentLevel, targetLevel);
+    const { materials: delta, estimatedRanges, missingMaterials } = getCostDelta(
+      cumulativeCostData.relic, currentLevel, targetLevel, { expectedMaterials: getExpectedMaterials('relic') },
+    );
     addMaterialDelta(required, delta);
     mergeEstimateHints(estimated, delta, estimatedRanges);
+    addMaterialErrors(materialErrors, missingMaterials, seasonId);
   });
   if (relicCount > 0 && relicCount !== relicCountRequired) hasError = true;
 
@@ -352,11 +376,15 @@ export function calculateUpgradeResults(input, context) {
 
     const targetLevel = Math.max(currentLevel, getTargetForCategory(category.id, targets));
     if (targetLevel <= currentLevel) return;
+    hasInput = true;
 
     const costTable = getCategoryCostTable(category.id, cumulativeCostData);
-    const { materials: delta, estimatedRanges } = getCostDelta(costTable, currentLevel, targetLevel);
+    const { materials: delta, estimatedRanges, missingMaterials } = getCostDelta(
+      costTable, currentLevel, targetLevel, { expectedMaterials: getExpectedMaterials(category.id) },
+    );
     addMaterialDelta(required, delta);
     mergeEstimateHints(estimated, delta, estimatedRanges);
+    addMaterialErrors(materialErrors, missingMaterials, seasonId);
   });
 
   Object.entries(materialSourceGains || {}).forEach(([materialId, total]) => {
@@ -395,5 +423,10 @@ export function calculateUpgradeResults(input, context) {
     deficit[materialId] = Math.max(0, need - owned - gain);
   });
 
+  Object.keys(materialErrors).forEach((materialId) => {
+    delete required[materialId];
+    delete deficit[materialId];
+    delete estimated[materialId];
+  });
   return { required, gains, deficit, materialErrors, estimated, derived };
 }

@@ -106,6 +106,14 @@ function formatEstimateText(estimatedRanges = []) {
   return t('estimated_range_hint', { ranges: ranges.join(t('list_separator')) });
 }
 
+function formatMissingCostText(error) {
+  if (typeof error === 'string') return error;
+  const ranges = (error.ranges || []).map(({ from, to }) =>
+    from + ' → ' + (to + 1)
+  ).join(t('list_separator'));
+  return t('upgrade_cost_missing_data', { season: String(error.seasonId || '').toUpperCase(), ranges });
+}
+
 function getReadonlyBadgeHtml() {
   return `<span class="readonly-badge">${t('readonly_badge')}</span>`;
 }
@@ -937,7 +945,10 @@ export function renderResults(containers, payload, missingFiles = [], options = 
 
     const right = el('div', ['ml-auto', 'flex', 'items-center', 'gap-x-6', 'gap-y-1', 'text-sm', 'result-summary-values']);
     if (hasError) {
-      right.innerHTML = `<span class="semantic-danger font-semibold">${materialErrors[matId]}</span>`;
+      const notice = el('span', ['semantic-danger', 'font-semibold']);
+      notice.setAttribute('role', 'status');
+      notice.textContent = formatMissingCostText(materialErrors[matId]);
+      right.appendChild(notice);
     } else {
       right.innerHTML = `
         <span class="text-strong">${t('summary_need')} <strong>${fmt(need)}</strong></span>

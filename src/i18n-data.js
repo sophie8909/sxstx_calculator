@@ -1150,6 +1150,7 @@ const EN_TRANSLATIONS = {
   minutes_approx_time: { 'zh-Hant': '{minutes} 分鐘，約 {time}', 'zh-Hans': '{minutes} 分钟，约 {time}', en: '{minutes} minutes, about {time}' },
   level_value: { 'zh-Hant': '{level}等級', 'zh-Hans': '{level}等级', en: 'Lv. {level}' },
   level_range: { 'zh-Hant': '{from}~{to}等級', 'zh-Hans': '{from}~{to}等级', en: 'Lv. {from}-{to}' },
+  upgrade_cost_missing_data: { 'zh-Hant': '資料不足，無法計算（{season}，缺少升級數據：{ranges} 級）', 'zh-Hans': '数据不足，无法计算（{season}，缺少升级数据：{ranges} 级）', en: 'Insufficient data to calculate ({season}; missing upgrades: Lv. {ranges})' },
   estimated_range_hint: { 'zh-Hant': '（{ranges}等級數據為推算）', 'zh-Hans': '（{ranges}等级数据为推算）', en: '({ranges} data is estimated)' },
   list_separator: { 'zh-Hant': '、', 'zh-Hans': '、', en: ', ' },
   server_data_load_failed: { 'zh-Hant': '伺服器資料載入失敗', 'zh-Hans': '服务器资料载入失败', en: 'Failed to load server data' },

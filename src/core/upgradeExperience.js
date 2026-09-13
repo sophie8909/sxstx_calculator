@@ -6,7 +6,7 @@ const EXPERIENCE_MULTIPLIERS = Object.freeze({
 });
 
 // Supplemental Base/Slope ranges from upg_res_0.4.0.csv. Google Sheet values
-// remain authoritative; these ranges are used only when cost_exp is missing.
+// remain authoritative; these ranges supplement missing upgrade requirements.
 const SEGMENTS = Object.freeze([
   { category: 'equipment', season: 's1', to: 10, base: 30, slope: 5, phase: 0 },
   { category: 'equipment', season: 's1', to: 20, base: -420, slope: 50, phase: 0 },
@@ -81,6 +81,7 @@ const SEGMENTS = Object.freeze([
   { category: 'pet', season: 's3', to: 160, base: -84594, slope: 1626.8, phase: 0 },
   { category: 'pet', season: 's4', to: 161, base: 177320, slope: 0, phase: 0 },
   { category: 'pet', season: 's4', to: 166, base: -163162, slope: 1631.6, phase: 0 },
+  { category: 'pet', season: 's4', to: 190, base: null, slope: null, phase: 0 },
   { category: 'pet', season: 's5', to: 191, base: 741630, slope: 0, phase: 0 },
   { category: 'pet', season: 's5', to: 200, base: -374482, slope: 4115, phase: 0 },
   { category: 'pet', season: 's5', to: 209, base: -454257, slope: 4497.6, phase: 0 },
@@ -106,7 +107,11 @@ function getFormulaSegment(category, season, level) {
   const phaseZero = matches.filter((segment) => segment.phase === 0);
   const phaseOne = matches.filter((segment) => segment.phase === 1);
   const phaseZeroMax = Math.max(...phaseZero.map((segment) => segment.to), -Infinity);
-  const candidates = level <= phaseZeroMax ? phaseZero : phaseOne;
+  // Normal-level segments continue across seasons; extensions are season-specific.
+  const candidates = level <= phaseZeroMax
+    ? SEGMENTS.filter((segment) => segment.category === category
+      && segment.phase === 0 && segment.season <= season)
+    : phaseOne;
   return candidates.find((segment) => level <= segment.to) || null;
 }
 
@@ -114,26 +119,59 @@ export function calculateUpgradeExperience(category, season, level) {
   const normalizedCategory = normalizeCategory(category);
   const multiplier = EXPERIENCE_MULTIPLIERS[normalizedCategory];
   const numericLevel = Number(level);
-  if (!multiplier || !Number.isFinite(numericLevel)) return null;
+  if (!multiplier || !Number.isInteger(numericLevel) || numericLevel < 1) return null;
 
-  const segment = getFormulaSegment(normalizedCategory, String(season || '').trim().toLowerCase(), numericLevel);
-  if (!segment) return null;
+  const normalizedSeason = String(season || '').trim().toLowerCase();
+  const segment = getFormulaSegment(normalizedCategory, normalizedSeason, numericLevel);
+  if (normalizedCategory === 'pet' && segment?.season === 's4' && S4_PET_EXP[numericLevel]) {
+    return S4_PET_EXP[numericLevel];
+  }
+  if (!segment || segment.base === null || segment.slope === null) return null;
 
   const rawValue = segment.base + segment.slope * numericLevel;
   if (!Number.isFinite(rawValue)) return null;
-  const value = multiplier * Math.round(rawValue / 5);
+  const value = multiplier * Math.round(rawValue / multiplier);
   return Number.isFinite(value) && value > 0 ? value : null;
 }
 
-export function fillMissingUpgradeExperience(rows, category) {
-  return (rows || []).filter((row) => Object.keys(row || {})
-    .filter((key) => key.startsWith('cost_'))
-    .some((key) => String(row[key] ?? '').trim() !== ''))
-    .map((row) => {
-      const existing = Number(row?.cost_exp);
-      if (Number.isFinite(existing) && existing > 0) return row;
+// User-supplied S4 screenshot: required EXP at each destination level.
+const S4_PET_EXP = Object.freeze({
+  167: 276320, 168: 277510, 169: 278950, 170: 280290,
+  171: 281580, 172: 283060, 173: 284210, 174: 285840,
+  175: 286840, 176: 288610, 177: 291390, 178: 291870,
+  179: 294160, 180: 294780, 181: 296940, 182: 297700,
+  183: 299710, 184: 300620, 185: 302490, 186: 303540,
+  187: 306220, 188: 306460, 189: 309280, 190: 309380,
+});
 
-      const calculated = calculateUpgradeExperience(category, row?.season, row?.level);
-      return calculated === null ? row : { ...row, cost_exp: calculated };
-    });
+const REQUIREMENT_KEYS = Object.freeze({
+  equipment: 'cost_stone_ore', skill: 'cost_essence', relic: 'cost_sand', pet: 'cost_exp',
+});
+
+function positive(value) {
+  return Number.isFinite(Number(value)) && Number(value) > 0;
+}
+
+export function fillMissingUpgradeExperience(rows, category, season) {
+  const normalizedCategory = normalizeCategory(category);
+  const requirementKey = REQUIREMENT_KEYS[normalizedCategory];
+  if (!requirementKey) return rows || [];
+  const normalizedSeason = String(season || rows?.[0]?.season || '').trim().toLowerCase();
+  const maxLevel = Math.max(0, ...SEGMENTS.filter((segment) => segment.category === normalizedCategory
+    && segment.season === normalizedSeason).map((segment) => segment.to));
+  const byLevel = new Map((rows || []).filter((row) => String(row.level ?? '').trim() !== ''
+    && Number.isInteger(Number(row.level)) && Number(row.level) >= 0)
+    .map((row) => [Number(row.level), { ...row, level: Number(row.level) }]));
+
+  // CSV Level is the destination (100 describes 99 -> 100).
+  // App rows use the starting level, so shift exactly once here.
+  for (let level = 0; level < maxLevel; level += 1) {
+    if (!byLevel.has(level)) byLevel.set(level, { season: normalizedSeason, category: normalizedCategory, level });
+  }
+  return [...byLevel.values()].sort((a, b) => a.level - b.level).map((row) => {
+    const calculated = calculateUpgradeExperience(normalizedCategory, normalizedSeason, row.level + 1);
+    if (!positive(row[requirementKey]) && calculated !== null) row[requirementKey] = calculated;
+    if (!positive(row.cost_exp) && positive(row[requirementKey])) row.cost_exp = Number(row[requirementKey]);
+    return row;
+  });
 }

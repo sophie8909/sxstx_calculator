@@ -43,10 +43,9 @@ export function buildCumulativeCostData(gameData) {
       : source;
     if (sourceRows.length === 0) return;
 
-    const firstRow = sourceRows[0];
-    const costKeys = Object.keys(firstRow)
-      .map((key) => normalizeKey(key))
-      .filter((key) => /^cost_/.test(String(key).toLowerCase()));
+    const costKeys = Array.from(new Set(sourceRows.flatMap((rawRow) => Object.keys(rawRow)
+      .map((key) => normalizeKey(key).toLowerCase())
+      .filter((key) => /^cost_/.test(String(key))))));
     const cumulative = {};
     costKeys.forEach((key) => {
       cumulative[key] = 0;
@@ -59,12 +58,16 @@ export function buildCumulativeCostData(gameData) {
       });
 
       const level = readLevelFromRow(row, rawRow);
+      const costAvailability = {};
+      const costValues = {};
       costKeys.forEach((key) => {
-        const normalized = key.toLowerCase();
-        const value = Number(row[normalized] ?? 0);
-        cumulative[normalized] = (cumulative[normalized] || 0) + (Number.isFinite(value) ? value : 0);
+        const value = Number(row[key]);
+        const available = Number.isFinite(value) && value > 0;
+        cumulative[key] = (cumulative[key] || 0) + (available ? value : 0);
+        costAvailability[key] = available;
+        costValues[key] = available ? value : null;
       });
-      output[type].push({ level, ...cumulative });
+      output[type].push({ level, ...cumulative, __costAvailability: costAvailability, __costValues: costValues });
     });
   });
 
@@ -77,7 +80,7 @@ function getTableTemplate(costTable) {
 
   costTable.forEach((row) => {
     Object.keys(row).forEach((key) => {
-      empty[key] = 0;
+      if (!key.startsWith('__')) empty[key] = 0;
     });
   });
   delete empty.level;
@@ -172,35 +175,81 @@ export function getCharacterCumulativeExpFromTable(table, level) {
   return lastKnownExp + lastLevelExp * (level - maxLevelInTable);
 }
 
-export function getCostDelta(costTable, currentLevel, targetLevel) {
-  if (!costTable) return { materials: {}, estimatedRanges: [] };
+function compactRanges(levels) {
+  if (!levels.length) return [];
+  const sorted = [...new Set(levels)].sort((a, b) => a - b);
+  const ranges = [];
+  let from = sorted[0];
+  let to = from;
+  sorted.slice(1).forEach((level) => {
+    if (level === to + 1) { to = level; return; }
+    ranges.push({ from, to });
+    from = level;
+    to = level;
+  });
+  ranges.push({ from, to });
+  return ranges;
+}
 
-  const start = getCumulativeWithMeta(costTable, currentLevel - 1);
-  const end = getCumulativeWithMeta(costTable, targetLevel - 1);
+function getMissingMaterialRanges(costTable, currentLevel, targetLevel, expectedMaterials) {
+  if (!expectedMaterials.length || targetLevel <= currentLevel) return {};
+  const rows = Array.isArray(costTable) ? costTable : [];
+  const tracksAvailability = rows.some((row) => row && row.__costAvailability);
+  if (!tracksAvailability) {
+    if (rows.length) return {};
+    return Object.fromEntries(expectedMaterials.map((materialId) => [materialId, [{ from: currentLevel, to: targetLevel - 1 }]]));
+  }
+  const rowsByLevel = new Map(rows.map((row) => [Number(row.level), row]));
+  const keysByMaterial = new Map();
+  rows.forEach((row) => Object.keys(row.__costAvailability || {}).forEach((key) => {
+    const materialId = costKeyToMaterialId(key);
+    if (!keysByMaterial.has(materialId)) keysByMaterial.set(materialId, key);
+  }));
+  return Object.fromEntries(expectedMaterials.map((materialId) => {
+    const key = keysByMaterial.get(materialId);
+    const missingLevels = [];
+    for (let level = currentLevel; level < targetLevel; level += 1) {
+      const row = rowsByLevel.get(level);
+      if (!row || !key || row.__costAvailability[key] !== true) missingLevels.push(level);
+    }
+    return [materialId, compactRanges(missingLevels)];
+  }).filter(([, ranges]) => ranges.length));
+}
+
+export function getCostDelta(costTable, currentLevel, targetLevel, { expectedMaterials = [] } = {}) {
+  const startLevel = Math.max(0, Math.floor(Number(currentLevel) || 0));
+  const endLevel = Math.max(startLevel, Math.floor(Number(targetLevel) || 0));
+  if (endLevel <= startLevel) return { materials: {}, estimatedRanges: [] };
+  const missingMaterials = getMissingMaterialRanges(costTable, startLevel, endLevel, expectedMaterials);
+  if (!costTable) return { materials: {}, estimatedRanges: [], ...(Object.keys(missingMaterials).length ? { missingMaterials } : {}) };
+  if (costTable.some((row) => row.__costValues)) {
+    const materials = {};
+    costTable.filter((row) => row.level >= startLevel && row.level < endLevel).forEach((row) => {
+      Object.entries(row.__costValues || {}).forEach(([key, value]) => {
+        const materialId = costKeyToMaterialId(key);
+        if (missingMaterials[materialId] || (expectedMaterials.length && !expectedMaterials.includes(materialId))) return;
+        if (value !== null) materials[materialId] = (materials[materialId] || 0) + value;
+      });
+    });
+    return { materials, estimatedRanges: [], ...(Object.keys(missingMaterials).length ? { missingMaterials } : {}) };
+  }
+  const start = getCumulativeWithMeta(costTable, startLevel - 1);
+  const end = getCumulativeWithMeta(costTable, endLevel - 1);
   const materials = {};
   const estimatedRangesMap = new Map();
-
   Object.keys(end.row).forEach((key) => {
     if (!key.startsWith('cost_')) return;
     const materialId = costKeyToMaterialId(key);
+    if (missingMaterials[materialId]) return;
     const value = (end.row[key] || 0) - (start.row[key] || 0);
     if (value !== 0) materials[materialId] = value;
   });
-
-  [start, end].forEach((info) => {
-    info.estimatedRanges?.forEach((range) => {
-      const rangeKey = normalizeRange(range);
-      if (!rangeKey) return;
-      if (!estimatedRangesMap.has(rangeKey)) estimatedRangesMap.set(rangeKey, range);
-    });
-  });
-
-  return {
-    materials,
-    estimatedRanges: Array.from(estimatedRangesMap.values()),
-  };
+  [start, end].forEach((info) => info.estimatedRanges.forEach((range) => {
+    const rangeKey = normalizeRange(range);
+    if (rangeKey && !estimatedRangesMap.has(rangeKey)) estimatedRangesMap.set(rangeKey, range);
+  }));
+  return { materials, estimatedRanges: Array.from(estimatedRangesMap.values()), ...(Object.keys(missingMaterials).length ? { missingMaterials } : {}) };
 }
-
 export function findMissingUpgradeLevel(sourceTable, currentLevel, targetLevel) {
   if (!sourceTable || sourceTable.length === 0) return null;
 

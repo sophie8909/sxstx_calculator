@@ -192,7 +192,7 @@ export async function loadUpgradeCosts(category, season) {
   const filtered = rows
     .filter((row) => row.season === normalizedSeason)
     .map((row) => ({ ...row, category }));
-  return fillMissingUpgradeExperience(filtered, category);
+  return fillMissingUpgradeExperience(filtered, category, season);
 }
 
 export async function loadUpgradeCostTablesForSeason(season) {
@@ -204,7 +204,7 @@ export async function loadUpgradeCostTablesForSeason(season) {
         .map((row) => ({ ...row, category }));
       return [
         sheetKey,
-        fillMissingUpgradeExperience(filtered, category),
+        fillMissingUpgradeExperience(filtered, category, season),
       ];
     })
   );
