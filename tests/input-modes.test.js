@@ -26,7 +26,7 @@ test('equipment, skill, and pet inputs expose compact resonance and detailed mod
   assert.match(controller, /syncSavedCompactCurrentLevels\(\)/);
 });
 
-test('all compact and detailed controls use the relic segmented button style', async () => {
+test('remaining input modes keep segmented controls while relics use compact inputs only', async () => {
   const [view, html, i18n] = await Promise.all([
     read('src/ui/view.js'),
     read('index.html'),
@@ -34,7 +34,8 @@ test('all compact and detailed controls use the relic segmented button style', a
   ]);
   assert.match(view, /target-layout-selector', 'segmented-control'/);
   assert.match(view, /const selector = el\('div', \['segmented-control'\]\)/);
-  assert.match(html, /class="segmented-control"[^>]*data-i18n-aria-label="relic_input_mode"/);
+  assert.doesNotMatch(html, /relic-mode-btn|id="relic-ui-mode"/);
+  assert.doesNotMatch(view, /relic-level-\$\{/);
   assert.match(i18n, /relic_mode_new: \{ 'zh-Hant': '精簡'/);
   assert.match(i18n, /relic_mode_old: \{ 'zh-Hant': '詳細'/);
 });

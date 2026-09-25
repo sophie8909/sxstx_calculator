@@ -1125,6 +1125,7 @@ const EN_TRANSLATIONS = {
   primordial_star_accumulated: { 'zh-Hant': '目前累計原初', 'zh-Hans': '当前累计原初', en: 'Current cumulative Primordial Stars' },
   primordial_star_current_season: { 'zh-Hant': '當前賽季目標原初', 'zh-Hans': '当前赛季目标原初', en: 'Current season target Primordial Stars' },
   primordial_star_total: { 'zh-Hant': '加入當前賽季後總原初', 'zh-Hans': '加入当前赛季后总原初', en: 'Total after current season' },
+  relic_saved_distribution_needs_reentry: { 'zh-Hant': '舊版遺物等級分布無法精確轉為精簡輸入，已保留舊資料備份；請重新輸入遺物等級。', 'zh-Hans': '旧版遗物等级分布无法精确转换为精简输入，已保留旧数据备份；请重新输入遗物等级。', en: 'The saved relic distribution cannot be represented exactly in compact inputs. A backup was kept; please re-enter your relic levels.' },
   relic_completed_level: { 'zh-Hant': '已完成遺物等級', 'zh-Hans': '已完成遗物等级', en: 'Completed relic level' },
   relic_next_progress: { 'zh-Hant': '下一等級進度數量', 'zh-Hans': '下一等级进度数量', en: 'Next level progress count' },
   level_placeholder: { 'zh-Hant': '等級', 'zh-Hans': '等级', en: 'Level' },

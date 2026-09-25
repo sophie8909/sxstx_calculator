@@ -92,18 +92,6 @@ export function getAvailableRelicLevels() {
 }
 
 export function getDerivedRelicDistribution() {
-  if (document.getElementById('relic-ui-mode')?.value === 'legacy') {
-    const distribution = [];
-    document.querySelectorAll('[id^="relic-level-"]').forEach((input) => {
-      const level = Number(String(input.id).replace('relic-level-', ''));
-      const count = parseInt(input.value, 10) || 0;
-      if (Number.isFinite(level) && count > 0) {
-        distribution.push({ level, count });
-      }
-    });
-    return distribution;
-  }
-
   const completedInput = document.getElementById('relic-completed-level');
   const progressInput = document.getElementById('relic-next-progress');
   const completedLevel = Math.max(0, parseInt(completedInput?.value, 10) || 0);
@@ -638,7 +626,11 @@ export function computeEtaToTargetLevel(currentLevel, ownedExp, bedExpHourly, ta
 }
 
 export function saveAllInputs() {
+  const previous = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
   const data = {};
+  for (const key of ['relic-legacy-backup', 'relic-migration-needs-reentry']) {
+    if (previous[key] != null) data[key] = previous[key];
+  }
   document.querySelectorAll('input[type=number], input[type=text], input[type=datetime-local], input[type=checkbox], select')
     .forEach(input => {
       if (!input.id) return;
@@ -651,6 +643,31 @@ export function loadAllInputs(excludeKeys = []) {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw) return;
   const data = JSON.parse(raw);
+  let migrated = false;
+  if (data['relic-ui-mode'] === 'legacy') {
+    const relicCounts = Object.entries(data)
+      .map(([id, value]) => {
+        const match = id.match(/^relic-level-(\d+)$/);
+        return match ? { level: Number(match[1]), count: Math.max(0, parseInt(value, 10) || 0) } : null;
+      })
+      .filter((entry) => entry && entry.count > 0)
+      .sort((a, b) => a.level - b.level);
+    const totalCount = relicCounts.reduce((sum, entry) => sum + entry.count, 0);
+    const equivalent = totalCount === 20 && relicCounts.length <= 2
+      && (relicCounts.length < 2 || relicCounts[1].level === relicCounts[0].level + 1);
+    if (equivalent && relicCounts.length > 0) {
+      data['relic-completed-level'] = String(relicCounts[0].level);
+      data['relic-next-progress'] = String(relicCounts.length === 2 ? relicCounts[1].count : 0);
+      migrated = true;
+    } else if (relicCounts.length > 0) {
+      data['relic-legacy-backup'] = Object.fromEntries(relicCounts.map(({ level, count }) => [level, count]));
+      data['relic-migration-needs-reentry'] = 'true';
+      data['relic-completed-level'] = '';
+      data['relic-next-progress'] = '';
+    }
+    data['relic-ui-mode'] = 'compact';
+    migrated = true;
+  }
   Object.keys(data).forEach(id => {
     if (excludeKeys.includes(id)) return;
     const n = document.getElementById(id);
@@ -658,4 +675,18 @@ export function loadAllInputs(excludeKeys = []) {
     if (n.type === 'checkbox') n.checked = !!data[id];
     else n.value = data[id];
   });
+  if (data['relic-migration-needs-reentry'] === 'true') {
+    const card = document.getElementById('relic-card');
+    if (card && !card.querySelector('[data-relic-migration-notice]')) {
+      const notice = document.createElement('p');
+      notice.dataset.relicMigrationNotice = 'true';
+      notice.dataset.i18n = 'relic_saved_distribution_needs_reentry';
+      notice.className = 'text-sm text-amber-700 mt-3';
+      notice.textContent = t('relic_saved_distribution_needs_reentry');
+      card.appendChild(notice);
+    }
+  }
+  if (migrated || data['relic-migration-needs-reentry'] === 'true') {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }
 }

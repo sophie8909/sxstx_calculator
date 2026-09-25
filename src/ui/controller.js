@@ -32,7 +32,6 @@ import {
   renderLevelupTimeText,
   renderTargetEtaText,
   renderMaterialSource,
-  renderRelicDistribution,
   renderTargetLevels,
 } from './view.js';
 import { applyStaticTranslations, getCurrentLanguage, initLanguage, t } from '../i18n-inline.js';
@@ -1776,15 +1775,6 @@ function updateTargetTimeFormDefaults() {
     }
   }
   if (seasonSelect && seasonSelector?.value) seasonSelect.value = String(seasonSelector.value).toUpperCase();
-}
-
-function updateRelicModeButtons() {
-  const mode = document.getElementById('relic-ui-mode')?.value || 'compact';
-  document.querySelectorAll('.relic-mode-btn').forEach((button) => {
-    const active = button.dataset.mode === mode;
-    button.classList.toggle('is-active', active);
-    button.setAttribute('aria-pressed', String(active));
-  });
 }
 
 function getCurrentLevelLayout(category) {
@@ -3621,14 +3611,11 @@ function bindGlobalHandlers(containers) {
 
       if (t.tagName === 'INPUT') markTargetRecommendationCustom(t);
 
-      if (t.id === 'relic-ui-mode') {
-        saveAllInputs();
-        renderRelicDistribution(containers.relicDistributionInputs);
-        loadAllInputs(['season-select']);
-        updateRelicModeButtons();
-        updateRelicTotal();
-        triggerRecalculate(containers);
-        return;
+      if (t.id === 'relic-completed-level' || t.id === 'relic-next-progress') {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+        delete saved['relic-migration-needs-reentry'];
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+        document.querySelector('[data-relic-migration-notice]')?.remove();
       }
 
       if (t.id === 'target-recommendation-type') {
@@ -3700,14 +3687,6 @@ function bindGlobalHandlers(containers) {
       return;
     }
 
-    const button = e.target.closest('.relic-mode-btn');
-    if (!button) return;
-
-    const select = document.getElementById('relic-ui-mode');
-    if (!select || select.value === button.dataset.mode) return;
-
-    select.value = button.dataset.mode;
-    select.dispatchEvent(new Event('change', { bubbles: true }));
   });
 
 }
@@ -3763,9 +3742,7 @@ async function initializeActiveFeature(containers, saved = {}, { refresh = false
       bindTooltipLayers();
       loadAllInputs(['season-select']);
       syncSavedCompactCurrentLevels();
-      renderRelicDistribution(containers.relicDistributionInputs);
       restoreDungeonAutoTargetLevel();
-      updateRelicModeButtons();
       await Promise.allSettled([
         initEquipmentSeasonScore(saved),
         renderPrimordialRecommendations(),

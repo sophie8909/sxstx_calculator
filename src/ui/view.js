@@ -9,7 +9,6 @@ import {
   materials,
   productionSources,
   getMaterialSourceConfig,
-  getAvailableRelicLevels,
   STAMINA_BIG_MINE_RATE,
 } from '../features/progression/legacyAdapter.js';
 
@@ -253,31 +252,6 @@ export function renderMaterials(container) {
 
 export function renderRelicDistribution(container) {
   container.innerHTML = '';
-  const mode = document.getElementById('relic-ui-mode')?.value || 'compact';
-
-  if (mode === 'legacy') {
-    container.className = 'grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 xl:grid-cols-11 gap-3';
-    const relicLevels = getAvailableRelicLevels();
-    const levels = relicLevels.length > 0
-      ? relicLevels
-      : Array.from({ length: 21 }, (_, index) => index + 10);
-
-    levels.forEach((level) => {
-      const group = createInputGroup(`relic-level-${level}`, `${t('target_relic_resonance')} ${level}`, t('quantity_placeholder'));
-      const label = group.querySelector('label');
-      const input = group.querySelector('input');
-
-      label.querySelector('.tooltip')?.remove();
-      label.classList.remove('label-with-help');
-      label.classList.add('text-center', 'mb-1');
-      group.classList.add('min-w-0');
-      input.classList.add('w-full', 'text-center', 'relic-dist-input');
-
-      container.appendChild(group);
-    });
-    return;
-  }
-
   container.className = 'grid grid-cols-1 md:grid-cols-2 gap-4';
 
   [
@@ -853,26 +827,6 @@ export function updateCurrentTime(container) {
 }
 
 export function updateRelicTotal() {
-  if (document.getElementById('relic-ui-mode')?.value === 'legacy') {
-    let legacyTotal = 0;
-    document.querySelectorAll('[id^="relic-level-"]').forEach((input) => {
-      legacyTotal += parseInt(input.value, 10) || 0;
-    });
-
-    const display = document.getElementById('relic-total-display');
-    if (!display) return;
-
-    display.textContent = `(${legacyTotal}/20)`;
-    if (legacyTotal !== 20 && legacyTotal > 0) {
-      display.classList.add('text-warning');
-      display.classList.remove('text-gray-400');
-    } else {
-      display.classList.remove('text-warning');
-      display.classList.add('text-gray-400');
-    }
-    return;
-  }
-
   const progressInput = document.getElementById('relic-next-progress');
   const progress = Math.max(0, Math.min(20, parseInt(progressInput?.value, 10) || 0));
   if (progressInput && progressInput.value !== '') progressInput.value = String(progress);
