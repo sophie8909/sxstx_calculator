@@ -1,5 +1,71 @@
 :root[data-theme="dark"] {
   color-scheme: dark;
+  --page-bg: #102c31;
+  --page-bg-secondary: #163b3c;
+  --surface: rgba(20, 52, 56, .96);
+  --surface-soft: #1c4547;
+  --surface-lavender: #245154;
+  --surface-pink: #2a514c;
+  --surface-blue: #1e4850;
+  --surface-gold: #4a4327;
+  --primary: #91d4ca;
+  --primary-strong: #c3eee5;
+  --primary-soft: #27585a;
+  --secondary: #9bd8c6;
+  --secondary-soft: #315b54;
+  --sky: #8fd2d4;
+  --sky-soft: #284e54;
+  --gold: #f0d67f;
+  --gold-soft: #51492d;
+  --text: #e6f7f1;
+  --text-strong: #f9fffb;
+  --text-muted: #a8c5c0;
+  --border: #4f7775;
+  --border-pink: #527d73;
+  --border-gold: #766c42;
+  --success: #86d6ad;
+  --warning: #efc674;
+  --danger: #ef9ca8;
+  --metric-neutral-bg: var(--metric-default-bg);
+  --metric-neutral-border: var(--border);
+  --metric-neutral-accent: var(--primary);
+  --metric-warning-bg: var(--metric-overflow-bg);
+  --metric-warning-accent: var(--gold);
+  --metric-default-bg: linear-gradient(135deg, #245154, #2a514c);
+  --metric-default-accent: var(--primary);
+  --metric-info-bg: linear-gradient(135deg, #1e4850, #23494e);
+  --metric-info-accent: var(--sky);
+  --metric-shortage-bg: linear-gradient(135deg, #4f3944, #3d343f);
+  --metric-shortage-accent: var(--danger);
+  --metric-overflow-bg: linear-gradient(135deg, #4a4327, #3d3b32);
+  --metric-overflow-accent: var(--gold);
+  --metric-success-bg: linear-gradient(135deg, #284c42, #4a4327);
+  --metric-success-accent: var(--success);
+  --metric-unavailable-bg: var(--metric-shortage-bg);
+  --metric-unavailable-accent: var(--danger);
+  --shadow-card: 0 10px 28px rgba(10, 5, 18, .3);
+  --shadow-floating: 0 16px 36px rgba(8, 4, 16, .42);
+  --shadow-control: 0 3px 12px rgba(8, 4, 16, .2);
+  --color-surface-raised: #264b4d;
+  --color-border-strong: #65918d;
+}
+:root[data-theme="dark"] body {
+  background: radial-gradient(circle at 78% 8%, rgba(77, 173, 166, .16), transparent 28rem), radial-gradient(circle at 12% 74%, rgba(235, 207, 117, .1), transparent 30rem), linear-gradient(145deg, var(--page-bg), var(--page-bg-secondary));
+}
+:root[data-theme="dark"] .bg-white,
+:root[data-theme="dark"] .bg-gray-50,
+:root[data-theme="dark"] .bg-white\/90 { background-color: var(--surface) !important; }
+:root[data-theme="dark"] .text-slate-700,
+:root[data-theme="dark"] .text-gray-500,
+:root[data-theme="dark"] .text-slate-600,
+:root[data-theme="dark"] [class*="border-[#"],
+
+:root[data-theme="dark"] .bg-green-100,
+:root[data-theme="dark"] .bg-blue-100,
+:root[data-theme="dark"] .bg-orange-100,
+:root[data-theme="dark"] .bg-red-100 { filter: saturate(.78) brightness(.72); color: var(--text-strong); }
+
+:root[data-theme="dark"][data-visual-theme="dream-carnival"] {
   --page-bg: #21172f;
   --page-bg-secondary: #2b1b39;
   --surface: rgba(48, 35, 65, .96);
@@ -26,41 +92,14 @@
   --success: #75d0a2;
   --warning: #edbd70;
   --danger: #f097ad;
-  --metric-neutral-bg: var(--metric-default-bg);
-  --metric-neutral-border: var(--border);
-  --metric-neutral-accent: var(--primary);
-  --metric-warning-bg: var(--metric-overflow-bg);
-  --metric-warning-accent: var(--gold);
   --metric-default-bg: linear-gradient(135deg, #3b2d50, #432b43);
-  --metric-default-accent: var(--primary);
   --metric-info-bg: linear-gradient(135deg, #29384f, #382d4d);
-  --metric-info-accent: var(--sky);
   --metric-shortage-bg: linear-gradient(135deg, #4b2d45, #38283f);
-  --metric-shortage-accent: var(--danger);
   --metric-overflow-bg: linear-gradient(135deg, #403724, #3a2b3e);
-  --metric-overflow-accent: var(--gold);
   --metric-success-bg: linear-gradient(135deg, #2d403b, #403724);
-  --metric-success-accent: var(--success);
-  --metric-unavailable-bg: var(--metric-shortage-bg);
-  --metric-unavailable-accent: var(--danger);
   --shadow-card: 0 10px 28px rgba(10, 5, 18, .3);
   --shadow-floating: 0 16px 36px rgba(8, 4, 16, .42);
   --shadow-control: 0 3px 12px rgba(8, 4, 16, .2);
   --color-surface-raised: #3a2a4c;
   --color-border-strong: #806d9a;
 }
-:root[data-theme="dark"] body {
-  background: radial-gradient(circle at 78% 8%, rgba(138, 109, 195, .16), transparent 28rem), radial-gradient(circle at 12% 74%, rgba(205, 112, 163, .1), transparent 30rem), linear-gradient(145deg, var(--page-bg), var(--page-bg-secondary));
-}
-:root[data-theme="dark"] .bg-white,
-:root[data-theme="dark"] .bg-gray-50,
-:root[data-theme="dark"] .bg-white\/90 { background-color: var(--surface) !important; }
-:root[data-theme="dark"] .text-slate-700,
-:root[data-theme="dark"] .text-gray-500,
-:root[data-theme="dark"] .text-slate-600,
-:root[data-theme="dark"] [class*="border-[#"],
-
-:root[data-theme="dark"] .bg-green-100,
-:root[data-theme="dark"] .bg-blue-100,
-:root[data-theme="dark"] .bg-orange-100,
-:root[data-theme="dark"] .bg-red-100 { filter: saturate(.78) brightness(.72); color: var(--text-strong); }

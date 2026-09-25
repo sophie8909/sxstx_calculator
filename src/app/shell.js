@@ -1,5 +1,6 @@
 import { normalizeTool } from './router.js';
 import { confirmationNotice, element, featureTabs, navButton } from '../shared/components.js';
+import { applyVisualThemePreference } from '../theme.js';
 
 const COPY = {
   'zh-Hant': {
@@ -74,6 +75,8 @@ Object.assign(COPY['zh-Hans'], {
   applyCharacter: '套用角色目标', applyAll: '套用所有目标', characterApplied: '角色目标已套用至经验计算机。', allApplied: '所有目标已套用至资源计算机。',
   unavailableTitle: '目前没有可用的已验证表单', unavailableBody: '取得已验证的 Google 表单字段后才会开放此区；系统不会建立虚构的提交资料。',
 });
+const faviconUrl = new URL('../../images/favicon_v1.png', import.meta.url).href;
+
 const FEATURE_META = [
   ['primordial', 'primordial', 'primordial'], ['equipment', 'fragment', 'equipment'], ['gift', 'gift', 'gift'],
   ['world-rally', 'world-rally', 'rally'], ['contribution', 'target-time-form', 'contribution'],
@@ -234,7 +237,7 @@ function mountAppShell() {
   const root = element('div', { id: 'calculator-app', className: 'calculator-app' });
   const sidebar = element('aside', { className: 'desktop-sidebar' });
   const sidebarBrand = element('div', { className: 'sidebar-brand' }, [
-    element('span', { className: 'brand-mark', text: '\u2726', ariaHidden: 'true' }),
+    element('img', { className: 'brand-mark', src: faviconUrl, alt: '' }),
     element('div', {}, [element('strong', { text: copy.product }), element('span', { text: 'Feiya Studio' })]),
   ]);
   const desktopNav = element('nav', { className: 'desktop-feature-nav', ariaLabel: copy.menu });
@@ -244,12 +247,20 @@ function mountAppShell() {
     desktopNav.append(navButton({ label, shortLabel: copy.short[index], iconName, page }));
     mobileNav.append(navButton({ label, shortLabel: copy.short[index], iconName, page }));
   });
-  sidebar.append(sidebarBrand, desktopNav, element('div', { className: 'sidebar-links', html: '<a href="https://feiyastudio.com/sxstx-calculator">Feiya Studio</a><a href="https://github.com/sophie8909/sxstx_calculator">GitHub</a>' }));
+  const visualTheme = document.querySelector('[data-visual-theme-select-wrap]');
+  if (visualTheme) sidebar.append(visualTheme);
+  sidebar.append(sidebarBrand, desktopNav, element('div', { className: 'sidebar-illustration', ariaHidden: 'true' }), element('div', { className: 'sidebar-links', html: '<a href="https://feiyastudio.com/sxstx-calculator">Feiya Studio</a><a href="https://github.com/sophie8909/sxstx_calculator">GitHub</a>' }));
 
   const main = element('main', { className: 'application-main' });
   const mobileHeader = element('header', { className: 'mobile-header' }, [
-    element('span', { className: 'brand-mark', text: '\u2726', ariaHidden: 'true' }), element('strong', { text: copy.product }),
+    element('img', { className: 'brand-mark', src: faviconUrl, alt: '' }), element('strong', { text: copy.product }),
   ]);
+  if (visualTheme) {
+    const mobileVisualTheme = visualTheme.cloneNode(true);
+    const select = mobileVisualTheme.querySelector('[data-visual-theme-select]');
+    select?.addEventListener('change', () => applyVisualThemePreference(select.value));
+    mobileHeader.prepend(mobileVisualTheme);
+  }
   const topbar = element('header', { className: 'top-bar' }, [
     element('div', { className: 'feature-heading' }, [
       element('h1', { id: 'current-feature-title', text: copy.features.primordial[0] }),

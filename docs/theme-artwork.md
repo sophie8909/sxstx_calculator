@@ -1,0 +1,11 @@
+# Theme artwork
+
+Generated with the built-in image_gen tool. Both illustrations follow the user-provided flat 2D carnival castle art-style reference. The moon rabbit uses the jade, moon-white and pale-gold palette reference. Transparent PNG originals are preserved.
+
+## images/theme-carnival-castle.png
+
+Generate a new castle illustration using the LAST attached user image ONLY as art-style and architecture reference: the central carnival castle building in that reference. Do not recreate the promotional sheet. Asset: standalone transparent cutout for website lower-left sidebar. Match the reference's flat 2D hand-drawn mobile fantasy game sprite style: clear muted brown-gray outlines, restrained cel shading, charming compact proportions, pink diamond-tile rooftops, turquoise/cyan edging, cream stone towers, gold trim, small carnival bunting and flags, wooden lower-floor beams and balcony, front-on orthographic dollhouse-like architecture. One recognizable compact castle building with central roof and flanking turrets. Keep silhouette readable at small scale. No realistic Disney rendering, no dramatic lighting, no photorealism, no 3D render, no deep perspective. No text, no banners with writing, no lettering, no surrounding objects or promotional frames, no circular background. True transparent alpha background. Entire castle inside frame with margin. Pastel pink, lavender, cyan, cream and soft gold.
+
+## images/theme-moon-rabbit.png
+
+Use case: stylized-concept. Asset type: decorative illustration for lower-left sidebar of fantasy RPG calculator website. Primary request: a luminous pale-gold crescent moon cradling one adorable white jade rabbit with long ears; graceful osmanthus sprig with pale golden blossoms tucked around lower crescent. Elegant Mid-Autumn moon festival feeling, polished hand-painted anime fantasy game item illustration. Palette: deep ocean teal #145b67, jade turquoise #56aaa6, moon-white #edf7ef and muted luminous gold #e5d68d. Cool teal shadows on white rabbit and soft warm moon glow, crisp readable silhouette at 200px display. Compact centered square composition, entire moon and rabbit visible, generous transparent margins. Genuinely transparent background alpha, no rectangular backdrop, no lettering, no text, no logo, no UI, no human character. Refined illustration not plastic 3D.

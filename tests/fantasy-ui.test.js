@@ -5,16 +5,16 @@ import test from 'node:test';
 const root = new URL('../', import.meta.url);
 const read = (path) => readFile(new URL(path, root), 'utf8');
 
-test('approved pastel fantasy tokens replace the legacy teal identity', async () => {
+test('moonlit and carnival visual theme tokens are available', async () => {
   const [tokens, themes, fantasy] = await Promise.all([
     read('src/styles/tokens.css'), read('src/styles/themes.css'), read('src/styles/fantasy.css'),
   ]);
-  for (const token of ['--page-bg: #f8f5ff', '--primary: #8064e8', '--secondary: #e78bb6', '--sky: #72b7ef', '--gold: #e8bd58']) {
+  for (const token of ['--page-bg: #edf8f5', '--primary: #167f7a', '--secondary: #64b9ad', '--sky: #5daeb5', '--gold: #cfaa4a']) {
     assert.match(tokens, new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   }
   assert.doesNotMatch(tokens, /#0f6b68|#173536/);
-  assert.match(themes, /--page-bg: #21172f/);
-  assert.match(themes, /--gold: #e9c96f/);
+  assert.match(themes, /--page-bg: #102c31/);
+  assert.match(themes, /--gold: #f0d67f/);
   assert.match(fantasy, /linear-gradient\(145deg,var\(--primary\),var\(--secondary\)\)/);
   assert.match(fantasy, /prefers-reduced-motion:reduce/);
 });

@@ -61,7 +61,7 @@ test('shared controls and design tokens are centralized', async () => {
   const [tokens, fantasy, components] = await Promise.all([
     read('src/styles/tokens.css'), read('src/styles/fantasy.css'), read('src/styles/components.css'),
   ]);
-  assert.match(tokens, /--primary: #8064e8/);
+  assert.match(tokens, /--primary: #167f7a/);
   assert.match(tokens, /--content-max: 1500px/);
   assert.match(fantasy, /min-height: var\(--control-height\)/);
   assert.match(components, /\.btn-primary/);
@@ -71,7 +71,7 @@ test('shared controls and design tokens are centralized', async () => {
 
 test('contribution workspace keeps only the server and time tab', async () => {
   const shell = await read('src/app/shell.js');
-  const contributionBlock = shell.match(/function prepareContributionTabs[\s\S]*?\n}\n\nfunction updateLabels/)?.[0] || '';
+  const contributionBlock = shell.match(/function prepareContributionTabs[\s\S]*?\r?\n}\r?\n\r?\nfunction updateLabels/)?.[0] || '';
   assert.match(contributionBlock, /id: 'target-time'/);
   assert.doesNotMatch(contributionBlock, /id: 'experience'|id: 'other'|unavailableTitle/);
   assert.equal((shell.match(/contributionTabs:/g) || []).length, 5);

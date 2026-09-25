@@ -34,7 +34,7 @@
 .feature-workspace > div { animation: feature-enter .18s ease-out; }
 .mobile-header, .mobile-navigation { display: none; }
 @keyframes feature-enter { from { opacity: .25; transform: translateY(4px); } }
-@media (max-width: 1023px) {
+@media (max-width: 1199px) {
   .desktop-sidebar { display: none; }
   .application-main { margin-left: 0; }
   .mobile-header { display: flex; min-height: 58px; align-items: center; gap: 10px; padding: 10px 24px; background: var(--color-surface); border-bottom: 1px solid var(--color-border); }

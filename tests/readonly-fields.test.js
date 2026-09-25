@@ -47,7 +47,7 @@ test('read-only number controls hide steppers and have dedicated light and dark 
   assert.match(fantasy, /input\.readonly-field,\.readonly-field[\s\S]*?border: 0!important/);
   assert.match(fantasy, /cursor: default/);
   assert.match(fantasy, /html\[data-theme='dark'\] input\.readonly-field/);
-  assert.match(fantasy, /rgba\(68,48,91,.92\)/);
+  assert.match(fantasy, /color-mix\(in srgb,var\(--surface\) 90%,var\(--primary\)\)/);
 });
 
 test('Traditional Chinese exposes a compact 唯讀 indicator', async () => {
