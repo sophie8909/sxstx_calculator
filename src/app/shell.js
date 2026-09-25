@@ -248,8 +248,9 @@ function mountAppShell() {
     mobileNav.append(navButton({ label, shortLabel: copy.short[index], iconName, page }));
   });
   const visualTheme = document.querySelector('[data-visual-theme-select-wrap]');
+  sidebar.append(sidebarBrand, desktopNav, element('div', { className: 'sidebar-illustration', ariaHidden: 'true' }));
   if (visualTheme) sidebar.append(visualTheme);
-  sidebar.append(sidebarBrand, desktopNav, element('div', { className: 'sidebar-illustration', ariaHidden: 'true' }), element('div', { className: 'sidebar-links', html: '<a href="https://feiyastudio.com/sxstx-calculator">Feiya Studio</a><a href="https://github.com/sophie8909/sxstx_calculator">GitHub</a>' }));
+  sidebar.append(element('div', { className: 'sidebar-links', html: '<a href="https://feiyastudio.com/sxstx-calculator">Feiya Studio</a><a href="https://github.com/sophie8909/sxstx_calculator">GitHub</a>' }));
 
   const main = element('main', { className: 'application-main' });
   const mobileHeader = element('header', { className: 'mobile-header' }, [

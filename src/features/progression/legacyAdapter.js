@@ -633,7 +633,7 @@ export function saveAllInputs() {
   }
   document.querySelectorAll('input[type=number], input[type=text], input[type=datetime-local], input[type=checkbox], select')
     .forEach(input => {
-      if (!input.id) return;
+      if (!input.id || input.id === 'language-select') return;
       data[input.id] = input.type === 'checkbox' ? input.checked : input.value;
     });
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -669,7 +669,8 @@ export function loadAllInputs(excludeKeys = []) {
     migrated = true;
   }
   Object.keys(data).forEach(id => {
-    if (excludeKeys.includes(id)) return;
+    // Language is owned by sxstx_ui_language, never by calculator form snapshots.
+    if (id === 'language-select' || excludeKeys.includes(id)) return;
     const n = document.getElementById(id);
     if (!n) return;
     if (n.type === 'checkbox') n.checked = !!data[id];
