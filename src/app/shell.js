@@ -75,7 +75,7 @@ Object.assign(COPY['zh-Hans'], {
   applyCharacter: '套用角色目标', applyAll: '套用所有目标', characterApplied: '角色目标已套用至经验计算机。', allApplied: '所有目标已套用至资源计算机。',
   unavailableTitle: '目前没有可用的已验证表单', unavailableBody: '取得已验证的 Google 表单字段后才会开放此区；系统不会建立虚构的提交资料。',
 });
-const faviconUrl = new URL('../../images/favicon_v1.png', import.meta.url).href;
+const faviconUrl = new URL('../../images/favicon_v1_96.png', import.meta.url).href;
 
 const FEATURE_META = [
   ['primordial', 'primordial', 'primordial'], ['equipment', 'fragment', 'equipment'], ['gift', 'gift', 'gift'],

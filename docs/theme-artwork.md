@@ -2,6 +2,8 @@
 
 Generated with the built-in image_gen tool. Both illustrations follow the user-provided flat 2D carnival castle art-style reference. The moon rabbit uses the jade, moon-white and pale-gold palette reference. Transparent PNG originals are preserved.
 
+Optimized derivatives: `favicon_v1_96.png` is a 96px favicon, and the 512px transparent WebP theme illustrations are used in the sidebar.
+
 ## images/theme-carnival-castle.png
 
 Generate a new castle illustration using the LAST attached user image ONLY as art-style and architecture reference: the central carnival castle building in that reference. Do not recreate the promotional sheet. Asset: standalone transparent cutout for website lower-left sidebar. Match the reference's flat 2D hand-drawn mobile fantasy game sprite style: clear muted brown-gray outlines, restrained cel shading, charming compact proportions, pink diamond-tile rooftops, turquoise/cyan edging, cream stone towers, gold trim, small carnival bunting and flags, wooden lower-floor beams and balcony, front-on orthographic dollhouse-like architecture. One recognizable compact castle building with central roof and flanking turrets. Keep silhouette readable at small scale. No realistic Disney rendering, no dramatic lighting, no photorealism, no 3D render, no deep perspective. No text, no banners with writing, no lettering, no surrounding objects or promotional frames, no circular background. True transparent alpha background. Entire castle inside frame with margin. Pastel pink, lavender, cyan, cream and soft gold.

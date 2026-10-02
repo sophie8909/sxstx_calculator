@@ -63,8 +63,8 @@ a { color: var(--primary-strong); }
 .desktop-feature-nav { gap: 7px; }
 .visual-theme-select-wrap { display: flex; width: 100%; margin-bottom: 14px; padding: 4px; border: 1px solid var(--border-gold); border-radius: var(--radius-pill); background: color-mix(in srgb,var(--surface) 88%,var(--surface-gold)); box-shadow: var(--shadow-control); }
 .visual-theme-select { min-width: 0; height: 36px; min-height: 36px; padding: 4px 28px 4px 10px; border: 0; border-radius: var(--radius-pill); background: transparent; color: var(--primary-strong); box-shadow: none; font-weight: 700; }
-.sidebar-illustration { flex: 0 0 174px; margin-top: auto; background: center / contain no-repeat url('../../images/theme-moon-rabbit.png'); }
-html[data-visual-theme='dream-carnival'] .sidebar-illustration { background-image: url('../../images/theme-carnival-castle.png'); }
+.sidebar-illustration { flex: 0 0 174px; margin-top: auto; background: center / contain no-repeat url('../../images/theme-moon-rabbit.webp'); }
+html[data-visual-theme='dream-carnival'] .sidebar-illustration { background-image: url('../../images/theme-carnival-castle.webp'); }
 .sidebar-links { margin-top: 12px; padding: 16px 8px 0; border-color: var(--border); }
 .application-main { margin-left: var(--sidebar-width); padding-bottom: 56px; }
 .top-bar { min-height: var(--topbar-height); padding: 10px 28px; border-color: var(--border); background: color-mix(in srgb,var(--page-bg) 82%,transparent); backdrop-filter: blur(18px); }
