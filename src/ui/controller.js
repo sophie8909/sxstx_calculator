@@ -1312,7 +1312,7 @@ function bindDataCacheHandlers(containers) {
     const sheet = event.detail?.sheet || 'Google data';
     setGlobalDataStatus('stale', `${sheet} refresh failed; showing cached data.`);
     if (containers?.results && globalStore.getState().activeTool === 'primordial') triggerRecalculate(containers);
-  });
+  }, { signal: controllerEvents.signal });
 
   window.addEventListener(CACHE_UPDATED_EVENT, async (event) => {
     if (Number(event.detail?.gid) === getSheetDefinition('seasonScore').gid) {
@@ -1354,7 +1354,7 @@ function bindDataCacheHandlers(containers) {
         console.error('[server data refresh]', error);
       });
     }
-  });
+  }, { signal: controllerEvents.signal });
 }
 
 
@@ -1559,7 +1559,7 @@ function initSeasonSelector(containers, saved = null) {
 
     await handleSeasonChange(containers);
     updateTargetTimeFormDefaults();
-  });
+  }, { signal: controllerEvents.signal });
 }
 
 function refreshSeasonSelectorLabels() {
@@ -1703,12 +1703,12 @@ function bindTargetTimeFormToggle() {
   };
 
   navButtons.forEach((button) => {
-    button.addEventListener('click', () => showPage(button.dataset.page || 'primordial'));
+    button.addEventListener('click', () => showPage(button.dataset.page || 'primordial'), { signal: controllerEvents.signal });
   });
   window.addEventListener('popstate', () => {
     const tool = normalizeTool(new URLSearchParams(window.location.search).get('tool'));
     showPage(toolToPage[tool], false, { updateHistory: false });
-  });
+  }, { signal: controllerEvents.signal });
 
   const initialTool = normalizeTool(new URLSearchParams(window.location.search).get('tool'));
   showPage(toolToPage[initialTool], false, { replaceHistory: true });
@@ -3024,6 +3024,9 @@ async function initGlobalContext(containers, saved = {}) {
   if (!serverSelect || !playerInput) return;
 
   const servers = await fetchServerRows();
+  globalContextEvents.abort();
+  globalContextEvents = new AbortController();
+  const signal = globalContextEvents.signal;
   const savedPlayerNumber = normalizePlayerNumber(saved.playerNumber || saved['player-code-input'] || '');
   const savedServerValue = String(saved.serverId || saved['server-select'] || saved.serverName || '').trim();
   const savedServer = findServerById(servers, savedServerValue)
@@ -3121,18 +3124,12 @@ async function initGlobalContext(containers, saved = {}) {
   };
 
   if (savedPlayerNumber) playerInput.value = savedPlayerNumber;
-  if (serverSelect.dataset.serverBound !== '1') {
-    serverSelect.dataset.serverBound = '1';
-    serverSelect.addEventListener('change', () => {
-      void syncContext('server-select', playerInput.value, serverSelect.value);
-    });
-  }
-  if (playerInput.dataset.playerBound !== '1') {
-    playerInput.dataset.playerBound = '1';
-    playerInput.addEventListener('input', () => {
-      void syncContext('player-input', playerInput.value);
-    });
-  }
+  serverSelect.addEventListener('change', () => {
+    void syncContext('server-select', playerInput.value, serverSelect.value);
+  }, { signal });
+  playerInput.addEventListener('input', () => {
+    void syncContext('player-input', playerInput.value);
+  }, { signal });
 
   const savedPlayer = parsePlayerNumber(savedPlayerNumber, servers);
   const initialServerId = savedPlayer.ok
@@ -3146,7 +3143,7 @@ async function initGlobalContext(containers, saved = {}) {
       if (!option.value) return;
       option.textContent = `[${option.value}] ${option.dataset.serverName || t('server_unknown_name')}`;
     });
-  });
+  }, { signal });
 }
 async function initWorldRally() {
   const playerInput = document.getElementById('player-code-input');
@@ -3498,112 +3495,117 @@ function updateStoreSummaries() {
 
 
 
+const pendingInputUpdates = new Map();
+let inputUpdateTimer = null;
+
+function flushInputUpdates() {
+  clearTimeout(inputUpdateTimer);
+  inputUpdateTimer = null;
+  const updates = [...pendingInputUpdates.values()];
+  pendingInputUpdates.clear();
+  updates.forEach((update) => update());
+}
+
+function queueInputUpdate(feature, update) {
+  pendingInputUpdates.set(feature, update);
+  clearTimeout(inputUpdateTimer);
+  inputUpdateTimer = setTimeout(flushInputUpdates, 120);
+}
+
+function isCalculatorInput(input) {
+  return Boolean(input?.id && (
+    input.id === 'job-select'
+    || input.closest('#calculator-page-content, #fragment-calculator-panel, #gift-calculator-panel')
+  ) && !input.closest('#exp-required-inline-card'));
+}
+
 function bindGlobalHandlers(containers) {
+  const inputValues = new WeakMap();
+  const valueOf = (input) => input.type === 'checkbox' ? input.checked : input.value;
 
-  document.addEventListener('input',
-    (e) => {
-      if (isAppLoading) {
-        e.preventDefault();
-        return;
-      }
-
-      const t = e.target;
-      if (t.tagName === 'INPUT') {
-        mirrorCompactCurrentLevelInput(t);
-        if (t.id?.startsWith('equipment-season-')) {
-          updateEquipmentSeasonScore();
-          saveAllInputs();
-          return;
-        }
-
-        if (t.id?.startsWith('fragment-')) {
-          updateFragmentCalculator();
-          saveAllInputs();
-          return;
-        }
-
-        if (t.id?.startsWith('gift-')) {
-          updateGiftCalculatorResult();
-          saveAllInputs();
-          return;
-        }
-
-        markTargetRecommendationCustom(t);
-
-        if (t.classList.contains('material-source-input')) {
-          const src = t.dataset.source;
-          const mat = t.dataset.material;
-          if (src && mat) updateMaterialSourceRow(src, mat);
-          if (src === 'store') updateStoreSummaries();
-        }
-
-      if (t.classList.contains('relic-dist-input')) updateRelicTotal();
-      triggerRecalculate(containers);
-    }
-  });
-
-  document.addEventListener('change', (e) => {
-    if (isAppLoading) {
-      e.preventDefault();
+  document.addEventListener('input', (e) => {
+    if (isAppLoading) return;
+    const t = e.target;
+    if (t.tagName !== 'INPUT' || t.type === 'checkbox' || !isCalculatorInput(t)) return;
+    inputValues.set(t, valueOf(t));
+    mirrorCompactCurrentLevelInput(t);
+    if (t.id.startsWith('equipment-season-')) {
+      queueInputUpdate('equipment', () => { updateEquipmentSeasonScore(); saveAllInputs(); });
       return;
     }
-
-    const t = e.target;
-      if (t.tagName === 'INPUT' || t.tagName === 'SELECT') {
-      if (t.id === 'job-select') {
-        initEquipmentSeasonScore().then(() => saveAllInputs());
-        return;
-      }
-
-      if (t.id?.startsWith('equipment-season-')) {
-        updateEquipmentSeasonScore();
-        saveAllInputs();
-        return;
-      }
-
-      if (t.id?.startsWith('fragment-')) {
-        if (t.id === 'fragment-discount-fee') updateFragmentFeeRates();
-        if (t.id === 'fragment-dungeon-select') updateDungeonFragmentYield();
-        updateFragmentCalculator();
-        saveAllInputs();
-        return;
-      }
-
-      if (t.id?.startsWith('gift-')) {
-        updateGiftCalculatorResult();
-        saveAllInputs();
-        return;
-      }
-
-      if (t.tagName === 'INPUT') markTargetRecommendationCustom(t);
-
-      if (t.id === 'relic-completed-level' || t.id === 'relic-next-progress') {
-        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-        delete saved['relic-migration-needs-reentry'];
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
-        document.querySelector('[data-relic-migration-notice]')?.remove();
-      }
-
-      if (t.id === 'target-recommendation-type') {
-        saveAllInputs();
-        applyTargetRecommendation(t.value).then(() => {
-          saveAllInputs();
-          triggerRecalculate(containers);
-        });
-        return;
-      }
-
-      if (t.classList.contains('material-source-input')) {
-        const src = t.dataset.source;
-        const mat = t.dataset.material;
-        if (src && mat) updateMaterialSourceRow(src, mat);
-        if (src === 'store') updateStoreSummaries();
-      }
-
-      if (t.classList.contains('relic-dist-input')) updateRelicTotal();
-      triggerRecalculate(containers);
+    if (t.id.startsWith('fragment-')) {
+      queueInputUpdate('fragment', () => { updateFragmentCalculator(); saveAllInputs(); });
+      return;
     }
-  });
+    if (t.id.startsWith('gift-')) {
+      queueInputUpdate('gift', () => { updateGiftCalculatorResult(); saveAllInputs(); });
+      return;
+    }
+    markTargetRecommendationCustom(t);
+    if (t.classList.contains('material-source-input')) {
+      const src = t.dataset.source;
+      const mat = t.dataset.material;
+      if (src && mat) updateMaterialSourceRow(src, mat);
+      if (src === 'store') updateStoreSummaries();
+    }
+    if (t.classList.contains('relic-dist-input')) updateRelicTotal();
+    queueInputUpdate('primordial', () => triggerRecalculate(containers));
+  }, { signal: controllerEvents.signal });
+
+  document.addEventListener('change', (e) => {
+    if (isAppLoading) return;
+    const t = e.target;
+    if (!['INPUT', 'SELECT'].includes(t.tagName) || !isCalculatorInput(t)) return;
+    if (t.id === 'relic-completed-level' || t.id === 'relic-next-progress') {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      delete saved['relic-migration-needs-reentry'];
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+      document.querySelector('[data-relic-migration-notice]')?.remove();
+    }
+    const alreadyUpdated = t.tagName === 'INPUT' && inputValues.has(t) && inputValues.get(t) === valueOf(t);
+    flushInputUpdates();
+    if (alreadyUpdated) return;
+    if (t.id === 'job-select') {
+      initEquipmentSeasonScore().then(() => saveAllInputs());
+      return;
+    }
+    if (t.id.startsWith('equipment-season-')) {
+      updateEquipmentSeasonScore();
+      saveAllInputs();
+      return;
+    }
+    if (t.id.startsWith('fragment-')) {
+      if (t.id === 'fragment-discount-fee') updateFragmentFeeRates();
+      if (t.id === 'fragment-dungeon-select') updateDungeonFragmentYield();
+      updateFragmentCalculator();
+      saveAllInputs();
+      return;
+    }
+    if (t.id.startsWith('gift-')) {
+      updateGiftCalculatorResult();
+      saveAllInputs();
+      return;
+    }
+    if (t.tagName === 'INPUT') markTargetRecommendationCustom(t);
+    if (t.id === 'target-recommendation-type') {
+      saveAllInputs();
+      applyTargetRecommendation(t.value).then(() => triggerRecalculate(containers));
+      return;
+    }
+    if (t.classList.contains('material-source-input')) {
+      const src = t.dataset.source;
+      const mat = t.dataset.material;
+      if (src && mat) updateMaterialSourceRow(src, mat);
+      if (src === 'store') updateStoreSummaries();
+    }
+    if (t.classList.contains('relic-dist-input')) updateRelicTotal();
+    triggerRecalculate(containers);
+  }, { signal: controllerEvents.signal });
+
+  window.addEventListener('pagehide', flushInputUpdates, { signal: controllerEvents.signal });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') flushInputUpdates();
+  }, { signal: controllerEvents.signal });
 
   document.addEventListener('click', (e) => {
     if (isAppLoading) {
@@ -3611,6 +3613,7 @@ function bindGlobalHandlers(containers) {
       return;
     }
 
+    flushInputUpdates();
     const characterExpAction = e.target.closest(
       '#enable-levelup-notify-btn, #enable-target-notify-btn, #enable-hoard-exp-notify-btn, #open-exp-required-form-btn'
     );
@@ -3653,7 +3656,7 @@ function bindGlobalHandlers(containers) {
       return;
     }
 
-  });
+  }, { signal: controllerEvents.signal });
 
 }
 
@@ -3885,7 +3888,27 @@ async function enableNextSeasonExpHoardCalendar() {
   });
 }
 
-async function init() {
+let initialization = null;
+let controllerEvents = new AbortController();
+let globalContextEvents = new AbortController();
+let runtimeBound = false;
+
+function init() {
+  if (!initialization) {
+    initialization = initializeApplication().finally(() => { initialization = null; });
+  }
+  return initialization;
+}
+
+function retryInitialization() {
+  return initialization ? initialization.then(init) : init();
+}
+
+async function initializeApplication() {
+  flushInputUpdates();
+  controllerEvents.abort();
+  globalContextEvents.abort();
+  controllerEvents = new AbortController();
   let containers = null;
   let saved = {};
 
@@ -3919,7 +3942,7 @@ async function init() {
           alert(t('alert_local_data_cleared'));
           location.reload();
         }
-      });
+      }, { signal: controllerEvents.signal });
     },
     async initializeGlobalContext() {
       globalStore.update({
@@ -3932,30 +3955,35 @@ async function init() {
     },
     onError(error, stage) {
       console.error('[bootstrap]', stage, error);
-      renderBootstrapError(document, error, () => init());
+      renderBootstrapError(document, error, retryInitialization);
     },
     onTimeout(error) {
       console.error('[bootstrap watchdog]', error);
-      renderBootstrapError(document, error, () => init());
+      renderBootstrapError(document, error, retryInitialization);
     },
   });
   if (!bootstrap.ok || !containers) return;
-  setupAutoUpdate();
-  setInterval(() => updateCurrentTime(containers.currentTimeDisplay), 1000);
-  updateCurrentTime(containers.currentTimeDisplay);
+  if (!runtimeBound) {
+    runtimeBound = true;
+    setupAutoUpdate();
+    setInterval(() => updateCurrentTime(containers.currentTimeDisplay), 1000);
+    updateCurrentTime(containers.currentTimeDisplay);
 
-  window.addEventListener('languagechange', () => {
-    applyStaticTranslations();
-    refreshSeasonSelectorLabels();
-    applyMobileSectionOrder();
-    renderAll(containers);
-    initializeActiveFeature(containers, JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'));
-  });
-  window.addEventListener('resize', applyMobileSectionOrder, { passive: true });
-  window.addEventListener('sxstx:tool-change', () => {
-    initializeActiveFeature(containers, JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'));
-  });
+    window.addEventListener('languagechange', () => {
+      flushInputUpdates();
+      applyStaticTranslations();
+      refreshSeasonSelectorLabels();
+      applyMobileSectionOrder();
+      renderAll(containers);
+      initializeActiveFeature(containers, JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'));
+    });
+    window.addEventListener('resize', applyMobileSectionOrder, { passive: true });
+    window.addEventListener('sxstx:tool-change', () => {
+      flushInputUpdates();
+      initializeActiveFeature(containers, JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'));
+    });
 
+  }
   initializeActiveFeature(containers, saved);
 }
 

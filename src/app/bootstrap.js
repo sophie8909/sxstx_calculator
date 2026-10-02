@@ -52,6 +52,7 @@ export async function runShellBootstrap({
 }) {
   let stage = 'mount-shell';
   let settled = false;
+  let timeoutError = null;
   const updateLoading = (loading) => {
     setDocumentLoading(documentLike, loading, loadingMessage);
     onLoadingChange?.(loading);
@@ -60,22 +61,26 @@ export async function runShellBootstrap({
 
   const watchdog = timers.setTimeout(() => {
     if (settled) return;
-    const error = Object.assign(
+    timeoutError = Object.assign(
       new Error(`Application initialization timed out during ${stage}`),
       { code: 'bootstrap_timeout', stage }
     );
     updateLoading(false);
-    onTimeout?.(error);
+    onTimeout?.(timeoutError);
   }, timeoutMs);
 
   try {
     await mountShell?.();
+    if (timeoutError) return { ok: false, error: timeoutError, stage };
     stage = 'restore-preferences';
     await restorePreferences?.();
+    if (timeoutError) return { ok: false, error: timeoutError, stage };
     stage = 'initialize-global-context';
     await initializeGlobalContext?.();
+    if (timeoutError) return { ok: false, error: timeoutError, stage };
     return { ok: true, stage: 'complete' };
   } catch (error) {
+    if (timeoutError) return { ok: false, error: timeoutError, stage };
     onError?.(error, stage);
     return { ok: false, error, stage };
   } finally {
