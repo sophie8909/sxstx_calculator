@@ -41,7 +41,7 @@ import {
   convertExperienceToAbsolute,
   parseExperienceInput,
 } from '../core/experience.js';
-import { loadRallyRules, loadServers } from '../services/dataService.js';
+import { loadRallyRules, loadServers, parseCsvRows } from '../services/dataService.js';
 import { getSheetDefinition } from '../services/sheetRegistry.js';
 import { CACHE_FALLBACK_EVENT, CACHE_UPDATED_EVENT, fetchTextWithCache } from '../services/dataCache.js';
 import { setReadOnlyField, summaryMetric } from '../shared/components.js';
@@ -592,40 +592,6 @@ function mergeServerOptions(serverNames) {
       return otherMembers.length > members.length && isSubsetMembers(members, otherMembers);
     });
   });
-}
-
-function parseCsvRows(text) {
-  const rows = [];
-  let row = [];
-  let cell = '';
-  let inQuotes = false;
-
-  for (let i = 0; i < text.length; i += 1) {
-    const char = text[i];
-    const next = text[i + 1];
-
-    if (char === '"' && inQuotes && next === '"') {
-      cell += '"';
-      i += 1;
-    } else if (char === '"') {
-      inQuotes = !inQuotes;
-    } else if (char === ',' && !inQuotes) {
-      row.push(cell);
-      cell = '';
-    } else if ((char === '\n' || char === '\r') && !inQuotes) {
-      if (char === '\r' && next === '\n') i += 1;
-      row.push(cell);
-      if (row.some((value) => String(value).trim() !== '')) rows.push(row);
-      row = [];
-      cell = '';
-    } else {
-      cell += char;
-    }
-  }
-
-  row.push(cell);
-  if (row.some((value) => String(value).trim() !== '')) rows.push(row);
-  return rows;
 }
 
 function normalizeHeader(value) {

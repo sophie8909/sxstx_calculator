@@ -5,7 +5,7 @@ import './title-icons.js';
 import { initLanguage, applyStaticTranslations, t } from './i18n-inline.js';
 import { CACHE_UPDATED_EVENT, fetchTextWithCache } from './services/dataCache.js';
 import { getSheetDefinition } from './services/sheetRegistry.js';
-import { loadServers } from './services/dataService.js';
+import { loadServers, parseCsvRows } from './services/dataService.js';
 import { readToolFromLocation } from './app/router.js';
 import { setReadOnlyField } from './shared/components.js';
 
@@ -57,40 +57,6 @@ function normalizeServerName(name) {
 function normalizeSeasonId(value) {
   const match = String(value || '').match(/\bs\s*(\d+)\b/i);
   return match ? `S${match[1]}` : '';
-}
-
-function parseCsvRows(text) {
-  const rows = [];
-  let row = [];
-  let cell = '';
-  let inQuotes = false;
-
-  for (let i = 0; i < text.length; i += 1) {
-    const char = text[i];
-    const next = text[i + 1];
-
-    if (char === '"' && inQuotes && next === '"') {
-      cell += '"';
-      i += 1;
-    } else if (char === '"') {
-      inQuotes = !inQuotes;
-    } else if (char === ',' && !inQuotes) {
-      row.push(cell);
-      cell = '';
-    } else if ((char === '\n' || char === '\r') && !inQuotes) {
-      if (char === '\r' && next === '\n') i += 1;
-      row.push(cell);
-      if (row.some((value) => String(value).trim() !== '')) rows.push(row);
-      row = [];
-      cell = '';
-    } else {
-      cell += char;
-    }
-  }
-
-  row.push(cell);
-  if (row.some((value) => String(value).trim() !== '')) rows.push(row);
-  return rows;
 }
 
 function normalizeHeader(value) {

@@ -1,6 +1,6 @@
 // model.js
 
-import { getGoogleSheetCsvUrl, loadGameSettings, loadUpgradeCostTablesForSeason, clearDataServiceMemoryCache } from '../../services/dataService.js';
+import { getGoogleSheetCsvUrl, loadGameSettings, loadUpgradeCostTablesForSeason, clearDataServiceMemoryCache, parseCsvRows } from '../../services/dataService.js';
 import { fetchTextWithCache } from '../../services/dataCache.js';
 import {
   buildCumulativeCostData,
@@ -187,8 +187,7 @@ const normalizeKey = (k) => k ? k.replace(/^\uFEFF/, '').trim() : k;
 
 export async function fetchAndParseCsv(url) {
   const text = await fetchTextWithCache(`csv:${url}`, url);
-  const lines = text.replace(/\r\n?/g, '\n').trim().split('\n');
-  if (lines.length === 0) return [];
+  const csvRows = parseCsvRows(text);
   // Find the real header row; published sheets can contain preamble rows.
   const knownHeaders = new Set([
     'level',
@@ -204,15 +203,13 @@ export async function fetchAndParseCsv(url) {
     'cost_freeze_dried',
     'cost_sand',
   ]);
-  const headerIndex = lines.findIndex((line) =>
-    line.split(',').some((cell) => knownHeaders.has(normalizeKey(cell).toLowerCase()))
+  const headerIndex = csvRows.findIndex((row) =>
+    row.some((cell) => knownHeaders.has(normalizeKey(cell).toLowerCase()))
   );
   const headerLineIndex = headerIndex === -1 ? 0 : headerIndex;
-  const rawHeaders = lines[headerLineIndex].split(',').map(h => normalizeKey(h));
+  const rawHeaders = csvRows[headerLineIndex].map(h => normalizeKey(h));
   const headers = rawHeaders.map(h => h.toLowerCase());
-  const dataLines = lines.filter((_, index) => index !== headerLineIndex);
-  const rows = dataLines.map(line => {
-    const values = line.split(',').map(v => v.trim());
+  const rows = csvRows.slice(headerLineIndex + 1).map(values => {
     const obj = {};
     headers.forEach((h, i) => {
       const raw = (values[i] ?? '').trim();

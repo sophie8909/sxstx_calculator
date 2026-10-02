@@ -126,25 +126,19 @@ export function rowsToObjects(csvRows, definition) {
   const rawHeaders = csvRows[headerIndex] || [];
   const dataRows = csvRows.slice(headerIndex + 1);
   const headers = validateSheetHeaders(rawHeaders, definition);
-  const aliasFields = Object.keys(definition.aliases || {});
+  const aliases = Object.keys(definition.aliases || {}).map((field) => [field, resolveAlias(headers, definition, field)]);
   return dataRows.map((row) => {
     const object = {};
     headers.forEach((header, index) => {
       if (header) object[header] = parseCell(row[index]);
     });
-    aliasFields.forEach((field) => {
-      const sourceHeader = resolveAlias(headers, definition, field);
+    aliases.forEach(([field, sourceHeader]) => {
       if (sourceHeader) object[field] = object[sourceHeader];
     });
     if (object.season !== undefined) object.season = String(object.season).trim().toLowerCase();
     if (object.server_id !== undefined) object.server_id = String(object.server_id).trim();
     return object;
   });
-}
-
-function validateSheetText(text, definition) {
-  const objects = rowsToObjects(parseCsvRows(text, definition), definition);
-  return { signature: JSON.stringify(objects) };
 }
 
 export function clearDataServiceMemoryCache(gid) {
@@ -156,6 +150,7 @@ export function loadSheet(sheetKey, { refresh = false, timeoutMs } = {}) {
   const definition = getSheetDefinition(sheetKey);
   if (refresh) requestCache.delete(definition.gid);
   if (!requestCache.has(definition.gid)) {
+    let parsed;
     const request = fetchTextWithCache(
       `google-sheet:${definition.gid}`,
       getGoogleSheetCsvUrl(definition.gid),
@@ -163,11 +158,19 @@ export function loadSheet(sheetKey, { refresh = false, timeoutMs } = {}) {
         refresh,
         timeoutMs,
         metadata: { sheetKey, sheet: definition.title, gid: definition.gid },
-        validate: (text) => validateSheetText(text, definition),
+        validate: (text) => {
+          const objects = rowsToObjects(parseCsvRows(text, definition), definition);
+          parsed = { text, objects };
+          return { signature: JSON.stringify(objects) };
+        },
       }
-    ).then((text) => rowsToObjects(parseCsvRows(text, definition), definition));
+    ).then((text) => parsed?.text === text
+      ? parsed.objects
+      : rowsToObjects(parseCsvRows(text, definition), definition));
     requestCache.set(definition.gid, request);
-    request.catch(() => requestCache.delete(definition.gid));
+    request.catch(() => {
+      if (requestCache.get(definition.gid) === request) requestCache.delete(definition.gid);
+    });
   }
   return requestCache.get(definition.gid);
 }
