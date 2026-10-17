@@ -769,16 +769,16 @@ export const I18N_DICTIONARIES = {
     "zh-Hans": "例：S2 开始、将军陵"
   },
   "relay_submit": {
-    "zh-Hant": "送出到 Google 表單",
-    "zh-Hans": "送出到 Google 表单"
+    "zh-Hant": "送出到 Google 表單（新分頁）",
+    "zh-Hans": "送出到 Google 表单（新分页）"
   },
   "relay_submit_pending": {
     "zh-Hant": "送出中，稍後會顯示成功訊息。",
     "zh-Hans": "送出中，稍后会显示成功讯息。"
   },
-  "relay_submit_success": {
-    "zh-Hant": "已送出到 Google 表單，感謝補充目標時間。",
-    "zh-Hans": "已送出到 Google 表单，感谢补充目标时间。"
+  "relay_submit_check_response": {
+    "zh-Hant": "請在新分頁確認 Google 表單顯示已收到回覆，才表示送出成功。若未開啟分頁，請允許彈出式視窗後再試。",
+    "zh-Hans": "请在新分页确认 Google 表单显示已收到回复，才表示送出成功。若未打开分页，请允许弹出式窗口后再试。"
   },
   "relay_validation_required": {
     "zh-Hant": "請先填完伺服器、賽季、目標日期與說明。",
@@ -1065,9 +1065,9 @@ const EN_TRANSLATIONS = {
   relay_description_placeholder: { en: 'Example: S2 start, General Tomb' },
   relay_season_start_auto_description: { 'zh-Hant': '此日期將作為計算機自動推算當前賽季副本時間點的基準', 'zh-Hans': '此日期将作为计算机自动推算当前赛季副本时间点的基准', en: 'This date is used as the baseline for automatically estimating current-season dungeon times.' },
   relay_season_end_auto_description: { 'zh-Hant': '此日期將作為計算機自動推算賽季結束時間點的基準', 'zh-Hans': '此日期将作为计算机自动推算赛季结束时间点的基准', en: 'This date is used as the baseline for automatically estimating season end time.' },
-  relay_submit: { en: 'Submit to Google Form' },
+  relay_submit: { en: 'Submit to Google Form (new tab)' },
   relay_submit_pending: { en: 'Submitting. A success message will appear shortly.' },
-  relay_submit_success: { en: 'Submitted to Google Form. Thanks for adding target time data.' },
+  relay_submit_check_response: { en: 'Check the Google Form response in the new tab. Submission succeeds only when Google confirms your response was recorded. If no tab opens, allow pop-ups and try again.' },
   relay_validation_required: { en: 'Fill in server number, server, season, target date, and description first.' },
   relay_validation_date: { en: 'Target date format is invalid.' },
   exp_required_form_title: { en: 'Required EXP Form' },
