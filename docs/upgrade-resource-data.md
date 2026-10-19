@@ -12,3 +12,12 @@ Sources: user-provided upg_res_0.4.0.csv (archived in docs/data) and the S4 pet 
 - This supplements the website at load time. It does not modify the external Google Sheet.
 
 Upgrade availability is checked per material over the requested transitions only. Blank, zero, nonnumeric, missing rows and unavailable tables must not appear as satisfied requirements. Earlier missing transitions must not prevent a later fully known range from being calculated. Equal current/target levels require no materials.
+
+## Screenshot observations recorded on 2026-10-19
+
+The canonical Google workbook now preserves the two user-provided screenshots in separate source tabs:
+
+- [S6升級需求](https://docs.google.com/spreadsheets/d/1boxKipNVI-tCaJEaX-AoOTijEgKcxKfilhbtxkLbX-E/edit#gid=106190601), `A1:L18`: 14 progression milestones, material requirements in units of 10,000, original blanks, and source notes. The two level-220 rows are distinct milestones and must both be retained.
+- [小推車升級需求](https://docs.google.com/spreadsheets/d/1boxKipNVI-tCaJEaX-AoOTijEgKcxKfilhbtxkLbX-E/edit#gid=106190602), `A1:E14`: seven cart types for the 342-to-432 upgrade interval. The screenshot total is retained alongside formula-based item sums and differences; the supplied totals do not match the item sums.
+
+These are source observations, not single-level transition rows. They are not loaded by the current calculator. Confirm whether the S6 figures cover one item or all items before using them in calculations; do not spread interval totals evenly across levels or treat blank cells as zero. Cart construction requirements must not be used as hourly production rates. Existing canonical transition tables and append-only history were left unchanged.
