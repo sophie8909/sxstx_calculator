@@ -3,6 +3,7 @@ import { getCurrentLanguage, t } from '../i18n-inline.js';
 import { setReadOnlyField } from '../shared/components.js';
 import { EQUIPMENT_TARGET_IDS, SKILL_TARGET_IDS, PET_TARGET_IDS, ELEMENT_TARGET_IDS, RELIC_TARGET_IDS } from '../core/targetLayouts.js';
 import {
+  STORAGE_KEY,
   categories,
   seasonOptions,
   targetLevelConfig,
@@ -192,7 +193,7 @@ export function renderPrimordialStarCumulative(container) {
 }
 
 export function renderTargetLevels(container) {
-  const saved = JSON.parse(localStorage.getItem('sxstxCalculatorData') || '{}');
+  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
   const layoutMode = saved['target-level-layout-mode'] || 'compact';
   const relicMode = saved['target-relic-layout-mode'] || 'element';
   container.className = 'space-y-4';
@@ -315,7 +316,7 @@ export function renderPetInputs(container) {
 }
 
 function renderCurrentLevelInputs(container, category, detailedContent) {
-  const saved = JSON.parse(localStorage.getItem('sxstxCalculatorData') || '{}');
+  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
   const modeId = `${category}-current-layout-mode`;
   const compactId = `${category}-resonance-current`;
   const hasSavedDetailedValues = Array.from(detailedContent.querySelectorAll('input'))

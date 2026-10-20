@@ -4,8 +4,8 @@ export const I18N_DICTIONARIES = {
     "zh-Hans": "实际经验"
   },
   "alert_local_data_cleared": {
-    "zh-Hant": "本機資料已清除，頁面即將重新整理。",
-    "zh-Hans": "本机资料已清除，页面即将重新整理。"
+    "zh-Hant": "目前紀錄的輸入已清除，其他紀錄保留。頁面即將重新整理。",
+    "zh-Hans": "当前记录的输入已清除，其他记录保留。页面即将重新整理。"
   },
   "calendar_event_details": {
     "zh-Hant": "此事件依你目前的計算結果建立。預計升級時間：{upgradeTime}。提前提醒：{notifyMinutes} 分鐘。",
@@ -128,12 +128,32 @@ export const I18N_DICTIONARIES = {
     "zh-Hans": "战技 4"
   },
   "clear_local_data": {
-    "zh-Hant": "清除本機資料",
-    "zh-Hans": "清除本机资料"
+    "zh-Hant": "清除目前紀錄輸入",
+    "zh-Hans": "清除当前记录输入"
   },
   "confirm_clear_local_data": {
-    "zh-Hant": "確定要清除本機儲存的所有資料嗎？",
-    "zh-Hans": "确定要清除本机存储的所有资料吗？"
+    "zh-Hant": "確定要清除目前紀錄的輸入嗎？其他紀錄會保留。",
+    "zh-Hans": "确定要清除当前记录的输入吗？其他记录会保留。"
+  },
+  "local_record_add": {
+    "zh-Hant": "新增紀錄",
+    "zh-Hans": "新增记录"
+  },
+  "local_record_default": {
+    "zh-Hant": "紀錄 {number}",
+    "zh-Hans": "记录 {number}"
+  },
+  "local_record_error": {
+    "zh-Hant": "無法儲存紀錄變更，請檢查瀏覽器儲存空間。",
+    "zh-Hans": "无法保存记录更改，请检查浏览器存储空间。"
+  },
+  "local_record_name": {
+    "zh-Hant": "紀錄名稱",
+    "zh-Hans": "记录名称"
+  },
+  "local_record_select": {
+    "zh-Hant": "目前紀錄",
+    "zh-Hans": "当前记录"
   },
   "current_placeholder": {
     "zh-Hant": "目前",
@@ -853,7 +873,7 @@ const EN_TRANSLATIONS = {
   theme_select_title: { 'zh-Hant': '\u5207\u63db\u4e3b\u984c\u6a21\u5f0f', 'zh-Hans': '\u5207\u6362\u4e3b\u9898\u6a21\u5f0f', en: 'Select theme mode' },
   theme_system_label: { 'zh-Hant': '\u7cfb\u7d71\u8a2d\u5b9a', 'zh-Hans': '\u7cfb\u7edf\u8bbe\u5b9a', en: 'System settings' },
   actual_exp: { en: 'Actual EXP' },
-  alert_local_data_cleared: { en: 'Saved data on this device has been cleared. The page will reload.' },
+  alert_local_data_cleared: { en: 'Inputs for the current record have been cleared. Other records are preserved. The page will reload.' },
   calendar_event_details: { en: 'This event was created from your current calculation. Estimated upgrade time: {upgradeTime}. Reminder lead time: {notifyMinutes} minutes.' },
   calendar_event_title: { en: 'Character level-up reminder Lv.{level}' },
   calendar_import_unavailable: { en: 'Cannot estimate the upgrade time yet. Check character level, current EXP, and EXP per hour from bed first.' },
@@ -884,8 +904,13 @@ const EN_TRANSLATIONS = {
   category_skill_combat2: { en: 'Combat Skill 2' },
   category_skill_combat3: { en: 'Combat Skill 3' },
   category_skill_combat4: { en: 'Combat Skill 4' },
-  clear_local_data: { en: 'Clear saved data' },
-  confirm_clear_local_data: { en: 'Clear all data saved on this device?' },
+  clear_local_data: { en: 'Clear current record inputs' },
+  confirm_clear_local_data: { en: 'Clear inputs for the current record? Other records will be preserved.' },
+  local_record_add: { 'zh-Hant': '新增紀錄', 'zh-Hans': '新增记录', en: 'Add record' },
+  local_record_default: { 'zh-Hant': '紀錄 {number}', 'zh-Hans': '记录 {number}', en: 'Record {number}' },
+  local_record_error: { 'zh-Hant': '無法儲存紀錄變更，請檢查瀏覽器儲存空間。', 'zh-Hans': '无法保存记录更改，请检查浏览器存储空间。', en: 'Could not save record changes. Check browser storage availability.' },
+  local_record_name: { 'zh-Hant': '紀錄名稱', 'zh-Hans': '记录名称', en: 'Record name' },
+  local_record_select: { 'zh-Hant': '目前紀錄', 'zh-Hans': '当前记录', en: 'Current record' },
   current_placeholder: { en: 'Current' },
   current_time_title: { en: 'Current time' },
   custom_target_time: { en: 'Custom time' },

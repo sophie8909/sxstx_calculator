@@ -1,5 +1,7 @@
-const GLOBAL_CONTEXT_KEY = 'sxstxGlobalContext';
-const LEGACY_CALCULATOR_KEY = 'sxstxCalculatorData';
+import { getLocalRecordStorageKey } from './localRecords.js';
+
+const GLOBAL_CONTEXT_KEY = getLocalRecordStorageKey('sxstxGlobalContext');
+const LEGACY_CALCULATOR_KEY = getLocalRecordStorageKey('sxstxCalculatorData');
 
 export function loadGlobalContext() {
   if (typeof localStorage === 'undefined') return {};

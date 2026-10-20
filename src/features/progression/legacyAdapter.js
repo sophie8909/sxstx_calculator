@@ -2,6 +2,7 @@
 
 import { getGoogleSheetCsvUrl, loadGameSettings, loadUpgradeCostTablesForSeason, clearDataServiceMemoryCache, parseCsvRows } from '../../services/dataService.js';
 import { fetchTextWithCache } from '../../services/dataCache.js';
+import { getLocalRecordStorageKey } from '../../services/localRecords.js';
 import {
   buildCumulativeCostData,
   getCharacterCumulativeExpFromTable,
@@ -23,7 +24,7 @@ import { t } from '../../i18n-inline.js';
 import { normalizeTargetValues } from '../../core/targetLayouts.js';
 
 export const MAX_LEVEL = 200;
-export const STORAGE_KEY = 'sxstxCalculatorData';
+export const STORAGE_KEY = getLocalRecordStorageKey('sxstxCalculatorData');
 
 export const categories = [
   { id: 'character', name: 'Character' },

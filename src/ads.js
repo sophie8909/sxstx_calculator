@@ -1,9 +1,11 @@
+import { getLocalRecordStorageKey } from './services/localRecords.js';
+
 const ADS_CLIENT = 'ca-pub-2263683088830621';
 const ADS_SCRIPT_ID = 'sxstx-adsbygoogle-script';
 const DISABLED_PLAYER_PREFIX = '6001509';
 const PLAYER_CODE_INPUT_ID = 'player-code-input';
 const PLAYER_CODE_PATTERN = /^\d{12}$/;
-const STORAGE_KEY = 'sxstxCalculatorData';
+const STORAGE_KEY = getLocalRecordStorageKey('sxstxCalculatorData');
 
 function normalizePlayerCode(value) {
   return String(value || '').trim();

@@ -59,6 +59,7 @@ import { createWorldRallyViewModel } from '../features/world-rally/model.js';
 import { normalizeTool, readToolFromLocation } from '../app/router.js';
 import { renderBootstrapError, runShellBootstrap } from '../app/bootstrap.js';
 import { createGlobalStore } from '../app/store.js';
+import { mountLocalRecordControls } from '../features/local-records/controls.js';
 
 export const globalStore = createGlobalStore();
 
@@ -3916,12 +3917,14 @@ async function initializeApplication() {
   controllerEvents = new AbortController();
   let containers = null;
   let saved = {};
+  let recordControls = null;
 
   const bootstrap = await runShellBootstrap({
     documentLike: document,
     loadingMessage: t('loading_app_data'),
     onLoadingChange(loading) {
       isAppLoading = loading;
+      if (recordControls) recordControls.disabled = loading;
     },
     mountShell() {
       containers = getContainers();
@@ -3930,6 +3933,10 @@ async function initializeApplication() {
     },
     async restorePreferences() {
       await initLanguage();
+      recordControls = mountLocalRecordControls(document.getElementById('local-record-controls'), {
+        beforeSwitch: flushInputUpdates,
+      });
+      recordControls.disabled = isAppLoading;
       renderAll(containers);
       enhanceStaticFieldTooltips();
       bindTooltipLayers();

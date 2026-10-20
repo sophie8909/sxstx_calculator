@@ -31,6 +31,12 @@ Successful Google CSV responses are cached in `localStorage` as an ephemeral bro
 
 Reload the page to refresh all active feature data. Code can explicitly refresh an individual sheet with `refreshSheet(sheetKey)`.
 
+### Local records
+
+Use the record selector above player context to switch between saved input sets. Edit the record name directly; names and input changes save automatically. **Add record** opens an empty record, while the first record keeps existing saved inputs. Switching saves pending input changes and reloads the selected record. Player/server context and calculator inputs belong to each record; language, theme, and remote data caches are shared. Clearing saved inputs affects only the current record.
+
+Records stay in this browser's local storage. They are not exported files or cloud backups, and clearing browser site data removes them.
+
 ## Updating data
 
 1. Edit or append the canonical row in the appropriate Google sheet.

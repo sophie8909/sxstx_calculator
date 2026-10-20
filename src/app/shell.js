@@ -279,7 +279,8 @@ function mountAppShell() {
     </div>`;
   const featureHeader = element('div', { className: 'feature-toolbar' }, [element('div', { id: 'feature-settings', 'data-feature-settings': '' })]);
   const workspace = element('div', { id: 'feature-workspace', className: 'feature-workspace' });
-  main.append(mobileHeader, topbar, context, featureHeader, workspace);
+  const localRecords = element('div', { id: 'local-record-controls', className: 'local-record-controls' });
+  main.append(mobileHeader, topbar, localRecords, context, featureHeader, workspace);
   root.append(sidebar, main, mobileNav);
   document.body.insertBefore(root, legacyLayout);
 
