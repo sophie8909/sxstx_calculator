@@ -623,14 +623,13 @@ export function computeEtaToTargetLevel(currentLevel, ownedExp, bedExpHourly, ta
 }
 
 export function saveAllInputs() {
-  const previous = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-  const data = {};
-  for (const key of ['relic-legacy-backup', 'relic-migration-needs-reentry']) {
-    if (previous[key] != null) data[key] = previous[key];
-  }
+  // Lazy-loaded tools may not have mounted their saved fields yet.
+  const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+  delete data['language-select'];
   document.querySelectorAll('input[type=number], input[type=text], input[type=datetime-local], input[type=checkbox], select')
     .forEach(input => {
       if (!input.id || input.id === 'language-select') return;
+      if (input.tagName === 'SELECT' && input.options.length === 0) return;
       data[input.id] = input.type === 'checkbox' ? input.checked : input.value;
     });
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));

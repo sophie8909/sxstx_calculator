@@ -1278,6 +1278,7 @@ function refreshBedProgressSummary() {
 }
 
 function triggerRecalculate(containers) {
+  if (isAppLoading) return;
   refreshBedProgressSummary();
   const payload = computeAll(containers);
   renderResults(containers, payload, state.missingFiles, { cacheFallback: state.cacheFallback });
@@ -3703,6 +3704,7 @@ async function initializeActiveFeature(containers, saved = {}, { refresh = false
   }
 
   try {
+    loadAllInputs(['season-select']);
     if (tool === 'primordial') {
       await loadDataForSeason(state.seasonId);
       if (generation !== activeFeatureGeneration) return;
@@ -3710,18 +3712,21 @@ async function initializeActiveFeature(containers, saved = {}, { refresh = false
       renderAll(containers);
       bindTooltipLayers();
       loadAllInputs(['season-select']);
-      syncSavedCompactCurrentLevels();
-      restoreDungeonAutoTargetLevel();
       await Promise.allSettled([
         initEquipmentSeasonScore(saved),
         renderPrimordialRecommendations(),
         loadMaterialAvgDefaults(),
       ]);
       renderMaterialSource(containers);
+      loadAllInputs(['season-select']);
+      syncSavedCompactCurrentLevels();
+      restoreDungeonAutoTargetLevel();
+      updateDaysRemainingFromTarget();
+      updateAllMaterialSources();
       updateRelicTotal();
       triggerRecalculate(containers);
     } else if (tool === 'equipment') {
-      await Promise.all([initFragmentCalculator(saved), initDungeonFragmentYield(saved)]);
+      await Promise.all([initEquipmentSeasonScore(saved), initFragmentCalculator(saved), initDungeonFragmentYield(saved)]);
       updateFragmentFeeRates();
       updateFragmentCalculator();
     } else if (tool === 'gift') {
