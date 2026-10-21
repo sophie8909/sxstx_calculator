@@ -110,3 +110,35 @@
   --shadow-floating: 0 12px 32px rgba(104, 72, 216, .16);
   --shadow-control: 0 3px 10px rgba(117, 89, 177, .08);
 }
+
+:root[data-visual-theme="twilight-castle"] {
+  --page-bg: #eee9fa;
+  --page-bg-secondary: #faf1df;
+  --surface: rgba(252, 250, 255, .96);
+  --surface-soft: #f7f3fc;
+  --surface-lavender: #e9e0f7;
+  --surface-pink: #f4e8f6;
+  --surface-blue: #e1f2ef;
+  --surface-gold: #fff0d5;
+  --primary: #6944aa;
+  --primary-strong: #4e2d85;
+  --primary-soft: #dfd0f3;
+  --secondary: #398577;
+  --secondary-soft: #daeee7;
+  --sky: #317d83;
+  --sky-soft: #d9efed;
+  --gold: #a96a1b;
+  --gold-soft: #ffe2a1;
+  --text: #49395f;
+  --text-strong: #30213f;
+  --text-muted: #746383;
+  --border: #cfbee4;
+  --border-pink: #dfc5e4;
+  --border-gold: #dfbd7d;
+  --success: #287558;
+  --warning: #a2641d;
+  --danger: #af435c;
+  --shadow-card: 0 8px 24px rgba(67, 42, 103, .12), 0 2px 6px rgba(169, 106, 27, .08);
+  --shadow-floating: 0 12px 32px rgba(67, 42, 103, .18);
+  --shadow-control: 0 3px 10px rgba(67, 42, 103, .1);
+}

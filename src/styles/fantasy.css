@@ -65,6 +65,7 @@ a { color: var(--primary-strong); }
 .visual-theme-select { min-width: 0; height: 36px; min-height: 36px; padding: 4px 28px 4px 10px; border: 0; border-radius: var(--radius-pill); background: transparent; color: var(--primary-strong); box-shadow: none; font-weight: 700; }
 .sidebar-illustration { flex: 0 0 174px; margin-top: auto; background: center / contain no-repeat url('../../images/theme-moon-rabbit.webp'); }
 html[data-visual-theme='dream-carnival'] .sidebar-illustration { background-image: url('../../images/theme-carnival-castle.webp'); }
+html[data-visual-theme='twilight-castle'] .sidebar-illustration { background-image: url('../../images/theme-twilight-castle.webp'); }
 .sidebar-links { margin-top: 12px; padding: 16px 8px 0; border-color: var(--border); }
 .application-main { margin-left: var(--sidebar-width); padding-bottom: 56px; }
 .top-bar { min-height: var(--topbar-height); padding: 10px 28px; border-color: var(--border); background: color-mix(in srgb,var(--page-bg) 82%,transparent); backdrop-filter: blur(18px); }

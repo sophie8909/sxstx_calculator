@@ -103,3 +103,39 @@
   --color-surface-raised: #3a2a4c;
   --color-border-strong: #806d9a;
 }
+
+:root[data-theme="dark"][data-visual-theme="twilight-castle"] {
+  --page-bg: #1c152c;
+  --page-bg-secondary: #2b2034;
+  --surface: rgba(42, 32, 59, .96);
+  --surface-soft: #32273f;
+  --surface-lavender: #3d2f51;
+  --surface-pink: #463044;
+  --surface-blue: #263f43;
+  --surface-gold: #493a29;
+  --primary: #c4a6f2;
+  --primary-strong: #e0caff;
+  --primary-soft: #50386b;
+  --secondary: #90cdb6;
+  --secondary-soft: #304d44;
+  --sky: #8acdc9;
+  --sky-soft: #2d4a4c;
+  --gold: #f2c16c;
+  --gold-soft: #59432c;
+  --text: #f0e9f8;
+  --text-strong: #fff8ed;
+  --text-muted: #c2b1d2;
+  --border: #6c557f;
+  --border-pink: #79556f;
+  --border-gold: #8a693e;
+  --success: #92d3ab;
+  --warning: #f2c16c;
+  --danger: #f2a0b4;
+  --metric-default-bg: linear-gradient(135deg, var(--surface-lavender), var(--surface-pink));
+  --metric-info-bg: linear-gradient(135deg, var(--surface-blue), var(--surface-lavender));
+  --metric-shortage-bg: linear-gradient(135deg, #503044, #3b293e);
+  --metric-overflow-bg: linear-gradient(135deg, var(--surface-gold), var(--surface-pink));
+  --metric-success-bg: linear-gradient(135deg, var(--secondary-soft), var(--surface-gold));
+  --color-surface-raised: #3b2c4c;
+  --color-border-strong: #9275aa;
+}

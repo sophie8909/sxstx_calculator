@@ -4,7 +4,7 @@ const LIGHT_THEME = 'light';
 const SYSTEM_THEME = 'system';
 const VISUAL_THEME_STORAGE_KEY = 'sxstx_visual_theme';
 const DEFAULT_VISUAL_THEME = 'moon-rabbit';
-const VISUAL_THEMES = ['moon-rabbit', 'dream-carnival'];
+const VISUAL_THEMES = ['moon-rabbit', 'dream-carnival', 'twilight-castle'];
 
 const THEME_LABELS = {
   'zh-Hant': { dark: '夜間模式', light: '日間模式', system: '系統設定' },
@@ -15,9 +15,9 @@ const THEME_LABELS = {
 const THEME_EMOJIS = { dark: '🌙', light: '☀️', system: '⚙️' };
 
 const VISUAL_THEME_LABELS = {
-  'zh-Hant': { 'moon-rabbit': '桂月生輝', 'dream-carnival': '夢幻嘉年華' },
-  'zh-Hans': { 'moon-rabbit': '桂月生辉', 'dream-carnival': '梦幻嘉年华' },
-  en: { 'moon-rabbit': 'Moonlit Radiance', 'dream-carnival': 'Dream Carnival' },
+  'zh-Hant': { 'moon-rabbit': '桂月生輝', 'dream-carnival': '夢幻嘉年華', 'twilight-castle': '暮夜古堡' },
+  'zh-Hans': { 'moon-rabbit': '桂月生辉', 'dream-carnival': '梦幻嘉年华', 'twilight-castle': '暮夜古堡' },
+  en: { 'moon-rabbit': 'Moonlit Radiance', 'dream-carnival': 'Dream Carnival', 'twilight-castle': 'Twilight Castle' },
 };
 
 const VISUAL_THEME_TITLES = {
