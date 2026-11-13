@@ -37,6 +37,9 @@ jobs:
       - name: Verify SEO output
         run: npm run test:seo
 
+      - name: Publish legacy-domain redirects
+        run: node scripts/build-domain-redirect.mjs
+
       - name: Configure Pages
         uses: actions/configure-pages@v6
 
